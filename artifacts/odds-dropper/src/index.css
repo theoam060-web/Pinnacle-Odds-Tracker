@@ -1,0 +1,146 @@
+@import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap");
+
+@import "tailwindcss";
+@import "tw-animate-css";
+@plugin "@tailwindcss/typography";
+
+@custom-variant dark (&:is(.dark *));
+
+@theme inline {
+  --color-background: hsl(var(--background));
+  --color-foreground: hsl(var(--foreground));
+  --color-border: hsl(var(--border));
+  --color-input: hsl(var(--input));
+  --color-ring: hsl(var(--ring));
+
+  --color-card: hsl(var(--card));
+  --color-card-foreground: hsl(var(--card-foreground));
+  --color-card-border: hsl(var(--card-border));
+
+  --color-popover: hsl(var(--popover));
+  --color-popover-foreground: hsl(var(--popover-foreground));
+  --color-popover-border: hsl(var(--popover-border));
+
+  --color-primary: hsl(var(--primary));
+  --color-primary-foreground: hsl(var(--primary-foreground));
+  --color-primary-border: var(--primary-border);
+
+  --color-secondary: hsl(var(--secondary));
+  --color-secondary-foreground: hsl(var(--secondary-foreground));
+  --color-secondary-border: var(--secondary-border);
+
+  --color-muted: hsl(var(--muted));
+  --color-muted-foreground: hsl(var(--muted-foreground));
+  --color-muted-border: var(--muted-border);
+
+  --color-accent: hsl(var(--accent));
+  --color-accent-foreground: hsl(var(--accent-foreground));
+  --color-accent-border: var(--accent-border);
+
+  --color-destructive: hsl(var(--destructive));
+  --color-destructive-foreground: hsl(var(--destructive-foreground));
+  --color-destructive-border: var(--destructive-border);
+
+  --color-chart-1: hsl(var(--chart-1));
+  --color-chart-2: hsl(var(--chart-2));
+  --color-chart-3: hsl(var(--chart-3));
+  --color-chart-4: hsl(var(--chart-4));
+  --color-chart-5: hsl(var(--chart-5));
+
+  --color-sidebar: hsl(var(--sidebar));
+  --color-sidebar-foreground: hsl(var(--sidebar-foreground));
+  --color-sidebar-border: hsl(var(--sidebar-border));
+  --color-sidebar-primary: hsl(var(--sidebar-primary));
+  --color-sidebar-primary-foreground: hsl(var(--sidebar-primary-foreground));
+  --color-sidebar-primary-border: var(--sidebar-primary-border);
+  --color-sidebar-accent: hsl(var(--sidebar-accent));
+  --color-sidebar-accent-foreground: hsl(var(--sidebar-accent-foreground));
+  --color-sidebar-accent-border: var(--sidebar-accent-border);
+  --color-sidebar-ring: hsl(var(--sidebar-ring));
+
+  --font-sans: var(--app-font-sans);
+  --font-serif: var(--app-font-serif);
+  --font-mono: var(--app-font-mono);
+
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+}
+
+:root {
+  --button-outline: rgba(255,255,255, .10);
+  --badge-outline: rgba(255,255,255, .05);
+
+  --opaque-button-border-intensity: 9;
+  --elevate-1: rgba(255,255,255, .04);
+  --elevate-2: rgba(255,255,255, .09);
+
+  /* Deep charcoal background #0f1117 */
+  --background: 225 21% 7%;
+  --foreground: 210 40% 98%;
+
+  /* Darker panels #161821 */
+  --card: 229 20% 11%;
+  --card-foreground: 210 40% 98%;
+  --card-border: 226 18% 16%;
+
+  --popover: 229 20% 11%;
+  --popover-foreground: 210 40% 98%;
+  --popover-border: 226 18% 16%;
+
+  /* Amber accent for active/highlights #ffb020 */
+  --primary: 39 100% 56%;
+  --primary-foreground: 225 21% 7%;
+
+  --secondary: 226 18% 16%;
+  --secondary-foreground: 210 40% 98%;
+
+  --muted: 226 18% 16%;
+  --muted-foreground: 215 20.2% 65.1%;
+
+  --accent: 226 18% 16%;
+  --accent-foreground: 210 40% 98%;
+
+  --destructive: 0 62.8% 30.6%;
+  --destructive-foreground: 210 40% 98%;
+
+  --border: 226 18% 16%;
+  --input: 226 18% 16%;
+  --ring: 39 100% 56%;
+
+  --sidebar: 229 20% 11%;
+  --sidebar-foreground: 210 40% 98%;
+  --sidebar-border: 226 18% 16%;
+  --sidebar-primary: 39 100% 56%;
+  --sidebar-primary-foreground: 225 21% 7%;
+  --sidebar-accent: 226 18% 16%;
+  --sidebar-accent-foreground: 210 40% 98%;
+  --sidebar-ring: 39 100% 56%;
+
+  --chart-1: 39 100% 56%;
+  --chart-2: 210 40% 98%;
+  --chart-3: 142 71% 45%;
+  --chart-4: 348 83% 47%;
+  --chart-5: 280 65% 60%;
+
+  --app-font-sans: 'Inter', sans-serif;
+  --app-font-serif: Georgia, serif;
+  --app-font-mono: 'JetBrains Mono', 'Menlo', 'Consolas', monospace;
+  --radius: 0.375rem;
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply font-sans antialiased bg-background text-foreground;
+  }
+}
+
+.text-drop { color: #f87171; } /* Red for drops */
+.text-rise { color: #4ade80; } /* Green for rises */
+.bg-drop { background-color: rgba(248, 113, 113, 0.1); }
+.bg-rise { background-color: rgba(74, 222, 128, 0.1); }

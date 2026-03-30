@@ -1,3 +1,21 @@
+# Pinnacle Odds Dropper Clone
+
+## What This Is
+
+A sports odds movement tracker inspired by Pinnacle Odds Dropper. Bettors and value hunters use it to monitor significant odds movements across sports in real time.
+
+## Features
+
+- Live market feed with 16+ events and real odds movements
+- Sport, league, and movement direction filters
+- Summary stats bar (total events, drops, rises, avg drop %)
+- Auto-refreshes every 15 seconds
+- Event detail page with interactive odds movement chart (Recharts)
+- Top Movers page highlighting biggest single moves
+- Dark trading terminal aesthetic (charcoal + amber)
+
+---
+
 # Workspace
 
 ## Overview

@@ -1,15 +1,18 @@
 openapi: 3.1.0
 info:
-  # Do not change the title, if the title changes, the import paths will be broken
   title: Api
   version: 0.1.0
-  description: API specification
+  description: Odds Dropper API
 servers:
   - url: /api
     description: Base API path
 tags:
   - name: health
     description: Health operations
+  - name: odds
+    description: Odds operations
+  - name: sports
+    description: Sports and leagues
 paths:
   /healthz:
     get:
@@ -24,6 +27,136 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/HealthStatus"
+
+  /odds/drops:
+    get:
+      operationId: getOddsDrops
+      tags: [odds]
+      summary: Get odds drops
+      description: Returns events with significant odds movements
+      parameters:
+        - name: sport
+          in: query
+          required: false
+          schema:
+            type: string
+          description: Filter by sport slug
+        - name: league
+          in: query
+          required: false
+          schema:
+            type: string
+          description: Filter by league slug
+        - name: minDrop
+          in: query
+          required: false
+          schema:
+            type: number
+          description: Minimum percentage drop to include
+        - name: direction
+          in: query
+          required: false
+          schema:
+            type: string
+            enum: [drop, rise, all]
+          description: Filter by movement direction
+      responses:
+        "200":
+          description: List of odds drop events
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/OddsEvent"
+
+  /odds/drops/{id}:
+    get:
+      operationId: getOddsDropById
+      tags: [odds]
+      summary: Get single odds drop event
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Odds event detail
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OddsEventDetail"
+        "404":
+          description: Not found
+
+  /odds/summary:
+    get:
+      operationId: getOddsSummary
+      tags: [odds]
+      summary: Get summary stats for the odds dropper
+      description: Returns counts and stats for the current snapshot
+      responses:
+        "200":
+          description: Summary stats
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OddsSummary"
+
+  /odds/top-movers:
+    get:
+      operationId: getTopMovers
+      tags: [odds]
+      summary: Get top movers
+      description: Returns the events with the largest odds movements in the last hour
+      responses:
+        "200":
+          description: Top mover events
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/OddsEvent"
+
+  /sports:
+    get:
+      operationId: getSports
+      tags: [sports]
+      summary: Get available sports
+      responses:
+        "200":
+          description: List of sports
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Sport"
+
+  /sports/{sportSlug}/leagues:
+    get:
+      operationId: getLeaguesBySport
+      tags: [sports]
+      summary: Get leagues for a given sport
+      parameters:
+        - name: sportSlug
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: List of leagues
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/League"
+
 components:
   schemas:
     HealthStatus:
@@ -34,3 +167,164 @@ components:
       required:
         - status
 
+    Sport:
+      type: object
+      properties:
+        slug:
+          type: string
+        name:
+          type: string
+        icon:
+          type: string
+        eventCount:
+          type: integer
+      required:
+        - slug
+        - name
+        - icon
+        - eventCount
+
+    League:
+      type: object
+      properties:
+        slug:
+          type: string
+        name:
+          type: string
+        sport:
+          type: string
+        country:
+          type: string
+        eventCount:
+          type: integer
+      required:
+        - slug
+        - name
+        - sport
+        - country
+        - eventCount
+
+    OddsLine:
+      type: object
+      properties:
+        selection:
+          type: string
+        openingOdds:
+          type: number
+        currentOdds:
+          type: number
+        changePercent:
+          type: number
+        changeAbsolute:
+          type: number
+        direction:
+          type: string
+          enum: [drop, rise, stable]
+      required:
+        - selection
+        - openingOdds
+        - currentOdds
+        - changePercent
+        - changeAbsolute
+        - direction
+
+    OddsEvent:
+      type: object
+      properties:
+        id:
+          type: string
+        homeTeam:
+          type: string
+        awayTeam:
+          type: string
+        sport:
+          type: string
+        league:
+          type: string
+        leagueName:
+          type: string
+        commenceTime:
+          type: string
+          format: date-time
+        marketType:
+          type: string
+          enum: [moneyline, spread, total, asian_handicap]
+        lines:
+          type: array
+          items:
+            $ref: "#/components/schemas/OddsLine"
+        biggestDrop:
+          type: number
+        biggestRise:
+          type: number
+        lastUpdated:
+          type: string
+          format: date-time
+      required:
+        - id
+        - homeTeam
+        - awayTeam
+        - sport
+        - league
+        - leagueName
+        - commenceTime
+        - marketType
+        - lines
+        - biggestDrop
+        - biggestRise
+        - lastUpdated
+
+    OddsMovement:
+      type: object
+      properties:
+        timestamp:
+          type: string
+          format: date-time
+        odds:
+          type: number
+        selection:
+          type: string
+      required:
+        - timestamp
+        - odds
+        - selection
+
+    OddsEventDetail:
+      type: object
+      allOf:
+        - $ref: "#/components/schemas/OddsEvent"
+        - type: object
+          properties:
+            movements:
+              type: array
+              items:
+                $ref: "#/components/schemas/OddsMovement"
+          required:
+            - movements
+
+    OddsSummary:
+      type: object
+      properties:
+        totalEvents:
+          type: integer
+        dropsCount:
+          type: integer
+        risesCount:
+          type: integer
+        avgDropPercent:
+          type: number
+        biggestDrop:
+          type: number
+        biggestRise:
+          type: number
+        lastUpdated:
+          type: string
+          format: date-time
+      required:
+        - totalEvents
+        - dropsCount
+        - risesCount
+        - avgDropPercent
+        - biggestDrop
+        - biggestRise
+        - lastUpdated
