@@ -20,8 +20,8 @@ export const MARKET_TYPE_OPTIONS = [
   { slug: "spread", label: "Spreads" },
 ];
 
+// "All Sports" option intentionally removed — users must select a specific sport
 export const SPORT_OPTIONS = [
-  { slug: "all", label: "All Sports" },
   { slug: "soccer", label: "⚽ Football" },
   { slug: "basketball", label: "🏀 Basketball" },
   { slug: "tennis", label: "🎾 Tennis" },
@@ -46,7 +46,7 @@ export interface AlertConfig {
 
 export const DEFAULT_ALERT_CONFIG: Omit<AlertConfig, "id" | "name"> = {
   enabled: true,
-  sport: "all",
+  sport: "soccer", // defaults to Football; users must pick a specific sport
   minDropPercent: 2,
   maxHoursUntilMatch: 24,
   minOdds: 1.0,

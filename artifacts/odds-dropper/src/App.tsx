@@ -9,6 +9,7 @@ import NotFound from "@/pages/not-found";
 import FeedPage from "@/pages/feed";
 import EventDetailPage from "@/pages/event-detail";
 import BetTrackerPage from "@/pages/bet-tracker";
+import BetStatsPage from "@/pages/bet-stats";
 import AlertConfigurationsPage from "@/pages/alert-configurations";
 
 const queryClient = new QueryClient({
@@ -26,6 +27,7 @@ function Router() {
       <Route path="/" component={FeedPage} />
       <Route path="/event/:id" component={EventDetailPage} />
       <Route path="/bet-tracker" component={BetTrackerPage} />
+      <Route path="/bet-stats" component={BetStatsPage} />
       <Route path="/alert-configurations" component={AlertConfigurationsPage} />
       <Route component={NotFound} />
     </Switch>

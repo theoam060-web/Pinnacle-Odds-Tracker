@@ -2,7 +2,6 @@ import { useRef, useState, useEffect } from "react";
 import { Link } from "wouter";
 import { useGetOddsDrops, getGetOddsDropsQueryKey } from "@workspace/api-client-react";
 import { Layout } from "@/components/layout";
-import { OddsSummaryBar } from "@/components/odds-summary-bar";
 import { OddsSparkline } from "@/components/odds-sparkline";
 import { LogBetModal } from "@/components/log-bet-modal";
 import { CountdownTimer } from "@/components/countdown-timer";
@@ -219,8 +218,6 @@ export default function FeedPage() {
           )}
         </p>
       </div>
-
-      <OddsSummaryBar />
 
       {/* Control bar */}
       <div className="flex items-center gap-3 mb-4 bg-card border rounded-lg px-4 py-2.5 flex-wrap">

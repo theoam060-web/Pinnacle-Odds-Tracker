@@ -196,7 +196,7 @@ export default function AlertConfigurationsPage() {
           <h1 className="text-2xl font-bold tracking-tight">Alert Configurations</h1>
         </div>
         <p className="text-muted-foreground text-sm">
-          Configure up to 9 independent alert setups. Each one filters the feed and fires toasts separately.
+          Configure up to 9 independent alert setups. Each one filters the live feed and triggers a sound notification.
         </p>
       </div>
 

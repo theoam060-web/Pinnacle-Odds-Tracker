@@ -1,52 +1,57 @@
 import { useState, useCallback } from "react";
 import { Link, useLocation } from "wouter";
-import { Activity, TrendingDown, BookMarked, BellRing, Volume2, VolumeX, Cog, ArrowDownRight, ArrowUpRight } from "lucide-react";
+import { Activity, TrendingDown, BookMarked, BellRing, Volume2, VolumeX, Cog, BarChart2 } from "lucide-react";
 import { useAlertStore } from "@/lib/alert-context";
 import { useGetOddsSummary, getGetOddsSummaryQueryKey } from "@workspace/api-client-react";
 import { SettingsModal } from "@/components/settings-modal";
 import { useOddsStream, type OddsDropEvent, type OddsStreamFilters } from "@/hooks/use-odds-stream";
-import { toast } from "@/hooks/use-toast";
-import { formatChange, formatOdds } from "@/lib/format";
 import { useBetStore, getCurrencySymbol, calcEV } from "@/lib/bet-store";
 
 const NAV_ITEMS = [
   { href: "/", label: "Live Feed", icon: TrendingDown },
   { href: "/bet-tracker", label: "Bet Tracker", icon: BookMarked },
+  { href: "/bet-stats", label: "Bet Stats", icon: BarChart2 },
   { href: "/alert-configurations", label: "Alert Configurations", icon: BellRing },
 ];
 
-function OddsStreamListener({ filters }: { filters?: OddsStreamFilters }) {
-  const handleDrop = useCallback(
-    (drop: OddsDropEvent) => {
-      const isDown = drop.direction === "drop";
-      const sign = drop.changePercent > 0 ? "+" : "";
+// Plays a short chime when a drop notification fires and sound is enabled
+function playChime() {
+  try {
+    const ctx = new AudioContext();
+    const osc1 = ctx.createOscillator();
+    const osc2 = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc1.connect(gain); osc2.connect(gain); gain.connect(ctx.destination);
+    osc1.type = "sine";
+    osc1.frequency.setValueAtTime(880, ctx.currentTime);
+    osc1.frequency.exponentialRampToValueAtTime(660, ctx.currentTime + 0.15);
+    osc2.type = "sine";
+    osc2.frequency.setValueAtTime(1100, ctx.currentTime + 0.05);
+    osc2.frequency.exponentialRampToValueAtTime(880, ctx.currentTime + 0.2);
+    gain.gain.setValueAtTime(0, ctx.currentTime);
+    gain.gain.linearRampToValueAtTime(0.18, ctx.currentTime + 0.02);
+    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.35);
+    osc1.start(ctx.currentTime); osc1.stop(ctx.currentTime + 0.35);
+    osc2.start(ctx.currentTime + 0.05); osc2.stop(ctx.currentTime + 0.35);
+    osc1.onended = () => ctx.close();
+  } catch {}
+}
 
-      toast({
-        title: (
-          <span className="flex items-center gap-1.5 font-semibold text-sm">
-            {isDown
-              ? <ArrowDownRight className="w-4 h-4 text-drop shrink-0" />
-              : <ArrowUpRight className="w-4 h-4 text-rise shrink-0" />}
-            {drop.homeTeam} vs {drop.awayTeam}
-          </span>
-        ) as any,
-        description: (
-          <div className="text-xs mt-1 space-y-0.5">
-            <div className="text-muted-foreground">{drop.leagueName} · {drop.selection}</div>
-            <div className="flex items-center gap-2 font-mono">
-              <span className="text-muted-foreground">{formatOdds(drop.openingOdds)}</span>
-              <span className="text-muted-foreground">→</span>
-              <span className="font-semibold">{formatOdds(drop.currentOdds)}</span>
-              <span className={`font-bold ${isDown ? "text-drop" : "text-rise"}`}>
-                {sign}{formatChange(drop.changePercent)}
-              </span>
-            </div>
-          </div>
-        ) as any,
-        duration: 8000,
-      });
+// OddsStreamListener subscribes to SSE and plays a chime when sound is enabled.
+// Toasts/popups are intentionally removed — only audio notification fires.
+function OddsStreamListener({
+  soundEnabled,
+  filters,
+}: {
+  soundEnabled: boolean;
+  filters?: OddsStreamFilters;
+}) {
+  const handleDrop = useCallback(
+    (_drop: OddsDropEvent) => {
+      // Only play sound — no popup toast notifications
+      if (soundEnabled) playChime();
     },
-    [],
+    [soundEnabled],
   );
 
   useOddsStream({ filters, onDrop: handleDrop });
@@ -81,7 +86,7 @@ export function Layout({ children, notificationFilters }: LayoutProps) {
 
   return (
     <div className="min-h-screen bg-background text-foreground flex">
-      <OddsStreamListener filters={notificationFilters} />
+      <OddsStreamListener soundEnabled={soundEnabled} filters={notificationFilters} />
 
       <aside className="w-52 shrink-0 flex flex-col border-r border-border/60 bg-card/60 sticky top-0 h-screen overflow-y-auto">
         {/* Brand */}
