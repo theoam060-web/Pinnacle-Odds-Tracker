@@ -1,12 +1,13 @@
 import { useState, useCallback } from "react";
 import { Link, useLocation } from "wouter";
-import { Activity, TrendingDown, BookMarked, BellRing, Volume2, VolumeX, Settings, LayoutDashboard, Cog, ArrowDownRight, ArrowUpRight } from "lucide-react";
+import { Activity, TrendingDown, BookMarked, BellRing, Volume2, VolumeX, Cog, ArrowDownRight, ArrowUpRight } from "lucide-react";
 import { useAlertStore } from "@/lib/alert-context";
 import { useGetOddsSummary, getGetOddsSummaryQueryKey } from "@workspace/api-client-react";
 import { SettingsModal } from "@/components/settings-modal";
 import { useOddsStream, type OddsDropEvent, type OddsStreamFilters } from "@/hooks/use-odds-stream";
 import { toast } from "@/hooks/use-toast";
 import { formatChange, formatOdds } from "@/lib/format";
+import { useBetStore, getCurrencySymbol, calcEV } from "@/lib/bet-store";
 
 const NAV_ITEMS = [
   { href: "/", label: "Live Feed", icon: TrendingDown },
@@ -14,43 +15,9 @@ const NAV_ITEMS = [
   { href: "/alert-configurations", label: "Alert Configurations", icon: BellRing },
 ];
 
-function playChime() {
-  try {
-    const ctx = new AudioContext();
-    const osc1 = ctx.createOscillator();
-    const osc2 = ctx.createOscillator();
-    const gain = ctx.createGain();
-    osc1.connect(gain);
-    osc2.connect(gain);
-    gain.connect(ctx.destination);
-    osc1.type = "sine";
-    osc1.frequency.setValueAtTime(880, ctx.currentTime);
-    osc1.frequency.exponentialRampToValueAtTime(660, ctx.currentTime + 0.15);
-    osc2.type = "sine";
-    osc2.frequency.setValueAtTime(1100, ctx.currentTime + 0.05);
-    osc2.frequency.exponentialRampToValueAtTime(880, ctx.currentTime + 0.2);
-    gain.gain.setValueAtTime(0, ctx.currentTime);
-    gain.gain.linearRampToValueAtTime(0.2, ctx.currentTime + 0.02);
-    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.35);
-    osc1.start(ctx.currentTime);
-    osc1.stop(ctx.currentTime + 0.35);
-    osc2.start(ctx.currentTime + 0.05);
-    osc2.stop(ctx.currentTime + 0.35);
-    osc1.onended = () => ctx.close();
-  } catch {}
-}
-
-function OddsStreamListener({
-  soundEnabled,
-  filters,
-}: {
-  soundEnabled: boolean;
-  filters?: OddsStreamFilters;
-}) {
+function OddsStreamListener({ filters }: { filters?: OddsStreamFilters }) {
   const handleDrop = useCallback(
     (drop: OddsDropEvent) => {
-      if (soundEnabled) playChime();
-
       const isDown = drop.direction === "drop";
       const sign = drop.changePercent > 0 ? "+" : "";
 
@@ -79,7 +46,7 @@ function OddsStreamListener({
         duration: 8000,
       });
     },
-    [soundEnabled],
+    [],
   );
 
   useOddsStream({ filters, onDrop: handleDrop });
@@ -101,16 +68,27 @@ export function Layout({ children, notificationFilters }: LayoutProps) {
     query: { queryKey: getGetOddsSummaryQueryKey(), refetchInterval: 15000 }
   });
 
+  // Bet stats for sidebar Bets section
+  const { bets, currency } = useBetStore();
+  const sym = getCurrencySymbol(currency);
+  const unsettled = bets.filter(b => b.result === "pending");
+  const totalStaked = unsettled.reduce((s, b) => s + b.stake, 0);
+  const settledWins = bets.filter(b => b.result === "win");
+  const settledLosses = bets.filter(b => b.result === "loss");
+  const currentPL = settledWins.reduce((s, b) => s + b.potentialProfit, 0)
+    - settledLosses.reduce((s, b) => s + b.stake, 0);
+  const expectedProfit = unsettled.reduce((s, b) => s + calcEV(b.bettingOdds, b.novigOdds, b.stake), 0);
+
   return (
     <div className="min-h-screen bg-background text-foreground flex">
-      <OddsStreamListener soundEnabled={soundEnabled} filters={notificationFilters} />
+      <OddsStreamListener filters={notificationFilters} />
 
       <aside className="w-52 shrink-0 flex flex-col border-r border-border/60 bg-card/60 sticky top-0 h-screen overflow-y-auto">
         {/* Brand */}
         <div className="flex items-center gap-2 px-4 py-5 border-b border-border/40">
           <Activity className="h-5 w-5 text-primary shrink-0" />
           <span className="font-bold tracking-tight text-sm leading-tight">
-            Pinnacle<span className="text-primary">Tracker</span>
+            Sharp<span className="text-primary">Tracker</span>
           </span>
         </div>
 
@@ -167,21 +145,44 @@ export function Layout({ children, notificationFilters }: LayoutProps) {
           </button>
         </div>
 
-        {/* Shortcuts */}
-        <div className="mx-3 mb-3 space-y-1">
-          <div className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold px-1 mb-2">Shortcuts</div>
-          <Link href="/alert-configurations">
-            <div className="flex items-center gap-2 px-3 py-2 rounded-md text-xs text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors cursor-pointer">
-              <Settings className="w-3.5 h-3.5 shrink-0" />
-              Alert settings
-            </div>
-          </Link>
-          <Link href="/bet-tracker">
-            <div className="flex items-center gap-2 px-3 py-2 rounded-md text-xs text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors cursor-pointer">
-              <LayoutDashboard className="w-3.5 h-3.5 shrink-0" />
-              My bets
-            </div>
-          </Link>
+        {/* Bets section — live summary of all tracked bets */}
+        <div className="mx-3 mb-3 border border-border/40 rounded-md px-3 py-2.5 bg-background/40 space-y-2">
+          <div className="flex items-center justify-between">
+            <div className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold">Bets</div>
+            <Link href="/bet-tracker">
+              <span className="text-[10px] text-primary hover:underline cursor-pointer">View all →</span>
+            </Link>
+          </div>
+
+          {/* Unsettled (pending) bets */}
+          <div className="flex justify-between text-xs">
+            <span className="text-muted-foreground">Unsettled</span>
+            <span className="font-mono font-bold text-foreground">{unsettled.length}</span>
+          </div>
+
+          {/* Total staked on unsettled bets */}
+          <div className="flex justify-between text-xs">
+            <span className="text-muted-foreground">Staked</span>
+            <span className="font-mono font-bold text-foreground">
+              {sym}{totalStaked.toFixed(2)}
+            </span>
+          </div>
+
+          {/* Current settled P/L */}
+          <div className="flex justify-between text-xs">
+            <span className="text-muted-foreground">P / L</span>
+            <span className={`font-mono font-bold ${currentPL >= 0 ? "text-green-400" : "text-red-400"}`}>
+              {currentPL >= 0 ? "+" : ""}{sym}{Math.abs(currentPL).toFixed(2)}
+            </span>
+          </div>
+
+          {/* Expected profit (EV) on unsettled bets */}
+          <div className="flex justify-between text-xs">
+            <span className="text-muted-foreground">Exp. profit</span>
+            <span className={`font-mono font-bold ${expectedProfit >= 0 ? "text-sky-400" : "text-red-400"}`}>
+              {expectedProfit >= 0 ? "+" : ""}{sym}{Math.abs(expectedProfit).toFixed(2)}
+            </span>
+          </div>
         </div>
 
         {/* Footer: gear settings button */}

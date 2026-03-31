@@ -15,7 +15,7 @@ import {
 import { ArrowRight, TrendingDown, BookmarkPlus, Pause, Play, ArrowUpDown, Check } from "lucide-react";
 import { formatOdds, formatTime, formatDate } from "@/lib/format";
 import { computeNovig } from "@/lib/novig";
-import { useAlertStore, AlertConfig, NOVIG_METHOD_LABELS } from "@/lib/alert-context";
+import { useAlertStore, AlertConfig } from "@/lib/alert-context";
 
 const SPORT_LABELS: Record<string, string> = {
   soccer: "⚽ Football",
@@ -37,23 +37,6 @@ const SORT_LABELS: Record<SortOption, string> = {
   drop_desc: "Drop % highest first",
   drop_asc: "Drop % lowest first",
 };
-
-function playDropSound() {
-  try {
-    const ctx = new AudioContext();
-    const osc = ctx.createOscillator();
-    const gain = ctx.createGain();
-    osc.connect(gain);
-    gain.connect(ctx.destination);
-    osc.frequency.setValueAtTime(880, ctx.currentTime);
-    osc.frequency.exponentialRampToValueAtTime(440, ctx.currentTime + 0.12);
-    gain.gain.setValueAtTime(0.18, ctx.currentTime);
-    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.25);
-    osc.start(ctx.currentTime);
-    osc.stop(ctx.currentTime + 0.25);
-    osc.onended = () => ctx.close();
-  } catch {}
-}
 
 interface FeedRow {
   eventId: string;
@@ -168,8 +151,7 @@ function dropIntensityBg(abs: number): string {
 }
 
 export default function FeedPage() {
-  const { configs, novigMethod, soundEnabled } = useAlertStore();
-  const alertedRef = useRef<Set<string>>(new Set());
+  const { configs, novigMethod } = useAlertStore();
   const [logBetRow, setLogBetRow] = useState<(FeedRow & { novigOdds: number }) | null>(null);
   const [sortBy, setSortBy] = useState<SortOption>("newest");
 
@@ -196,25 +178,6 @@ export default function FeedPage() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [events, paused]);
 
-  // Sound alert on new drops
-  useEffect(() => {
-    if (!soundEnabled || !events) return;
-    let beepFired = false;
-    for (const config of configs) {
-      if (!config.enabled) continue;
-      for (const event of events) {
-        for (const line of event.lines) {
-          if (!lineMatchesConfig(event, line, event.commenceTime, config)) continue;
-          const key = `${config.id}:${event.id}:${line.selection}`;
-          if (!alertedRef.current.has(key)) {
-            alertedRef.current.add(key);
-            if (!beepFired) { playDropSound(); beepFired = true; }
-          }
-        }
-      }
-    }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [events]);
 
   function handlePause() {
     if (!paused) {
@@ -244,14 +207,13 @@ export default function FeedPage() {
 
   const displayRows = paused && frozenRowsRef.current !== null ? frozenRowsRef.current : liveRows;
   const activeConfigs = configs.filter(c => c.enabled);
-  const novigLabel = NOVIG_METHOD_LABELS[novigMethod];
 
   return (
     <Layout>
       <div className="mb-5">
         <h1 className="text-2xl font-bold tracking-tight mb-1 text-foreground">Live Market Feed</h1>
         <p className="text-muted-foreground text-sm">
-          Events with drops in the last 60 minutes. Refreshes every 15s.
+          Events with odds drops detected in the last 60 minutes.
           {activeConfigs.length > 0 && (
             <span className="ml-2 text-primary font-medium">{activeConfigs.length} active alert config{activeConfigs.length !== 1 ? "s" : ""}.</span>
           )}
@@ -266,10 +228,6 @@ export default function FeedPage() {
         <span className="text-sm text-muted-foreground">
           <span className="font-semibold text-foreground">{displayRows.length}</span> drops matching your alert configs
         </span>
-        <span className="text-xs text-muted-foreground font-mono hidden sm:block">
-          No-vig: <span className="text-foreground">{novigLabel}</span>
-        </span>
-
         {/* Pending events badge */}
         {paused && pendingCount > 0 && (
           <button
@@ -333,7 +291,6 @@ export default function FeedPage() {
               <TableHead className="w-[110px]">Sport</TableHead>
               <TableHead className="w-[130px]">Bet type</TableHead>
               <TableHead className="w-[160px] text-center">Odds movement</TableHead>
-              <TableHead className="w-[110px] text-center">No-vig ({novigLabel})</TableHead>
               <TableHead className="w-[130px] text-right">Drop / Trend</TableHead>
               <TableHead className="w-[80px] text-center">Action</TableHead>
             </TableRow>
@@ -343,14 +300,14 @@ export default function FeedPage() {
             {isLoading ? (
               Array(8).fill(0).map((_, i) => (
                 <TableRow key={i}>
-                  {Array(8).fill(0).map((_, j) => (
+                  {Array(7).fill(0).map((_, j) => (
                     <TableCell key={j}><div className="h-4 bg-muted animate-pulse rounded" /></TableCell>
                   ))}
                 </TableRow>
               ))
             ) : displayRows.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={8} className="text-center py-14 text-muted-foreground">
+                <TableCell colSpan={7} className="text-center py-14 text-muted-foreground">
                   No drops detected in the last 60 minutes matching your alert configurations.
                   <Link href="/alert-configurations">
                     <span className="block text-sm mt-1.5 text-primary hover:underline cursor-pointer">
@@ -361,8 +318,6 @@ export default function FeedPage() {
               </TableRow>
             ) : (
               displayRows.map((row, i) => {
-                const novig = computeNovig(row.allCurrentOdds, row.lineIndex);
-                const novigVal = novig[novigMethod];
                 const dropAbs = Math.abs(row.changePercent);
 
                 return (
@@ -417,12 +372,6 @@ export default function FeedPage() {
                       </div>
                     </TableCell>
 
-                    <TableCell className="text-center">
-                      <span className="text-sm font-mono text-foreground font-semibold">
-                        {formatOdds(novigVal)}
-                      </span>
-                    </TableCell>
-
                     <TableCell className="text-right">
                       <div className="flex flex-col items-end gap-1">
                         <span className="text-sm font-mono font-bold text-green-400">
@@ -444,7 +393,10 @@ export default function FeedPage() {
                         size="sm"
                         variant="outline"
                         className="h-7 text-xs px-2 gap-1"
-                        onClick={() => setLogBetRow({ ...row, novigOdds: novigVal })}
+                        onClick={() => {
+                          const novig = computeNovig(row.allCurrentOdds, row.lineIndex);
+                          setLogBetRow({ ...row, novigOdds: novig[novigMethod] });
+                        }}
                       >
                         <BookmarkPlus className="w-3 h-3" />
                         Log

@@ -9,8 +9,39 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { BookMarked, Trash2, TrendingUp } from "lucide-react";
+import { BookMarked, Trash2, TrendingUp, CalendarDays } from "lucide-react";
 import { formatOdds, formatDate, formatTime } from "@/lib/format";
+
+type TimeFilter = "all" | "today" | "7d" | "30d" | "this_month";
+
+const TIME_FILTER_LABELS: Record<TimeFilter, string> = {
+  all: "All time",
+  today: "Today",
+  "7d": "Last 7 days",
+  "30d": "Last 30 days",
+  this_month: "This month",
+};
+
+function filterByTime(bets: LoggedBet[], filter: TimeFilter): LoggedBet[] {
+  if (filter === "all") return bets;
+  const now = new Date();
+  const startOf = (date: Date) => new Date(date.getFullYear(), date.getMonth(), date.getDate()).getTime();
+  return bets.filter(b => {
+    const t = new Date(b.loggedAt).getTime();
+    switch (filter) {
+      case "today":
+        return t >= startOf(now);
+      case "7d":
+        return t >= now.getTime() - 7 * 24 * 60 * 60 * 1000;
+      case "30d":
+        return t >= now.getTime() - 30 * 24 * 60 * 60 * 1000;
+      case "this_month":
+        return t >= new Date(now.getFullYear(), now.getMonth(), 1).getTime();
+      default:
+        return true;
+    }
+  });
+}
 
 const RESULT_STYLES: Record<BetResult, { label: string; cls: string }> = {
   pending: { label: "Pending", cls: "bg-muted text-muted-foreground" },
@@ -89,19 +120,23 @@ function ClosingOddsCell({ bet, onUpdate }: { bet: LoggedBet; onUpdate: (closing
 export default function BetTrackerPage() {
   const { bets, currency, setCurrency, updateBet, removeBet } = useBetStore();
   const sym = getCurrencySymbol(currency);
+  const [timeFilter, setTimeFilter] = useState<TimeFilter>("all");
+
+  // Apply time filter first, then compute stats on filtered set
+  const filteredBets = filterByTime(bets, timeFilter);
 
   // Resolved bets (win/loss only)
-  const resolved = bets.filter(b => b.result === "win" || b.result === "loss");
-  const wins = bets.filter(b => b.result === "win");
-  const losses = bets.filter(b => b.result === "loss");
+  const resolved = filteredBets.filter(b => b.result === "win" || b.result === "loss");
+  const wins = filteredBets.filter(b => b.result === "win");
+  const losses = filteredBets.filter(b => b.result === "loss");
 
   const totalStake = resolved.reduce((s, b) => s + b.stake, 0);
   const totalPL = wins.reduce((s, b) => s + b.potentialProfit, 0)
     - losses.reduce((s, b) => s + b.stake, 0);
   const roi = totalStake > 0 ? (totalPL / totalStake) * 100 : 0;
 
-  // CLV stats (only bets with closingOdds)
-  const clvBets = bets.filter(b => b.closingOdds && b.closingOdds > 1);
+  // CLV stats (only filtered bets with closingOdds)
+  const clvBets = filteredBets.filter(b => b.closingOdds && b.closingOdds > 1);
   const avgCLV = clvBets.length > 0
     ? clvBets.reduce((s, b) => s + calcCLV(b.bettingOdds, b.closingOdds!), 0) / clvBets.length
     : null;
@@ -124,7 +159,7 @@ export default function BetTrackerPage() {
   return (
     <Layout>
       <div className="mb-5">
-        <div className="flex items-start justify-between gap-4">
+        <div className="flex items-start justify-between gap-4 flex-wrap">
           <div className="flex items-center gap-3">
             <BookMarked className="w-6 h-6 text-primary shrink-0" />
             <div>
@@ -133,21 +168,39 @@ export default function BetTrackerPage() {
             </div>
           </div>
 
-          {/* Currency selector */}
-          <div className="flex items-center gap-2 shrink-0">
-            <span className="text-xs text-muted-foreground">Currency</span>
-            <Select value={currency} onValueChange={setCurrency}>
-              <SelectTrigger className="w-[120px] h-8 text-xs">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {CURRENCIES.map(c => (
-                  <SelectItem key={c.code} value={c.code} className="text-xs">
-                    {c.symbol} {c.code} — {c.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+          {/* Right-side controls: time filter + currency */}
+          <div className="flex items-center gap-3 flex-wrap shrink-0">
+            {/* Time filter */}
+            <div className="flex items-center gap-2">
+              <CalendarDays className="w-3.5 h-3.5 text-muted-foreground" />
+              <Select value={timeFilter} onValueChange={v => setTimeFilter(v as TimeFilter)}>
+                <SelectTrigger className="w-[140px] h-8 text-xs">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {(Object.entries(TIME_FILTER_LABELS) as [TimeFilter, string][]).map(([key, label]) => (
+                    <SelectItem key={key} value={key} className="text-xs">{label}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* Currency selector */}
+            <div className="flex items-center gap-2">
+              <span className="text-xs text-muted-foreground">Currency</span>
+              <Select value={currency} onValueChange={setCurrency}>
+                <SelectTrigger className="w-[120px] h-8 text-xs">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {CURRENCIES.map(c => (
+                    <SelectItem key={c.code} value={c.code} className="text-xs">
+                      {c.symbol} {c.code} — {c.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
           </div>
         </div>
       </div>
@@ -163,7 +216,7 @@ export default function BetTrackerPage() {
         <>
           {/* Stats row */}
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 mb-5">
-            <StatCard label="Total bets" value={String(bets.length)} />
+            <StatCard label="Total bets" value={String(filteredBets.length)} />
             <StatCard label="Wins" value={String(wins.length)} color="text-green-400" />
             <StatCard label="Losses" value={String(losses.length)} color="text-red-400" />
             <StatCard
@@ -255,7 +308,16 @@ export default function BetTrackerPage() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {bets.map(bet => {
+                {filteredBets.length === 0 ? (
+                  <TableRow>
+                    <TableCell colSpan={11} className="text-center py-10 text-muted-foreground text-sm">
+                      No bets found for <span className="font-semibold">{TIME_FILTER_LABELS[timeFilter]}</span>.
+                      <button onClick={() => setTimeFilter("all")} className="ml-2 text-primary hover:underline text-xs">
+                        View all →
+                      </button>
+                    </TableCell>
+                  </TableRow>
+                ) : filteredBets.map(bet => {
                   const clv = bet.closingOdds ? calcCLV(bet.bettingOdds, bet.closingOdds) : null;
                   const ev = calcEV(bet.bettingOdds, bet.novigOdds, bet.stake);
                   const pl = bet.result === "win"
