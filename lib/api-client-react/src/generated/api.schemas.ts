@@ -64,6 +64,7 @@ export interface OddsEvent {
   lines: OddsLine[];
   biggestDrop: number;
   biggestRise: number;
+  newDropAt?: string | null;
   lastUpdated: string;
 }
 

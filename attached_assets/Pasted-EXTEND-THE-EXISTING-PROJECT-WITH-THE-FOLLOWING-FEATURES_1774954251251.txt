@@ -1,0 +1,78 @@
+EXTEND THE EXISTING PROJECT WITH THE FOLLOWING FEATURES (do NOT rebuild anything):
+
+---
+
+## SORT BUTTON
+
+* Add a button next to the existing PAUSE button
+* Button text: "Sort by"
+
+SORT OPTIONS (dropdown when clicked):
+
+1. Time – sort by match start time (soonest first)
+2. Newest Alert – newest drops at the top
+3. Oldest Alert – oldest drops at the top
+4. Drop % Highest First – events with highest drop % first
+5. Drop % Lowest First – events with lowest drop % first
+
+Behavior:
+
+* Sorting updates the live feed immediately
+* Works together with paused mode
+* Works with existing filters
+* Highlight currently selected sort option
+
+---
+
+## RECENT EVENTS DISPLAY
+
+* Show all events that came in during the last hour
+* Keep events visible in feed for 1 hour after they arrive
+
+---
+
+## SETTINGS GEAR BUTTON
+
+* Add a gear icon ⚙️ at the bottom left
+* Clicking opens Settings modal
+* Tabs inside Settings:
+
+1. **Preferences**
+
+   * Background color: White / Black / other relevant options
+   * Other display preferences (you decide)
+
+2. **Bet Sizing**
+
+   * Auto-calculate bet size ON/OFF (applies to Bet Tracker automatically)
+   * Starting bankroll input
+   * Bet size method: Kelly / Percent
+   * Kelly fraction % input
+   * Unit size (1u = chosen amount)
+   * Display calculated bet size in Bet Tracker
+
+3. **Currency**
+
+   * Allow user to choose currency
+   * Add more options (e.g., SEK, EUR, USD)
+   * Bet Tracker should display values in selected currency
+
+4. **Security**
+
+   * Set or change password
+   * Enable 2FA authentication
+
+5. **About / Legal**
+
+   * About Us (manually fill content)
+   * Terms of Service (manually fill content)
+   * Privacy Policy (manually fill content)
+
+---
+
+## IMPORTANT NOTES
+
+* Do NOT remove or break existing features
+* All new features should integrate seamlessly with live feed, alerts, and Bet Tracker
+* UI should remain clean and optimized for fast betting decisions
+* Explain all changes clearly in the code and comments

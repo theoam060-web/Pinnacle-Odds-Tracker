@@ -1,182 +1,454 @@
-import { useState } from "react";
+import { useRef, useState, useEffect } from "react";
 import { Link } from "wouter";
-import { useGetOddsDrops, getGetOddsDropsQueryKey, useGetSports, getGetSportsQueryKey, useGetLeaguesBySport, getGetLeaguesBySportQueryKey } from "@workspace/api-client-react";
+import { useGetOddsDrops, getGetOddsDropsQueryKey } from "@workspace/api-client-react";
 import { Layout } from "@/components/layout";
 import { OddsSummaryBar } from "@/components/odds-summary-bar";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+import { OddsSparkline } from "@/components/odds-sparkline";
+import { LogBetModal } from "@/components/log-bet-modal";
+import { CountdownTimer } from "@/components/countdown-timer";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { ArrowDownRight, ArrowUpRight, Minus, Search } from "lucide-react";
-import { formatChange, formatOdds, formatTime } from "@/lib/format";
+import { Button } from "@/components/ui/button";
+import {
+  DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { ArrowRight, TrendingDown, BookmarkPlus, Pause, Play, ArrowUpDown, Check } from "lucide-react";
+import { formatOdds, formatTime, formatDate } from "@/lib/format";
+import { computeNovig } from "@/lib/novig";
+import { useAlertStore, AlertConfig, NOVIG_METHOD_LABELS } from "@/lib/alert-context";
+
+const SPORT_LABELS: Record<string, string> = {
+  soccer: "⚽ Football",
+  basketball: "🏀 Basketball",
+  tennis: "🎾 Tennis",
+  hockey: "🏒 Ice Hockey",
+  american_football: "🏈 Am. Football",
+  baseball: "⚾ Baseball",
+  boxing: "🥊 Boxing",
+  mma: "🥋 MMA",
+};
+
+type SortOption = "time" | "newest" | "oldest" | "drop_desc" | "drop_asc";
+
+const SORT_LABELS: Record<SortOption, string> = {
+  time: "Time (soonest first)",
+  newest: "Newest alert",
+  oldest: "Oldest alert",
+  drop_desc: "Drop % highest first",
+  drop_asc: "Drop % lowest first",
+};
+
+function playDropSound() {
+  try {
+    const ctx = new AudioContext();
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+    osc.frequency.setValueAtTime(880, ctx.currentTime);
+    osc.frequency.exponentialRampToValueAtTime(440, ctx.currentTime + 0.12);
+    gain.gain.setValueAtTime(0.18, ctx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.25);
+    osc.start(ctx.currentTime);
+    osc.stop(ctx.currentTime + 0.25);
+    osc.onended = () => ctx.close();
+  } catch {}
+}
+
+interface FeedRow {
+  eventId: string;
+  homeTeam: string;
+  awayTeam: string;
+  leagueName: string;
+  sport: string;
+  commenceTime: Date | string;
+  marketType: string;
+  selection: string;
+  openingOdds: number;
+  currentOdds: number;
+  changePercent: number;
+  allCurrentOdds: number[];
+  lineIndex: number;
+  lastUpdated: Date | string;
+}
+
+function lineMatchesConfig(
+  event: { sport: string; marketType: string },
+  line: { changePercent: number; currentOdds: number },
+  commenceTime: Date | string,
+  config: AlertConfig,
+): boolean {
+  if (!config.enabled) return false;
+  if (line.changePercent >= 0) return false;
+  const dropAbs = Math.abs(line.changePercent);
+  if (dropAbs < config.minDropPercent) return false;
+  if (config.sport && config.sport !== "all" && event.sport !== config.sport) return false;
+  if (config.markets.length > 0 && !config.markets.includes(event.marketType)) return false;
+  if (line.currentOdds < config.minOdds || line.currentOdds > config.maxOdds) return false;
+  const hoursUntil = (new Date(commenceTime as Date).getTime() - Date.now()) / 3_600_000;
+  if (hoursUntil > config.maxHoursUntilMatch) return false;
+  return true;
+}
+
+function applySort(rows: FeedRow[], sort: SortOption): FeedRow[] {
+  const sorted = [...rows];
+  switch (sort) {
+    case "time":
+      return sorted.sort((a, b) =>
+        new Date(a.commenceTime as Date).getTime() - new Date(b.commenceTime as Date).getTime()
+      );
+    case "newest":
+      return sorted.sort((a, b) => {
+        const tDiff = new Date(b.lastUpdated as Date).getTime() - new Date(a.lastUpdated as Date).getTime();
+        if (tDiff !== 0) return tDiff;
+        return a.changePercent - b.changePercent;
+      });
+    case "oldest":
+      return sorted.sort((a, b) => {
+        const tDiff = new Date(a.lastUpdated as Date).getTime() - new Date(b.lastUpdated as Date).getTime();
+        if (tDiff !== 0) return tDiff;
+        return a.changePercent - b.changePercent;
+      });
+    case "drop_desc":
+      return sorted.sort((a, b) => Math.abs(a.changePercent) - Math.abs(b.changePercent));
+    case "drop_asc":
+      return sorted.sort((a, b) => Math.abs(b.changePercent) - Math.abs(a.changePercent));
+  }
+}
+
+function buildRows(
+  events: ReturnType<typeof useGetOddsDrops>["data"],
+  configs: AlertConfig[],
+  sort: SortOption,
+): FeedRow[] {
+  if (!events) return [];
+  // Show events whose drop was detected within the last 1 hour
+  const oneHourAgo = Date.now() - 60 * 60 * 1000;
+  const rows: FeedRow[] = [];
+
+  for (const event of events) {
+    // Keep events with drops detected in the last 1 hour (regardless of match started status)
+    const updatedAt = new Date(event.lastUpdated as Date).getTime();
+    if (updatedAt < oneHourAgo) continue;
+
+    const allCurrentOdds = event.lines.map(l => l.currentOdds);
+    event.lines.forEach((line, lineIndex) => {
+      const matchesAny = configs.some(c => lineMatchesConfig(event, line, event.commenceTime, c));
+      if (!matchesAny) return;
+      rows.push({
+        eventId: event.id,
+        homeTeam: event.homeTeam,
+        awayTeam: event.awayTeam,
+        leagueName: event.leagueName,
+        sport: event.sport,
+        commenceTime: event.commenceTime,
+        marketType: event.marketType,
+        selection: line.selection,
+        openingOdds: line.openingOdds,
+        currentOdds: line.currentOdds,
+        changePercent: line.changePercent,
+        allCurrentOdds,
+        lineIndex,
+        lastUpdated: event.lastUpdated,
+      });
+    });
+  }
+
+  return applySort(rows, sort);
+}
+
+function rowKey(r: FeedRow) {
+  return `${r.eventId}:${r.selection}`;
+}
+
+function dropIntensityBg(abs: number): string {
+  if (abs >= 15) return "bg-green-950/30";
+  if (abs >= 8) return "bg-green-950/15";
+  return "";
+}
 
 export default function FeedPage() {
-  const [sport, setSport] = useState<string>("all");
-  const [league, setLeague] = useState<string>("all");
-  const [direction, setDirection] = useState<string>("all");
+  const { configs, novigMethod, soundEnabled } = useAlertStore();
+  const alertedRef = useRef<Set<string>>(new Set());
+  const [logBetRow, setLogBetRow] = useState<(FeedRow & { novigOdds: number }) | null>(null);
+  const [sortBy, setSortBy] = useState<SortOption>("newest");
 
-  const { data: sports } = useGetSports({ query: { queryKey: getGetSportsQueryKey() } });
-  const { data: leagues } = useGetLeaguesBySport(sport, { 
-    query: { 
-      queryKey: getGetLeaguesBySportQueryKey(sport),
-      enabled: sport !== "all" 
-    } 
-  });
+  // Pause state
+  const [paused, setPaused] = useState(false);
+  const frozenRowsRef = useRef<FeedRow[] | null>(null);
+  const [pendingCount, setPendingCount] = useState(0);
 
-  const params = {
-    sport: sport === "all" ? undefined : sport,
-    league: league === "all" ? undefined : league,
-    direction: direction === "all" ? undefined : direction as any
-  };
-
-  const { data: events, isLoading } = useGetOddsDrops(params, {
+  const { data: events, isLoading } = useGetOddsDrops(undefined, {
     query: {
-      queryKey: getGetOddsDropsQueryKey(params),
+      queryKey: getGetOddsDropsQueryKey(),
       refetchInterval: 15000,
-    }
+    },
   });
+
+  const liveRows = buildRows(events, configs, sortBy);
+
+  // When paused: track new rows vs frozen snapshot
+  useEffect(() => {
+    if (!paused || frozenRowsRef.current === null) return;
+    const frozenKeys = new Set(frozenRowsRef.current.map(rowKey));
+    const newCount = liveRows.filter(r => !frozenKeys.has(rowKey(r))).length;
+    setPendingCount(newCount);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [events, paused]);
+
+  // Sound alert on new drops
+  useEffect(() => {
+    if (!soundEnabled || !events) return;
+    let beepFired = false;
+    for (const config of configs) {
+      if (!config.enabled) continue;
+      for (const event of events) {
+        for (const line of event.lines) {
+          if (!lineMatchesConfig(event, line, event.commenceTime, config)) continue;
+          const key = `${config.id}:${event.id}:${line.selection}`;
+          if (!alertedRef.current.has(key)) {
+            alertedRef.current.add(key);
+            if (!beepFired) { playDropSound(); beepFired = true; }
+          }
+        }
+      }
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [events]);
+
+  function handlePause() {
+    if (!paused) {
+      frozenRowsRef.current = [...liveRows];
+      setPendingCount(0);
+      setPaused(true);
+    } else {
+      frozenRowsRef.current = null;
+      setPendingCount(0);
+      setPaused(false);
+    }
+  }
+
+  function handleReveal() {
+    frozenRowsRef.current = null;
+    setPendingCount(0);
+    setPaused(false);
+  }
+
+  // When sort changes while paused, re-sort the frozen snapshot
+  useEffect(() => {
+    if (paused && frozenRowsRef.current) {
+      frozenRowsRef.current = applySort(frozenRowsRef.current, sortBy);
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [sortBy]);
+
+  const displayRows = paused && frozenRowsRef.current !== null ? frozenRowsRef.current : liveRows;
+  const activeConfigs = configs.filter(c => c.enabled);
+  const novigLabel = NOVIG_METHOD_LABELS[novigMethod];
 
   return (
     <Layout>
-      <div className="mb-6">
-        <h1 className="text-3xl font-bold tracking-tight mb-2 text-foreground">Live Market Feed</h1>
-        <p className="text-muted-foreground text-sm max-w-2xl">
-          Real-time stream of significant odds movements on Pinnacle. Automatically refreshes every 15 seconds.
+      <div className="mb-5">
+        <h1 className="text-2xl font-bold tracking-tight mb-1 text-foreground">Live Market Feed</h1>
+        <p className="text-muted-foreground text-sm">
+          Events with drops in the last 60 minutes. Refreshes every 15s.
+          {activeConfigs.length > 0 && (
+            <span className="ml-2 text-primary font-medium">{activeConfigs.length} active alert config{activeConfigs.length !== 1 ? "s" : ""}.</span>
+          )}
         </p>
       </div>
 
       <OddsSummaryBar />
 
-      <div className="flex flex-col sm:flex-row gap-4 mb-6 bg-card border rounded-lg p-4">
-        <div className="flex-1 flex flex-col sm:flex-row gap-4">
-          <div className="w-[180px]">
-            <Select value={sport} onValueChange={(val) => { setSport(val); setLeague("all"); }}>
-              <SelectTrigger className="w-full">
-                <SelectValue placeholder="All Sports" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Sports</SelectItem>
-                {sports?.map(s => (
-                  <SelectItem key={s.slug} value={s.slug}>
-                    {s.icon} {s.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-          
-          <div className="w-[200px]">
-            <Select value={league} onValueChange={setLeague} disabled={sport === "all"}>
-              <SelectTrigger className="w-full">
-                <SelectValue placeholder="All Leagues" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Leagues</SelectItem>
-                {leagues?.map(l => (
-                  <SelectItem key={l.slug} value={l.slug}>
-                    {l.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
+      {/* Control bar */}
+      <div className="flex items-center gap-3 mb-4 bg-card border rounded-lg px-4 py-2.5 flex-wrap">
+        <TrendingDown className="w-4 h-4 text-green-400 shrink-0" />
+        <span className="text-sm text-muted-foreground">
+          <span className="font-semibold text-foreground">{displayRows.length}</span> drops matching your alert configs
+        </span>
+        <span className="text-xs text-muted-foreground font-mono hidden sm:block">
+          No-vig: <span className="text-foreground">{novigLabel}</span>
+        </span>
 
-          <div className="w-[150px]">
-            <Select value={direction} onValueChange={setDirection}>
-              <SelectTrigger className="w-full">
-                <SelectValue placeholder="All Movements" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Movements</SelectItem>
-                <SelectItem value="drop">Drops Only</SelectItem>
-                <SelectItem value="rise">Rises Only</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
+        {/* Pending events badge */}
+        {paused && pendingCount > 0 && (
+          <button
+            onClick={handleReveal}
+            className="ml-1 rounded-full bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold px-2.5 py-0.5 transition-colors"
+          >
+            +{pendingCount} new
+          </button>
+        )}
+
+        <div className="ml-auto flex items-center gap-2">
+          {paused && (
+            <span className="text-[10px] font-mono text-amber-400 uppercase tracking-wide">Paused</span>
+          )}
+
+          {/* Sort dropdown */}
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button size="sm" variant="outline" className="h-7 text-xs gap-1.5">
+                <ArrowUpDown className="w-3 h-3" />
+                Sort by
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-[210px]">
+              <DropdownMenuLabel className="text-[10px] uppercase tracking-wider text-muted-foreground">
+                Sort order
+              </DropdownMenuLabel>
+              <DropdownMenuSeparator />
+              {(Object.entries(SORT_LABELS) as [SortOption, string][]).map(([key, label]) => (
+                <DropdownMenuItem
+                  key={key}
+                  onClick={() => setSortBy(key)}
+                  className="text-xs flex items-center justify-between"
+                >
+                  {label}
+                  {sortBy === key && <Check className="w-3 h-3 text-primary ml-2 shrink-0" />}
+                </DropdownMenuItem>
+              ))}
+            </DropdownMenuContent>
+          </DropdownMenu>
+
+          {/* Pause button */}
+          <Button
+            size="sm"
+            variant={paused ? "default" : "outline"}
+            className={`h-7 text-xs gap-1.5 ${paused ? "bg-amber-600 hover:bg-amber-500 border-amber-600" : ""}`}
+            onClick={handlePause}
+          >
+            {paused ? <Play className="w-3 h-3" /> : <Pause className="w-3 h-3" />}
+            {paused ? "Resume" : "Pause"}
+          </Button>
         </div>
       </div>
 
-      <div className="border rounded-md bg-card overflow-hidden">
-        <Table>
+      <div className="border rounded-md bg-card overflow-x-auto">
+        <Table className="min-w-[960px]">
           <TableHeader className="bg-muted/50">
             <TableRow>
-              <TableHead className="w-[80px]">Time</TableHead>
-              <TableHead>Event</TableHead>
-              <TableHead className="w-[150px]">League</TableHead>
-              <TableHead className="w-[120px]">Market</TableHead>
-              <TableHead className="w-[120px] text-right">Selection</TableHead>
-              <TableHead className="w-[100px] text-right">Open</TableHead>
-              <TableHead className="w-[100px] text-right">Current</TableHead>
-              <TableHead className="w-[100px] text-right">Move</TableHead>
+              <TableHead className="w-[200px]">Match</TableHead>
+              <TableHead className="w-[90px] text-center">Starts in</TableHead>
+              <TableHead className="w-[110px]">Sport</TableHead>
+              <TableHead className="w-[130px]">Bet type</TableHead>
+              <TableHead className="w-[160px] text-center">Odds movement</TableHead>
+              <TableHead className="w-[110px] text-center">No-vig ({novigLabel})</TableHead>
+              <TableHead className="w-[130px] text-right">Drop / Trend</TableHead>
+              <TableHead className="w-[80px] text-center">Action</TableHead>
             </TableRow>
           </TableHeader>
+
           <TableBody>
             {isLoading ? (
-              Array(10).fill(0).map((_, i) => (
+              Array(8).fill(0).map((_, i) => (
                 <TableRow key={i}>
-                  <TableCell><div className="h-4 w-12 bg-muted animate-pulse rounded" /></TableCell>
-                  <TableCell><div className="h-4 w-48 bg-muted animate-pulse rounded" /></TableCell>
-                  <TableCell><div className="h-4 w-24 bg-muted animate-pulse rounded" /></TableCell>
-                  <TableCell><div className="h-4 w-16 bg-muted animate-pulse rounded" /></TableCell>
-                  <TableCell><div className="h-4 w-16 bg-muted animate-pulse rounded ml-auto" /></TableCell>
-                  <TableCell><div className="h-4 w-12 bg-muted animate-pulse rounded ml-auto" /></TableCell>
-                  <TableCell><div className="h-4 w-12 bg-muted animate-pulse rounded ml-auto" /></TableCell>
-                  <TableCell><div className="h-4 w-16 bg-muted animate-pulse rounded ml-auto" /></TableCell>
+                  {Array(8).fill(0).map((_, j) => (
+                    <TableCell key={j}><div className="h-4 bg-muted animate-pulse rounded" /></TableCell>
+                  ))}
                 </TableRow>
               ))
-            ) : events?.length === 0 ? (
+            ) : displayRows.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={8} className="text-center py-10 text-muted-foreground">
-                  No significant movements found matching your filters.
+                <TableCell colSpan={8} className="text-center py-14 text-muted-foreground">
+                  No drops detected in the last 60 minutes matching your alert configurations.
+                  <Link href="/alert-configurations">
+                    <span className="block text-sm mt-1.5 text-primary hover:underline cursor-pointer">
+                      Adjust Alert Configurations →
+                    </span>
+                  </Link>
                 </TableCell>
               </TableRow>
             ) : (
-              events?.map(event => {
-                // Find biggest movement line to highlight
-                const biggestLine = [...event.lines].sort((a, b) => 
-                  Math.abs(b.changePercent) - Math.abs(a.changePercent)
-                )[0];
+              displayRows.map((row, i) => {
+                const novig = computeNovig(row.allCurrentOdds, row.lineIndex);
+                const novigVal = novig[novigMethod];
+                const dropAbs = Math.abs(row.changePercent);
 
                 return (
-                  <TableRow key={event.id} className="group hover:bg-muted/20 cursor-pointer">
-                    <TableCell className="font-mono text-xs text-muted-foreground">
-                      {formatTime(event.commenceTime)}
-                    </TableCell>
+                  <TableRow
+                    key={`${row.eventId}-${row.selection}-${i}`}
+                    className={`hover:bg-muted/20 ${dropIntensityBg(dropAbs)}`}
+                  >
                     <TableCell>
-                      <Link href={`/event/${event.id}`}>
-                        <div className="font-medium text-sm text-foreground hover:text-primary transition-colors">
-                          {event.homeTeam} <span className="text-muted-foreground mx-1 text-xs">vs</span> {event.awayTeam}
+                      <Link href={`/event/${row.eventId}`}>
+                        <div className="cursor-pointer group">
+                          <div className="text-[10px] text-muted-foreground font-mono mb-0.5">
+                            {formatTime(row.commenceTime)} · {formatDate(row.commenceTime)}
+                          </div>
+                          <div className="text-sm font-medium text-foreground group-hover:text-primary transition-colors leading-tight">
+                            {row.homeTeam} <span className="text-muted-foreground text-xs">vs</span> {row.awayTeam}
+                          </div>
+                          <div className="mt-0.5">
+                            <Badge variant="outline" className="text-[9px] font-normal border-muted-foreground/20 px-1 py-0 h-4">
+                              {row.leagueName}
+                            </Badge>
+                          </div>
                         </div>
                       </Link>
                     </TableCell>
+
+                    <TableCell className="text-center">
+                      <CountdownTimer commenceTime={row.commenceTime} />
+                    </TableCell>
+
                     <TableCell>
-                      <Badge variant="outline" className="text-[10px] font-normal tracking-wide truncate max-w-[130px] inline-block align-bottom border-muted-foreground/20">
-                        {event.leagueName}
-                      </Badge>
-                    </TableCell>
-                    <TableCell className="text-xs text-muted-foreground capitalize">
-                      {event.marketType.replace('_', ' ')}
-                    </TableCell>
-                    <TableCell className="text-right font-medium text-xs">
-                      {biggestLine.selection}
-                    </TableCell>
-                    <TableCell className="text-right font-mono text-xs text-muted-foreground">
-                      {formatOdds(biggestLine.openingOdds)}
-                    </TableCell>
-                    <TableCell className="text-right font-mono text-sm font-semibold">
-                      {formatOdds(biggestLine.currentOdds)}
-                    </TableCell>
-                    <TableCell className="text-right font-mono text-xs font-bold flex items-center justify-end">
-                      {biggestLine.direction === 'drop' && <ArrowDownRight className="w-3 h-3 mr-1 text-drop" />}
-                      {biggestLine.direction === 'rise' && <ArrowUpRight className="w-3 h-3 mr-1 text-rise" />}
-                      {biggestLine.direction === 'stable' && <Minus className="w-3 h-3 mr-1 text-muted-foreground" />}
-                      <span className={
-                        biggestLine.direction === 'drop' ? 'text-drop' :
-                        biggestLine.direction === 'rise' ? 'text-rise' : 'text-muted-foreground'
-                      }>
-                        {formatChange(biggestLine.changePercent)}
+                      <span className="text-xs text-muted-foreground">
+                        {SPORT_LABELS[row.sport] ?? row.sport}
                       </span>
+                    </TableCell>
+
+                    <TableCell>
+                      <span className="text-xs font-medium text-foreground capitalize">{row.selection}</span>
+                      <div className="text-[10px] text-muted-foreground capitalize mt-0.5">
+                        {row.marketType.replace(/_/g, " ")}
+                      </div>
+                    </TableCell>
+
+                    <TableCell className="text-center">
+                      <div className="flex items-center justify-center gap-1 font-mono">
+                        <span className="text-muted-foreground text-sm line-through">
+                          {formatOdds(row.openingOdds)}
+                        </span>
+                        <ArrowRight className="w-3 h-3 text-muted-foreground/40 shrink-0" />
+                        <span className="text-foreground text-sm font-bold">
+                          {formatOdds(row.currentOdds)}
+                        </span>
+                      </div>
+                    </TableCell>
+
+                    <TableCell className="text-center">
+                      <span className="text-sm font-mono text-foreground font-semibold">
+                        {formatOdds(novigVal)}
+                      </span>
+                    </TableCell>
+
+                    <TableCell className="text-right">
+                      <div className="flex flex-col items-end gap-1">
+                        <span className="text-sm font-mono font-bold text-green-400">
+                          {dropAbs.toFixed(2)}%
+                        </span>
+                        <div className="w-full max-w-[110px]">
+                          <OddsSparkline
+                            eventId={row.eventId}
+                            selection={row.selection}
+                            openingOdds={row.openingOdds}
+                            currentOdds={row.currentOdds}
+                          />
+                        </div>
+                      </div>
+                    </TableCell>
+
+                    <TableCell className="text-center">
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="h-7 text-xs px-2 gap-1"
+                        onClick={() => setLogBetRow({ ...row, novigOdds: novigVal })}
+                      >
+                        <BookmarkPlus className="w-3 h-3" />
+                        Log
+                      </Button>
                     </TableCell>
                   </TableRow>
                 );
@@ -185,6 +457,10 @@ export default function FeedPage() {
           </TableBody>
         </Table>
       </div>
+
+      {logBetRow && (
+        <LogBetModal row={logBetRow} onClose={() => setLogBetRow(null)} />
+      )}
     </Layout>
   );
 }

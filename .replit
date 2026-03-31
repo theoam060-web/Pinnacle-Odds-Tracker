@@ -23,4 +23,10 @@ expertMode = true
 
 [postMerge]
 path = "scripts/post-merge.sh"
-timeoutMs = 20000
+timeoutMs = 120000
+
+[userenv]
+
+[userenv.shared]
+POLL_INTERVAL_MS = "60000"
+MIN_DROP_PERCENT = "2"

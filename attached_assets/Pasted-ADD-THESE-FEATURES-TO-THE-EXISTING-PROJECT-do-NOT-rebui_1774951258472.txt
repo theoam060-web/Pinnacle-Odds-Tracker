@@ -1,0 +1,119 @@
+ADD THESE FEATURES TO THE EXISTING PROJECT (do NOT rebuild anything):
+
+---
+
+## NO-VIG SETTINGS
+
+* Add a setting where the user can SELECT which no-vig method to use
+* Only the SELECTED no-vig method should be displayed in the table (not all at once)
+
+---
+
+## ODDS DROP DISPLAY
+
+* Remove the minus (-) sign from drop %
+* Always show drop % as a positive number
+* Highlight drop % in GREEN when it represents value (odds dropping = positive signal)
+
+---
+
+## REMOVE / SIMPLIFY UI
+
+* Remove "Top Movers" section completely
+* Keep ONLY "Live Feed"
+
+---
+
+## LEFT SIDEBAR NAVIGATION
+
+Move all navigation to a LEFT SIDEBAR:
+
+Include:
+
+* Live Feed
+* Bet Tracker
+* Alert Configurations (rename from "Filter Settings")
+
+---
+
+## ALERT CONFIGURATIONS (IMPORTANT CORE FEATURE)
+
+* Rename "Filter Settings" → "Alert Configurations"
+* Move this into the LEFT SIDEBAR
+
+Inside Alert Configurations:
+
+* Allow up to 9 different alert setups (configurations)
+* Each configuration can be customized individually
+
+Each alert configuration must include:
+
+* Sport (can reuse same sport multiple times)
+
+* Minimum drop %
+
+* Maximum time before match start
+
+* Odds range (min/max)
+
+* Limit range
+
+* Markets:
+
+  * Moneyline
+  * Draw No Bet
+  * Handicaps
+  * Totals
+  * Both Teams To Score
+  * Spreads
+
+* Each configuration works independently
+
+* Alerts should trigger based on each configuration
+
+---
+
+## GRAPH UNDER DROP %
+
+* Under each drop % in the table, add a SMALL graph showing:
+
+  * Odds movement over time
+  * Limits movement over time
+
+* Graph should be interactive:
+
+  * On hover → show exact values
+  * On click → open expanded/detailed graph view
+
+---
+
+## EXPANDED GRAPH VIEW
+
+When clicking the graph:
+
+Show a detailed page/modal with:
+
+* Match name
+* League
+* Bet type
+
+Graph must include:
+
+* Timeline (date + time)
+* Odds movement (with and without no-vig)
+* Limits movement
+
+Features:
+
+* Hover to see exact values
+* Clear legend for each line
+
+---
+
+## IMPORTANT
+
+* Keep everything else as is
+* Do NOT rebuild the app
+* Only extend existing features
+* Keep UI clean and fast for betting decisions
+* Explain what you add

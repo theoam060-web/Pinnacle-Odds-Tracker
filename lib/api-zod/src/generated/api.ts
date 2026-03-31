@@ -53,6 +53,7 @@ export const GetOddsDropsResponseItem = zod.object({
   ),
   biggestDrop: zod.number(),
   biggestRise: zod.number(),
+  newDropAt: zod.coerce.date().nullish(),
   lastUpdated: zod.coerce.date(),
 });
 export const GetOddsDropsResponse = zod.array(GetOddsDropsResponseItem);
@@ -86,6 +87,7 @@ export const GetOddsDropByIdResponse = zod
     ),
     biggestDrop: zod.number(),
     biggestRise: zod.number(),
+    newDropAt: zod.coerce.date().nullish(),
     lastUpdated: zod.coerce.date(),
   })
   .and(
@@ -95,6 +97,7 @@ export const GetOddsDropByIdResponse = zod
           timestamp: zod.coerce.date(),
           odds: zod.number(),
           selection: zod.string(),
+          limit: zod.number().nullish(),
         }),
       ),
     }),
@@ -139,6 +142,7 @@ export const GetTopMoversResponseItem = zod.object({
   ),
   biggestDrop: zod.number(),
   biggestRise: zod.number(),
+  newDropAt: zod.coerce.date().nullish(),
   lastUpdated: zod.coerce.date(),
 });
 export const GetTopMoversResponse = zod.array(GetTopMoversResponseItem);

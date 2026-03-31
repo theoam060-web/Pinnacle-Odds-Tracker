@@ -13,6 +13,9 @@ import { formatEventForApi } from "../lib/oddsGenerator";
 
 const router: IRouter = Router();
 
+// Server-configured minimum drop threshold; client may override via minDrop query param
+const ENV_MIN_DROP_PERCENT = parseFloat(process.env["MIN_DROP_PERCENT"] ?? "2");
+
 router.get("/odds/drops", async (req, res): Promise<void> => {
   const query = GetOddsDropsQueryParams.safeParse(req.query);
   if (!query.success) {
@@ -21,6 +24,7 @@ router.get("/odds/drops", async (req, res): Promise<void> => {
   }
 
   const { sport, league, minDrop, direction } = query.data;
+  const effectiveMinDrop = minDrop ?? ENV_MIN_DROP_PERCENT;
 
   let rows = await db.select().from(oddsEventsTable).orderBy(desc(oddsEventsTable.lastUpdated));
 
@@ -30,9 +34,7 @@ router.get("/odds/drops", async (req, res): Promise<void> => {
   if (league) {
     rows = rows.filter(r => r.league === league);
   }
-  if (minDrop !== undefined) {
-    rows = rows.filter(r => Math.abs(r.biggestDrop) >= minDrop || Math.abs(r.biggestRise) >= minDrop);
-  }
+  rows = rows.filter(r => Math.abs(r.biggestDrop) >= effectiveMinDrop || Math.abs(r.biggestRise) >= effectiveMinDrop);
   if (direction === "drop") {
     rows = rows.filter(r => r.biggestDrop < -0.01);
   } else if (direction === "rise") {
@@ -74,6 +76,7 @@ router.get("/odds/drops/:id", async (req, res): Promise<void> => {
       timestamp: m.recordedAt.toISOString(),
       odds: m.odds,
       selection: m.selection,
+      limit: m.limit ?? null,
     })),
   };
 
@@ -110,7 +113,11 @@ router.get("/odds/summary", async (_req, res): Promise<void> => {
 router.get("/odds/top-movers", async (_req, res): Promise<void> => {
   const rows = await db.select().from(oddsEventsTable).orderBy(desc(oddsEventsTable.lastUpdated));
 
-  const sorted = [...rows].sort((a, b) => {
+  const filtered = rows.filter(
+    r => Math.abs(r.biggestDrop) >= ENV_MIN_DROP_PERCENT || Math.abs(r.biggestRise) >= ENV_MIN_DROP_PERCENT,
+  );
+
+  const sorted = [...filtered].sort((a, b) => {
     const aMax = Math.max(Math.abs(a.biggestDrop), Math.abs(a.biggestRise));
     const bMax = Math.max(Math.abs(b.biggestDrop), Math.abs(b.biggestRise));
     return bMax - aMax;

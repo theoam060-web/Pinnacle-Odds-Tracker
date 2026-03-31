@@ -10,4 +10,5 @@ export interface OddsMovement {
   timestamp: Date;
   odds: number;
   selection: string;
+  limit?: number | null;
 }

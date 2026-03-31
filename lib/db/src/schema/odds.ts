@@ -14,6 +14,7 @@ export const oddsEventsTable = pgTable("odds_events", {
   lines: jsonb("lines").notNull(),
   biggestDrop: real("biggest_drop").notNull().default(0),
   biggestRise: real("biggest_rise").notNull().default(0),
+  newDropAt: timestamp("new_drop_at", { withTimezone: true }),
   lastUpdated: timestamp("last_updated", { withTimezone: true }).notNull().defaultNow(),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 });
@@ -23,6 +24,7 @@ export const oddsMovementsTable = pgTable("odds_movements", {
   eventId: text("event_id").notNull().references(() => oddsEventsTable.id),
   selection: text("selection").notNull(),
   odds: real("odds").notNull(),
+  limit: real("limit"),
   recordedAt: timestamp("recorded_at", { withTimezone: true }).notNull().defaultNow(),
 });
 

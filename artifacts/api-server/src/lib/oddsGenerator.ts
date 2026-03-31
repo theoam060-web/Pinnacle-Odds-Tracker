@@ -315,12 +315,18 @@ export async function seedDatabase(): Promise<void> {
       const baseTime = Date.now() - 3 * 3600 * 1000;
       for (const line of event.lines) {
         const steps = 8;
+        // Opening limit between 2000-8000; drops proportionally as odds drop
+        const openingLimit = 2000 + Math.floor(Math.random() * 6000);
         for (let i = 0; i <= steps; i++) {
           const t = baseTime + (i / steps) * 3 * 3600 * 1000;
           const progress = i / steps;
           const interpolated = line.openingOdds + (line.currentOdds - line.openingOdds) * progress;
           const jitter = (Math.random() - 0.5) * 0.02;
           const snappedOdds = parseFloat((interpolated + jitter).toFixed(3));
+          // Limit decreases as a drop occurs (simulate risk reduction)
+          const limitFactor = 1 - (progress * Math.abs(line.changePercent) / 100) * 0.7;
+          const limitNoise = 1 + (Math.random() - 0.5) * 0.1;
+          const snappedLimit = parseFloat((Math.max(100, openingLimit * limitFactor * limitNoise)).toFixed(0));
 
           await db
             .insert(oddsMovementsTable)
@@ -328,6 +334,7 @@ export async function seedDatabase(): Promise<void> {
               eventId: event.id,
               selection: line.selection,
               odds: snappedOdds,
+              limit: snappedLimit,
               recordedAt: new Date(t),
             })
             .onConflictDoNothing();
@@ -354,6 +361,7 @@ export function formatEventForApi(row: typeof oddsEventsTable.$inferSelect) {
     lines,
     biggestDrop: row.biggestDrop,
     biggestRise: row.biggestRise,
+    newDropAt: row.newDropAt ? row.newDropAt.toISOString() : null,
     lastUpdated: row.lastUpdated.toISOString(),
   };
 }
