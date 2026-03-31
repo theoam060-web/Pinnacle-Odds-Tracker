@@ -1,6 +1,8 @@
 import { db, oddsEventsTable, oddsMovementsTable } from "@workspace/db";
 import { eq, like } from "drizzle-orm";
 import { logger } from "./logger";
+import { broadcastOddsDrop, type OddsDropEvent } from "./sseManager";
+import { sendTelegramDrop } from "./telegramNotifier";
 
 interface OddsLine {
   selection: string;
@@ -56,6 +58,36 @@ export async function simulateTick(): Promise<void> {
       await db.update(oddsEventsTable)
         .set({ lines: updatedLines, biggestDrop, biggestRise, lastUpdated: now })
         .where(eq(oddsEventsTable.id, event.id));
+
+      const prevBiggestDrop = (event.lines as OddsLine[])
+        .filter(l => l.direction === "drop")
+        .map(l => l.changePercent);
+      const prevBiggest = prevBiggestDrop.length ? Math.min(...prevBiggestDrop) : 0;
+      const MIN_NOTIFY_PERCENT = 2;
+      if (biggestDrop < -MIN_NOTIFY_PERCENT && biggestDrop < prevBiggest) {
+        const droppedLine = updatedLines
+          .filter(l => l.direction === "drop")
+          .sort((a, b) => a.changePercent - b.changePercent)[0];
+        if (droppedLine) {
+          const origLine = (event.lines as OddsLine[]).find(l => l.selection === droppedLine.selection);
+          const drop: OddsDropEvent = {
+            eventId: event.id,
+            homeTeam: event.homeTeam,
+            awayTeam: event.awayTeam,
+            sport: event.sport,
+            league: event.league,
+            leagueName: event.leagueName,
+            selection: droppedLine.selection,
+            openingOdds: origLine?.currentOdds ?? droppedLine.openingOdds,
+            currentOdds: droppedLine.currentOdds,
+            changePercent: droppedLine.changePercent,
+            direction: "drop",
+            detectedAt: now.toISOString(),
+          };
+          broadcastOddsDrop(drop);
+          sendTelegramDrop(drop).catch(err => logger.warn({ err }, "Telegram send failed"));
+        }
+      }
 
       for (const line of updatedLines) {
         // Fetch last limit for this selection to drift it

@@ -3,6 +3,7 @@ import { logger } from "./lib/logger";
 import { seedDatabase } from "./lib/oddsGenerator";
 import { startOddsPoller } from "./lib/oddsPoller";
 import { startMockSimulator } from "./lib/mockSimulator";
+import { logTelegramStatus } from "./lib/telegramNotifier";
 
 const rawPort = process.env["PORT"];
 
@@ -32,6 +33,7 @@ app.listen(port, (err) => {
   }
 
   logger.info({ port }, "Server listening");
+  logTelegramStatus();
 
   if (PINNACLE_API_KEY) {
     logger.info("PINNACLE_API_KEY found — starting live odds poller");

@@ -4,6 +4,8 @@ import { logger } from "./logger";
 import { fetchPinnacleOdds } from "./pinnacleClient";
 import { seedDatabase } from "./oddsGenerator";
 import { startMockSimulator } from "./mockSimulator";
+import { broadcastOddsDrop, type OddsDropEvent } from "./sseManager";
+import { sendTelegramDrop } from "./telegramNotifier";
 
 const FALLBACK_AFTER_EMPTY_POLLS = 3;
 
@@ -112,6 +114,30 @@ async function pollOnce(
       await db.update(oddsEventsTable)
         .set({ homeTeam: shape.homeTeam, awayTeam: shape.awayTeam, commenceTime: shape.commenceTime, lines: updatedLines, biggestDrop, biggestRise, newDropAt, lastUpdated: now })
         .where(eq(oddsEventsTable.id, shape.id));
+    }
+
+    if (isNewDrop) {
+      const droppedLine = updatedLines
+        .filter(l => l.direction === "drop")
+        .sort((a, b) => a.changePercent - b.changePercent)[0];
+      if (droppedLine) {
+        const drop: OddsDropEvent = {
+          eventId: shape.id,
+          homeTeam: shape.homeTeam,
+          awayTeam: shape.awayTeam,
+          sport: shape.sport,
+          league: shape.league,
+          leagueName: shape.leagueName,
+          selection: droppedLine.selection,
+          openingOdds: droppedLine.openingOdds,
+          currentOdds: droppedLine.currentOdds,
+          changePercent: droppedLine.changePercent,
+          direction: "drop",
+          detectedAt: now.toISOString(),
+        };
+        broadcastOddsDrop(drop);
+        sendTelegramDrop(drop).catch(err => logger.warn({ err }, "Telegram send failed"));
+      }
     }
 
     for (const line of updatedLines) {
