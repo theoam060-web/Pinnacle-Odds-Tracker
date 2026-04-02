@@ -163,30 +163,19 @@ function dropIntensityBg(abs: number): string {
   return "";
 }
 
-// Persisted map of rowKey → currentOdds that have already been shown
-const SEEN_KEY = "st:seen-drops:v1";
-
-function loadSeenMap(): Map<string, number> {
-  try {
-    const raw = localStorage.getItem(SEEN_KEY);
-    if (raw) return new Map(JSON.parse(raw) as [string, number][]);
-  } catch {}
-  return new Map();
-}
-
-function saveSeenMap(map: Map<string, number>) {
-  try {
-    localStorage.setItem(SEEN_KEY, JSON.stringify([...map.entries()]));
-  } catch {}
-}
-
 export default function FeedPage() {
   const { configs, novigMethod } = useAlertStore();
   const [logBetRow, setLogBetRow] = useState<(FeedRow & { novigOdds: number }) | null>(null);
   const [sortBy, setSortBy] = useState<SortOption>("newest");
 
-  // Seen-drop deduplication: key = "eventId:selection", value = last shown currentOdds
-  const seenDropsRef = useRef<Map<string, number>>(loadSeenMap());
+  // Accumulated log of alert rows shown this session.
+  // On first load: all current drops are added.
+  // On each subsequent poll: only rows whose odds changed are prepended.
+  // Rows never disappear — they stay visible, pushed down by newer ones.
+  const [shownRows, setShownRows] = useState<FeedRow[]>([]);
+  // Tracks rowKey → last currentOdds that was added to shownRows (in-memory only)
+  const lastShownOddsRef = useRef<Map<string, number>>(new Map());
+  const initializedRef = useRef(false);
 
   // Pause state
   const [paused, setPaused] = useState(false);
@@ -204,42 +193,53 @@ export default function FeedPage() {
     query: { refetchInterval: 30000 },
   });
 
-  const liveRows = useMemo(() => buildRows(events, configs, sortBy), [events, configs, sortBy]);
+  // Build candidate rows from latest API data (unsorted — sort applied to shownRows for display)
+  const liveRows = useMemo(() => buildRows(events, configs, "newest"), [events, configs]);
 
-  // Filter to only show rows whose odds changed since they were last shown.
-  // Rows are marked as "seen" on first appearance; re-shown only when currentOdds changes.
-  const filteredLiveRows = useMemo(() => {
-    const visible: FeedRow[] = [];
-    let dirty = false;
+  useEffect(() => {
+    if (!liveRows.length && !initializedRef.current) return;
+
+    if (!initializedRef.current) {
+      // First data: seed the feed with all current drops and record their odds
+      initializedRef.current = true;
+      liveRows.forEach(r => lastShownOddsRef.current.set(rowKey(r), r.currentOdds));
+      setShownRows(liveRows);
+      return;
+    }
+
+    // Subsequent polls: find rows whose odds changed since they were last shown
+    const newEntries: FeedRow[] = [];
     for (const row of liveRows) {
       const key = rowKey(row);
-      const lastOdds = seenDropsRef.current.get(key);
-      if (lastOdds === row.currentOdds) continue; // Already seen at this price — suppress
-      seenDropsRef.current.set(key, row.currentOdds);
-      dirty = true;
-      visible.push(row);
+      const lastOdds = lastShownOddsRef.current.get(key);
+      // Not seen before OR odds changed → new alert entry
+      if (lastOdds === undefined || lastOdds !== row.currentOdds) {
+        lastShownOddsRef.current.set(key, row.currentOdds);
+        newEntries.push(row);
+      }
     }
-    if (dirty) saveSeenMap(seenDropsRef.current);
-    return visible;
-  // liveRows identity changes only when events/configs/sort change
+    if (newEntries.length > 0) {
+      // Prepend new entries; existing rows stay in place (push down)
+      setShownRows(prev => [...newEntries, ...prev]);
+    }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [liveRows]);
 
-  // When paused: count new/changed rows vs frozen snapshot
+  // Display: sort the accumulated log by user's chosen sort
+  const sortedShownRows = useMemo(() => applySort(shownRows, sortBy), [shownRows, sortBy]);
+
+  // When paused: count new entries that arrived after the freeze
   useEffect(() => {
     if (!paused || frozenRowsRef.current === null) return;
-    const frozenMap = new Map(frozenRowsRef.current.map(r => [rowKey(r), r.currentOdds]));
-    const newCount = filteredLiveRows.filter(r => {
-      const frozenOdds = frozenMap.get(rowKey(r));
-      return frozenOdds === undefined || frozenOdds !== r.currentOdds;
-    }).length;
+    const frozenSet = new Set(frozenRowsRef.current.map(r => `${rowKey(r)}:${r.currentOdds}`));
+    const newCount = sortedShownRows.filter(r => !frozenSet.has(`${rowKey(r)}:${r.currentOdds}`)).length;
     setPendingCount(newCount);
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [events, paused]);
+  }, [shownRows, paused]);
 
   function handlePause() {
     if (!paused) {
-      frozenRowsRef.current = [...filteredLiveRows];
+      frozenRowsRef.current = [...sortedShownRows];
       setPendingCount(0);
       setPaused(true);
     } else {
@@ -263,7 +263,7 @@ export default function FeedPage() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [sortBy]);
 
-  const displayRows = paused && frozenRowsRef.current !== null ? frozenRowsRef.current : filteredLiveRows;
+  const displayRows = paused && frozenRowsRef.current !== null ? frozenRowsRef.current : sortedShownRows;
   const activeConfigs = configs.filter(c => c.enabled);
 
   return (
