@@ -458,29 +458,9 @@ async function fetchSportFull(
 
   const markets: NormalizedMarket[] = [];
   for (const rawMarket of rawMarkets) {
-    let matchup = matchupsById.get(rawMarket.matchupId);
-    if (!matchup) {
-      matchup = {
-        id: rawMarket.matchupId,
-        parentId: null,
-        type: "matchup",
-        sportId,
-        sport: toSlug(sportName),
-        leagueId: 0,
-        league: "unknown",
-        leagueName: "Unknown League",
-        homeTeam: "Unknown",
-        awayTeam: "Unknown",
-        startTime: new Date(),
-        isLive: false,
-        isHighlighted: false,
-        status: "unknown",
-        participants: [],
-        periods: [],
-        totalMarketCount: 0,
-      };
-      matchupsById.set(rawMarket.matchupId, matchup);
-    }
+    const matchup = matchupsById.get(rawMarket.matchupId);
+    // Skip markets whose matchup isn't in our catalog — they'd show "Unknown vs Unknown"
+    if (!matchup) continue;
     markets.push(normalizeMarket(rawMarket, matchup));
   }
 

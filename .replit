@@ -28,7 +28,7 @@ timeoutMs = 120000
 [userenv]
 
 [userenv.shared]
-POLL_INTERVAL_MS = "30000"
+POLL_INTERVAL_MS = "1000"
 MIN_DROP_PERCENT = "0.5"
 PINNACLE_SPORT_NAMES = "soccer"
 PINNACLE_MARKET_TYPES = "moneyline"

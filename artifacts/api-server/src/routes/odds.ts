@@ -29,6 +29,13 @@ router.get("/odds/drops", async (req, res): Promise<void> => {
 
   let rows = await db.select().from(oddsEventsTable).orderBy(desc(oddsEventsTable.lastUpdated));
 
+  // Pre-match only: exclude games that have already started
+  const now = new Date();
+  rows = rows.filter(r => !r.commenceTime || new Date(r.commenceTime) > now);
+
+  // Exclude events with unresolved team names
+  rows = rows.filter(r => r.homeTeam !== "Unknown" && r.awayTeam !== "Unknown");
+
   if (sport) {
     rows = rows.filter(r => r.sport === sport);
   }

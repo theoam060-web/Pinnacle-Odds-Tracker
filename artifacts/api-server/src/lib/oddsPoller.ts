@@ -409,6 +409,8 @@ async function pollOnce(minDropPercent: number, state: PollerState): Promise<voi
       const filteredMarkets = result.markets.filter((m) => {
         if (m.period !== 0 || m.isAlternate || m.status !== "open") return false;
         if (marketTypeFilter && !marketTypeFilter.includes(m.type)) return false;
+        // Pre-match only
+        if (m.isLive || m.startTime <= now) return false;
         return true;
       });
 
@@ -434,6 +436,9 @@ async function pollOnce(minDropPercent: number, state: PollerState): Promise<voi
       for (const market of r.markets) {
         if (market.period !== 0 || market.isAlternate || market.status !== "open") continue;
         if (marketTypeFilter && !marketTypeFilter.includes(market.type)) continue;
+        // Pre-match only: skip games that are live or have already kicked off
+        if (market.isLive) continue;
+        if (market.startTime <= now) continue;
         if (seen.has(market.id)) continue;
         seen.add(market.id);
         const lines = market.prices.map((p) => ({
