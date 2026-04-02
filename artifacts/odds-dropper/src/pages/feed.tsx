@@ -52,6 +52,19 @@ interface FeedRow {
   allCurrentOdds: number[];
   lineIndex: number;
   lastUpdated: Date | string;
+  newDropAt: Date | string | null;
+}
+
+function formatAlertAge(dropAt: Date | string | null): string {
+  if (!dropAt) return "";
+  const diffMs = Date.now() - new Date(dropAt).getTime();
+  if (diffMs < 0) return "just now";
+  const secs = Math.floor(diffMs / 1000);
+  if (secs < 60) return `${secs}s ago`;
+  const mins = Math.floor(secs / 60);
+  if (mins < 60) return `${mins}m ago`;
+  const hours = Math.floor(mins / 60);
+  return `${hours}h ago`;
 }
 
 function lineMatchesConfig(
@@ -132,6 +145,7 @@ function buildRows(
         allCurrentOdds,
         lineIndex,
         lastUpdated: event.lastUpdated,
+        newDropAt: event.newDropAt ?? null,
       });
     });
   }
@@ -294,6 +308,7 @@ export default function FeedPage() {
             <TableRow>
               <TableHead className="w-[200px]">Match</TableHead>
               <TableHead className="w-[90px] text-center">Starts in</TableHead>
+              <TableHead className="w-[90px] text-center">Alert</TableHead>
               <TableHead className="w-[110px]">Sport</TableHead>
               <TableHead className="w-[130px]">Bet type</TableHead>
               <TableHead className="w-[160px] text-center">Odds movement</TableHead>
@@ -306,14 +321,14 @@ export default function FeedPage() {
             {isLoading ? (
               Array(8).fill(0).map((_, i) => (
                 <TableRow key={i}>
-                  {Array(7).fill(0).map((_, j) => (
+                  {Array(8).fill(0).map((_, j) => (
                     <TableCell key={j}><div className="h-4 bg-muted animate-pulse rounded" /></TableCell>
                   ))}
                 </TableRow>
               ))
             ) : displayRows.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={7} className="text-center py-14 text-muted-foreground">
+                <TableCell colSpan={8} className="text-center py-14 text-muted-foreground">
                   <div className="flex flex-col items-center gap-2">
                     <TrendingDown className="w-7 h-7 text-muted-foreground/30 mb-1" />
                     <span className="font-medium text-sm text-foreground">No drops detected yet</span>
@@ -363,6 +378,16 @@ export default function FeedPage() {
                       <CountdownTimer commenceTime={row.commenceTime} />
                     </TableCell>
 
+                    <TableCell className="text-center">
+                      {row.newDropAt ? (
+                        <span className="text-[11px] font-mono text-amber-400 tabular-nums">
+                          {formatAlertAge(row.newDropAt)}
+                        </span>
+                      ) : (
+                        <span className="text-[11px] text-muted-foreground/40">—</span>
+                      )}
+                    </TableCell>
+
                     <TableCell>
                       <span className="text-xs text-muted-foreground">
                         {SPORT_LABELS[row.sport] ?? row.sport}
@@ -387,7 +412,7 @@ export default function FeedPage() {
                             {formatOdds(row.currentOdds)}
                           </span>
                         </div>
-                        <span className="text-[10px] font-mono text-red-400 tabular-nums">
+                        <span className="text-[10px] font-mono text-emerald-400 tabular-nums font-semibold">
                           NV {formatOdds(computeNovig(row.allCurrentOdds, row.lineIndex)[novigMethod])}
                         </span>
                       </div>

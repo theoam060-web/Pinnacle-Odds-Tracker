@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { LineChart, Line, ResponsiveContainer, YAxis } from "recharts";
+import { LineChart, Line, ResponsiveContainer, YAxis, CartesianGrid } from "recharts";
 import { useGetOddsDropById, getGetOddsDropByIdQueryKey } from "@workspace/api-client-react";
 import { formatOdds, formatTime } from "@/lib/format";
 import { computeNovig } from "@/lib/novig";
@@ -85,18 +85,23 @@ export function OddsSparkline({ eventId, selection, currentOdds, openingOdds }: 
         onClick={() => setModalOpen(true)}
         title="Click for full chart"
       >
-        {/* Chart — trading style matching event-detail */}
-        <div className="w-[130px] h-[54px] opacity-85 group-hover:opacity-100 transition-opacity rounded overflow-hidden bg-white/[0.02] border border-white/5">
+        {/* Chart — trading style matching event-detail (from user screenshot) */}
+        <div className="w-[150px] h-[72px] opacity-85 group-hover:opacity-100 transition-opacity rounded overflow-hidden bg-[#0c0e14] border border-white/8">
           <ResponsiveContainer width="100%" height="100%">
-            <LineChart data={points} margin={{ top: 5, right: 4, left: 4, bottom: 5 }}>
+            <LineChart data={points} margin={{ top: 6, right: 6, left: 6, bottom: 6 }}>
+              <CartesianGrid
+                strokeDasharray="2 4"
+                stroke="rgba(255,255,255,0.04)"
+                vertical={false}
+              />
               <YAxis domain={["auto", "auto"]} hide />
-              {/* No-vig line (red) */}
+              {/* No-vig line (green — sweeter/better price) */}
               {hasHistory && (
                 <Line
                   type="stepAfter"
                   dataKey="novig"
                   stroke="#f87171"
-                  strokeWidth={1.2}
+                  strokeWidth={1.3}
                   dot={false}
                   isAnimationActive={false}
                   connectNulls
