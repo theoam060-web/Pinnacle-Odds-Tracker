@@ -1,6 +1,6 @@
 import { useState, useCallback } from "react";
 import { Link, useLocation } from "wouter";
-import { Activity, TrendingDown, BookMarked, BellRing, Volume2, VolumeX, Cog, BarChart2 } from "lucide-react";
+import { Activity, TrendingDown, BookMarked, BellRing, Volume2, VolumeX, Cog, BarChart2, BookOpen } from "lucide-react";
 import { useAlertStore } from "@/lib/alert-context";
 import { useGetOddsSummary, getGetOddsSummaryQueryKey } from "@workspace/api-client-react";
 import { SettingsModal } from "@/components/settings-modal";
@@ -11,6 +11,7 @@ const NAV_ITEMS = [
   { href: "/", label: "Live Feed", icon: TrendingDown },
   { href: "/bet-tracker", label: "Bet Tracker", icon: BookMarked },
   { href: "/bet-stats", label: "Bet Stats", icon: BarChart2 },
+  { href: "/my-bets", label: "My Bets", icon: BookOpen },
   { href: "/alert-configurations", label: "Alert Configurations", icon: BellRing },
 ];
 

@@ -11,6 +11,8 @@ import EventDetailPage from "@/pages/event-detail";
 import BetTrackerPage from "@/pages/bet-tracker";
 import BetStatsPage from "@/pages/bet-stats";
 import AlertConfigurationsPage from "@/pages/alert-configurations";
+import TopMoversPage from "@/pages/top-movers";
+import MyBetsPage from "@/pages/my-bets";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -29,6 +31,8 @@ function Router() {
       <Route path="/bet-tracker" component={BetTrackerPage} />
       <Route path="/bet-stats" component={BetStatsPage} />
       <Route path="/alert-configurations" component={AlertConfigurationsPage} />
+      <Route path="/top-movers" component={TopMoversPage} />
+      <Route path="/my-bets" component={MyBetsPage} />
       <Route component={NotFound} />
     </Switch>
   );

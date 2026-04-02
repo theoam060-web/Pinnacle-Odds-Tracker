@@ -175,3 +175,114 @@ export const GetLeaguesBySportResponseItem = zod.object({
 export const GetLeaguesBySportResponse = zod.array(
   GetLeaguesBySportResponseItem,
 );
+
+/**
+ * Returns all logged bets with optional filtering
+ * @summary Get all bets
+ */
+export const GetBetsQueryParams = zod.object({
+  result: zod
+    .enum(["win", "loss", "void", "pending"])
+    .optional()
+    .describe("Filter by result"),
+  dateFrom: zod.date().optional().describe("Filter bets from this date"),
+  dateTo: zod.date().optional().describe("Filter bets up to this date"),
+});
+
+export const GetBetsResponseItem = zod.object({
+  id: zod.number(),
+  matchName: zod.string(),
+  selection: zod.string(),
+  sport: zod.string(),
+  league: zod.string(),
+  oddsValue: zod.number(),
+  stake: zod.number(),
+  result: zod.enum(["win", "loss", "void", "pending"]),
+  closingOdds: zod.number().nullish(),
+  notes: zod.string().nullish(),
+  betDate: zod.coerce.date(),
+  clv: zod.number().nullish(),
+  profitLoss: zod.number(),
+  createdAt: zod.coerce.date(),
+  updatedAt: zod.coerce.date(),
+});
+export const GetBetsResponse = zod.array(GetBetsResponseItem);
+
+/**
+ * @summary Create a new bet
+ */
+export const CreateBetBody = zod.object({
+  matchName: zod.string(),
+  selection: zod.string(),
+  sport: zod.string().optional(),
+  league: zod.string().optional(),
+  oddsValue: zod.number(),
+  stake: zod.number(),
+  result: zod.enum(["win", "loss", "void", "pending"]),
+  closingOdds: zod.number().nullish(),
+  notes: zod.string().nullish(),
+  betDate: zod.coerce.date().optional(),
+});
+
+/**
+ * Returns aggregated performance metrics
+ * @summary Get aggregated bet statistics
+ */
+export const GetBetStatsResponse = zod.object({
+  totalBets: zod.number(),
+  totalStake: zod.number(),
+  totalProfitLoss: zod.number(),
+  roi: zod.number(),
+  winRate: zod.number(),
+  avgClv: zod.number(),
+  betsWithClv: zod.number(),
+  wins: zod.number(),
+  losses: zod.number(),
+  voids: zod.number(),
+  pending: zod.number(),
+});
+
+/**
+ * @summary Update a bet
+ */
+export const UpdateBetParams = zod.object({
+  id: zod.coerce.number(),
+});
+
+export const UpdateBetBody = zod.object({
+  matchName: zod.string().optional(),
+  selection: zod.string().optional(),
+  sport: zod.string().optional(),
+  league: zod.string().optional(),
+  oddsValue: zod.number().optional(),
+  stake: zod.number().optional(),
+  result: zod.enum(["win", "loss", "void", "pending"]).optional(),
+  closingOdds: zod.number().nullish(),
+  notes: zod.string().nullish(),
+  betDate: zod.coerce.date().optional(),
+});
+
+export const UpdateBetResponse = zod.object({
+  id: zod.number(),
+  matchName: zod.string(),
+  selection: zod.string(),
+  sport: zod.string(),
+  league: zod.string(),
+  oddsValue: zod.number(),
+  stake: zod.number(),
+  result: zod.enum(["win", "loss", "void", "pending"]),
+  closingOdds: zod.number().nullish(),
+  notes: zod.string().nullish(),
+  betDate: zod.coerce.date(),
+  clv: zod.number().nullish(),
+  profitLoss: zod.number(),
+  createdAt: zod.coerce.date(),
+  updatedAt: zod.coerce.date(),
+});
+
+/**
+ * @summary Delete a bet
+ */
+export const DeleteBetParams = zod.object({
+  id: zod.coerce.number(),
+});

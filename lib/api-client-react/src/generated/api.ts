@@ -5,15 +5,22 @@
  * Odds Dropper API
  * OpenAPI spec version: 0.1.0
  */
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery } from "@tanstack/react-query";
 import type {
+  MutationFunction,
   QueryFunction,
   QueryKey,
+  UseMutationOptions,
+  UseMutationResult,
   UseQueryOptions,
   UseQueryResult,
 } from "@tanstack/react-query";
 
 import type {
+  Bet,
+  BetStats,
+  CreateBetInput,
+  GetBetsParams,
   GetOddsDropsParams,
   HealthStatus,
   League,
@@ -21,10 +28,11 @@ import type {
   OddsEventDetail,
   OddsSummary,
   Sport,
+  UpdateBetInput,
 } from "./api.schemas";
 
 import { customFetch } from "../custom-fetch";
-import type { ErrorType } from "../custom-fetch";
+import type { ErrorType, BodyType } from "../custom-fetch";
 
 type AwaitedInput<T> = PromiseLike<T> | T;
 
@@ -595,3 +603,421 @@ export function useGetLeaguesBySport<
 
   return { ...query, queryKey: queryOptions.queryKey };
 }
+
+/**
+ * Returns all logged bets with optional filtering
+ * @summary Get all bets
+ */
+export const getGetBetsUrl = (params?: GetBetsParams) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : value.toString());
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/api/bets?${stringifiedParams}`
+    : `/api/bets`;
+};
+
+export const getBets = async (
+  params?: GetBetsParams,
+  options?: RequestInit,
+): Promise<Bet[]> => {
+  return customFetch<Bet[]>(getGetBetsUrl(params), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getGetBetsQueryKey = (params?: GetBetsParams) => {
+  return [`/api/bets`, ...(params ? [params] : [])] as const;
+};
+
+export const getGetBetsQueryOptions = <
+  TData = Awaited<ReturnType<typeof getBets>>,
+  TError = ErrorType<unknown>,
+>(
+  params?: GetBetsParams,
+  options?: {
+    query?: UseQueryOptions<Awaited<ReturnType<typeof getBets>>, TError, TData>;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getGetBetsQueryKey(params);
+
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof getBets>>> = ({
+    signal,
+  }) => getBets(params, { signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof getBets>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type GetBetsQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getBets>>
+>;
+export type GetBetsQueryError = ErrorType<unknown>;
+
+/**
+ * @summary Get all bets
+ */
+
+export function useGetBets<
+  TData = Awaited<ReturnType<typeof getBets>>,
+  TError = ErrorType<unknown>,
+>(
+  params?: GetBetsParams,
+  options?: {
+    query?: UseQueryOptions<Awaited<ReturnType<typeof getBets>>, TError, TData>;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getGetBetsQueryOptions(params, options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary Create a new bet
+ */
+export const getCreateBetUrl = () => {
+  return `/api/bets`;
+};
+
+export const createBet = async (
+  createBetInput: CreateBetInput,
+  options?: RequestInit,
+): Promise<Bet> => {
+  return customFetch<Bet>(getCreateBetUrl(), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(createBetInput),
+  });
+};
+
+export const getCreateBetMutationOptions = <
+  TError = ErrorType<void>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof createBet>>,
+    TError,
+    { data: BodyType<CreateBetInput> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof createBet>>,
+  TError,
+  { data: BodyType<CreateBetInput> },
+  TContext
+> => {
+  const mutationKey = ["createBet"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof createBet>>,
+    { data: BodyType<CreateBetInput> }
+  > = (props) => {
+    const { data } = props ?? {};
+
+    return createBet(data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type CreateBetMutationResult = NonNullable<
+  Awaited<ReturnType<typeof createBet>>
+>;
+export type CreateBetMutationBody = BodyType<CreateBetInput>;
+export type CreateBetMutationError = ErrorType<void>;
+
+/**
+ * @summary Create a new bet
+ */
+export const useCreateBet = <
+  TError = ErrorType<void>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof createBet>>,
+    TError,
+    { data: BodyType<CreateBetInput> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof createBet>>,
+  TError,
+  { data: BodyType<CreateBetInput> },
+  TContext
+> => {
+  return useMutation(getCreateBetMutationOptions(options));
+};
+
+/**
+ * Returns aggregated performance metrics
+ * @summary Get aggregated bet statistics
+ */
+export const getGetBetStatsUrl = () => {
+  return `/api/bets/stats`;
+};
+
+export const getBetStats = async (options?: RequestInit): Promise<BetStats> => {
+  return customFetch<BetStats>(getGetBetStatsUrl(), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getGetBetStatsQueryKey = () => {
+  return [`/api/bets/stats`] as const;
+};
+
+export const getGetBetStatsQueryOptions = <
+  TData = Awaited<ReturnType<typeof getBetStats>>,
+  TError = ErrorType<unknown>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof getBetStats>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getGetBetStatsQueryKey();
+
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof getBetStats>>> = ({
+    signal,
+  }) => getBetStats({ signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof getBetStats>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type GetBetStatsQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getBetStats>>
+>;
+export type GetBetStatsQueryError = ErrorType<unknown>;
+
+/**
+ * @summary Get aggregated bet statistics
+ */
+
+export function useGetBetStats<
+  TData = Awaited<ReturnType<typeof getBetStats>>,
+  TError = ErrorType<unknown>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof getBetStats>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getGetBetStatsQueryOptions(options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary Update a bet
+ */
+export const getUpdateBetUrl = (id: number) => {
+  return `/api/bets/${id}`;
+};
+
+export const updateBet = async (
+  id: number,
+  updateBetInput: UpdateBetInput,
+  options?: RequestInit,
+): Promise<Bet> => {
+  return customFetch<Bet>(getUpdateBetUrl(id), {
+    ...options,
+    method: "PATCH",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(updateBetInput),
+  });
+};
+
+export const getUpdateBetMutationOptions = <
+  TError = ErrorType<void>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof updateBet>>,
+    TError,
+    { id: number; data: BodyType<UpdateBetInput> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof updateBet>>,
+  TError,
+  { id: number; data: BodyType<UpdateBetInput> },
+  TContext
+> => {
+  const mutationKey = ["updateBet"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof updateBet>>,
+    { id: number; data: BodyType<UpdateBetInput> }
+  > = (props) => {
+    const { id, data } = props ?? {};
+
+    return updateBet(id, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type UpdateBetMutationResult = NonNullable<
+  Awaited<ReturnType<typeof updateBet>>
+>;
+export type UpdateBetMutationBody = BodyType<UpdateBetInput>;
+export type UpdateBetMutationError = ErrorType<void>;
+
+/**
+ * @summary Update a bet
+ */
+export const useUpdateBet = <
+  TError = ErrorType<void>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof updateBet>>,
+    TError,
+    { id: number; data: BodyType<UpdateBetInput> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof updateBet>>,
+  TError,
+  { id: number; data: BodyType<UpdateBetInput> },
+  TContext
+> => {
+  return useMutation(getUpdateBetMutationOptions(options));
+};
+
+/**
+ * @summary Delete a bet
+ */
+export const getDeleteBetUrl = (id: number) => {
+  return `/api/bets/${id}`;
+};
+
+export const deleteBet = async (
+  id: number,
+  options?: RequestInit,
+): Promise<void> => {
+  return customFetch<void>(getDeleteBetUrl(id), {
+    ...options,
+    method: "DELETE",
+  });
+};
+
+export const getDeleteBetMutationOptions = <
+  TError = ErrorType<void>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof deleteBet>>,
+    TError,
+    { id: number },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof deleteBet>>,
+  TError,
+  { id: number },
+  TContext
+> => {
+  const mutationKey = ["deleteBet"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof deleteBet>>,
+    { id: number }
+  > = (props) => {
+    const { id } = props ?? {};
+
+    return deleteBet(id, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type DeleteBetMutationResult = NonNullable<
+  Awaited<ReturnType<typeof deleteBet>>
+>;
+
+export type DeleteBetMutationError = ErrorType<void>;
+
+/**
+ * @summary Delete a bet
+ */
+export const useDeleteBet = <
+  TError = ErrorType<void>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof deleteBet>>,
+    TError,
+    { id: number },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof deleteBet>>,
+  TError,
+  { id: number },
+  TContext
+> => {
+  return useMutation(getDeleteBetMutationOptions(options));
+};

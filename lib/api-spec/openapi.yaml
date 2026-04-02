@@ -13,6 +13,8 @@ tags:
     description: Odds operations
   - name: sports
     description: Sports and leagues
+  - name: bets
+    description: Personal betting tracker
 paths:
   /healthz:
     get:
@@ -156,6 +158,119 @@ paths:
                 type: array
                 items:
                   $ref: "#/components/schemas/League"
+
+  /bets:
+    get:
+      operationId: getBets
+      tags: [bets]
+      summary: Get all bets
+      description: Returns all logged bets with optional filtering
+      parameters:
+        - name: result
+          in: query
+          required: false
+          schema:
+            type: string
+            enum: [win, loss, void, pending]
+          description: Filter by result
+        - name: dateFrom
+          in: query
+          required: false
+          schema:
+            type: string
+            format: date-time
+          description: Filter bets from this date
+        - name: dateTo
+          in: query
+          required: false
+          schema:
+            type: string
+            format: date-time
+          description: Filter bets up to this date
+      responses:
+        "200":
+          description: List of bets
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Bet"
+    post:
+      operationId: createBet
+      tags: [bets]
+      summary: Create a new bet
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateBetInput"
+      responses:
+        "201":
+          description: Created bet
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Bet"
+        "400":
+          description: Validation error
+
+  /bets/stats:
+    get:
+      operationId: getBetStats
+      tags: [bets]
+      summary: Get aggregated bet statistics
+      description: Returns aggregated performance metrics
+      responses:
+        "200":
+          description: Bet statistics
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BetStats"
+
+  /bets/{id}:
+    patch:
+      operationId: updateBet
+      tags: [bets]
+      summary: Update a bet
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateBetInput"
+      responses:
+        "200":
+          description: Updated bet
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Bet"
+        "404":
+          description: Not found
+    delete:
+      operationId: deleteBet
+      tags: [bets]
+      summary: Delete a bet
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Deleted successfully
+        "404":
+          description: Not found
 
 components:
   schemas:
@@ -332,3 +447,157 @@ components:
         - biggestDrop
         - biggestRise
         - lastUpdated
+
+    Bet:
+      type: object
+      properties:
+        id:
+          type: integer
+        matchName:
+          type: string
+        selection:
+          type: string
+        sport:
+          type: string
+        league:
+          type: string
+        oddsValue:
+          type: number
+        stake:
+          type: number
+        result:
+          type: string
+          enum: [win, loss, void, pending]
+        closingOdds:
+          type: number
+          nullable: true
+        notes:
+          type: string
+          nullable: true
+        betDate:
+          type: string
+          format: date-time
+        clv:
+          type: number
+          nullable: true
+        profitLoss:
+          type: number
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+      required:
+        - id
+        - matchName
+        - selection
+        - sport
+        - league
+        - oddsValue
+        - stake
+        - result
+        - betDate
+        - profitLoss
+        - createdAt
+        - updatedAt
+
+    CreateBetInput:
+      type: object
+      properties:
+        matchName:
+          type: string
+        selection:
+          type: string
+        sport:
+          type: string
+        league:
+          type: string
+        oddsValue:
+          type: number
+        stake:
+          type: number
+        result:
+          type: string
+          enum: [win, loss, void, pending]
+        closingOdds:
+          type: number
+          nullable: true
+        notes:
+          type: string
+          nullable: true
+        betDate:
+          type: string
+          format: date-time
+      required:
+        - matchName
+        - selection
+        - oddsValue
+        - stake
+        - result
+
+    UpdateBetInput:
+      type: object
+      properties:
+        matchName:
+          type: string
+        selection:
+          type: string
+        sport:
+          type: string
+        league:
+          type: string
+        oddsValue:
+          type: number
+        stake:
+          type: number
+        result:
+          type: string
+          enum: [win, loss, void, pending]
+        closingOdds:
+          type: number
+          nullable: true
+        notes:
+          type: string
+          nullable: true
+        betDate:
+          type: string
+          format: date-time
+
+    BetStats:
+      type: object
+      properties:
+        totalBets:
+          type: integer
+        totalStake:
+          type: number
+        totalProfitLoss:
+          type: number
+        roi:
+          type: number
+        winRate:
+          type: number
+        avgClv:
+          type: number
+        betsWithClv:
+          type: integer
+        wins:
+          type: integer
+        losses:
+          type: integer
+        voids:
+          type: integer
+        pending:
+          type: integer
+      required:
+        - totalBets
+        - totalStake
+        - totalProfitLoss
+        - roi
+        - winRate
+        - avgClv
+        - betsWithClv
+        - wins
+        - losses
+        - voids
+        - pending

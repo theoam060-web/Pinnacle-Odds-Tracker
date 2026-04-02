@@ -88,6 +88,93 @@ export interface OddsSummary {
   lastUpdated: string;
 }
 
+export type BetResult = (typeof BetResult)[keyof typeof BetResult];
+
+export const BetResult = {
+  win: "win",
+  loss: "loss",
+  void: "void",
+  pending: "pending",
+} as const;
+
+export interface Bet {
+  id: number;
+  matchName: string;
+  selection: string;
+  sport: string;
+  league: string;
+  oddsValue: number;
+  stake: number;
+  result: BetResult;
+  closingOdds?: number | null;
+  notes?: string | null;
+  betDate: string;
+  clv?: number | null;
+  profitLoss: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export type CreateBetInputResult =
+  (typeof CreateBetInputResult)[keyof typeof CreateBetInputResult];
+
+export const CreateBetInputResult = {
+  win: "win",
+  loss: "loss",
+  void: "void",
+  pending: "pending",
+} as const;
+
+export interface CreateBetInput {
+  matchName: string;
+  selection: string;
+  sport?: string;
+  league?: string;
+  oddsValue: number;
+  stake: number;
+  result: CreateBetInputResult;
+  closingOdds?: number | null;
+  notes?: string | null;
+  betDate?: string;
+}
+
+export type UpdateBetInputResult =
+  (typeof UpdateBetInputResult)[keyof typeof UpdateBetInputResult];
+
+export const UpdateBetInputResult = {
+  win: "win",
+  loss: "loss",
+  void: "void",
+  pending: "pending",
+} as const;
+
+export interface UpdateBetInput {
+  matchName?: string;
+  selection?: string;
+  sport?: string;
+  league?: string;
+  oddsValue?: number;
+  stake?: number;
+  result?: UpdateBetInputResult;
+  closingOdds?: number | null;
+  notes?: string | null;
+  betDate?: string;
+}
+
+export interface BetStats {
+  totalBets: number;
+  totalStake: number;
+  totalProfitLoss: number;
+  roi: number;
+  winRate: number;
+  avgClv: number;
+  betsWithClv: number;
+  wins: number;
+  losses: number;
+  voids: number;
+  pending: number;
+}
+
 export type GetOddsDropsParams = {
   /**
    * Filter by sport slug
@@ -114,4 +201,28 @@ export const GetOddsDropsDirection = {
   drop: "drop",
   rise: "rise",
   all: "all",
+} as const;
+
+export type GetBetsParams = {
+  /**
+   * Filter by result
+   */
+  result?: GetBetsResult;
+  /**
+   * Filter bets from this date
+   */
+  dateFrom?: string;
+  /**
+   * Filter bets up to this date
+   */
+  dateTo?: string;
+};
+
+export type GetBetsResult = (typeof GetBetsResult)[keyof typeof GetBetsResult];
+
+export const GetBetsResult = {
+  win: "win",
+  loss: "loss",
+  void: "void",
+  pending: "pending",
 } as const;

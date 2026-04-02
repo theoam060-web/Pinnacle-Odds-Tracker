@@ -6,6 +6,13 @@
  * OpenAPI spec version: 0.1.0
  */
 
+export * from "./bet";
+export * from "./betResult";
+export * from "./betStats";
+export * from "./createBetInput";
+export * from "./createBetInputResult";
+export * from "./getBetsParams";
+export * from "./getBetsResult";
 export * from "./getOddsDropsDirection";
 export * from "./getOddsDropsParams";
 export * from "./healthStatus";
@@ -18,3 +25,5 @@ export * from "./oddsLineDirection";
 export * from "./oddsMovement";
 export * from "./oddsSummary";
 export * from "./sport";
+export * from "./updateBetInput";
+export * from "./updateBetInputResult";
