@@ -276,7 +276,12 @@ async function persistLegacyEvents(
     const updatedLines: OddsLine[] = shape.lines.map((newLine) => {
       if (!existing) return newLine;
       const existingLines = existing.lines as OddsLine[];
-      const existingLine = existingLines.find((l) => l.selection === newLine.selection);
+      // Match by designation prefix (before first space) so spread/total lines still match
+      // when the line number changes (e.g. "home -1.5" → "home -2")
+      const newDesignation = newLine.selection.split(" ")[0];
+      const existingLine =
+        existingLines.find((l) => l.selection === newLine.selection) ??
+        existingLines.find((l) => l.selection.split(" ")[0] === newDesignation);
       if (!existingLine) return newLine;
 
       const openingOdds = existingLine.openingOdds;
@@ -397,38 +402,12 @@ async function pollOnce(minDropPercent: number, state: PollerState): Promise<voi
 
   state.consecutiveEmpty = 0;
   const now = new Date();
-  let totalMarkets = 0;
-  let totalChanged = 0;
-  let totalDrops = 0;
 
-  // Apply market type filter before heavy persistence to keep per-poll time manageable
   const marketTypeFilter = parseMarketTypesFromEnv();
 
-  for (const result of allResults) {
-    try {
-      const filteredMarkets = result.markets.filter((m) => {
-        if (m.period !== 0 || m.isAlternate || m.status !== "open") return false;
-        if (marketTypeFilter && !marketTypeFilter.includes(m.type)) return false;
-        // Pre-match only
-        if (m.isLive || m.startTime <= now) return false;
-        return true;
-      });
+  logger.info({ sports: allResults.length }, "Full market poll complete");
 
-      const { changed, drops } = await persistMarkets(filteredMarkets, now);
-      totalMarkets += filteredMarkets.length;
-      totalChanged += changed;
-      totalDrops += drops;
-    } catch (err) {
-      logger.warn({ err, sport: result.sport }, "Failed to persist markets");
-    }
-  }
-
-  logger.info(
-    { totalMarkets, totalChanged, totalDrops, sports: allResults.length },
-    "Full market poll complete",
-  );
-
-  // Also update legacy event table for backward compat
+  // Persist legacy events table — the main source for the live feed
   try {
     const legacyEvents = allResults.flatMap((r) => {
       const events: Awaited<ReturnType<typeof fetchPinnacleOdds>> = [];

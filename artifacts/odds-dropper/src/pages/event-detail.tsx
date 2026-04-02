@@ -169,7 +169,11 @@ export default function EventDetailPage() {
 
   const logRows = useMemo(() => buildLogRows(chartData), [chartData]);
 
-  const hasLimits = chartData.some(p => p.limit !== undefined);
+  // Compute hasLimits from the whole event (not per-selection chartData) so the axis never flickers in/out
+  const hasLimits = useMemo(
+    () => (event?.movements ?? []).some(m => m.limit != null),
+    [event],
+  );
   const tickCount = event?.movements.filter(m => m.selection === sel).length ?? 0;
 
   // OHLC stats
@@ -280,7 +284,8 @@ export default function EventDetailPage() {
         {chartData.length > 1 ? (
           <div className="h-[300px] w-full">
             <ResponsiveContainer width="100%" height="100%">
-              <ComposedChart data={chartData} margin={{ top: 12, right: hasLimits && showLimit ? 52 : 10, left: 0, bottom: 4 }}>
+              {/* Fixed margins so the layout never jumps when axes are toggled */}
+              <ComposedChart data={chartData} margin={{ top: 12, right: 52, left: hasLimits ? 0 : -28, bottom: 4 }}>
                 <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.04)" vertical={false} />
                 <XAxis
                   dataKey="time"
@@ -299,11 +304,12 @@ export default function EventDetailPage() {
                   axisLine={false}
                   width={44}
                 />
-                {hasLimits && showLimit && (
+                {/* Always render the limit axis when the event has limits — only ticks become invisible when toggled off */}
+                {hasLimits && (
                   <YAxis
                     yAxisId="limit"
                     orientation="left"
-                    tick={{ fontSize: 10, fill: "#666" }}
+                    tick={showLimit ? { fontSize: 10, fill: "#666" } : false}
                     tickFormatter={v => v >= 1000 ? `${(v / 1000).toFixed(0)}k` : String(v)}
                     domain={["auto", "auto"]}
                     tickLine={false}
@@ -313,14 +319,14 @@ export default function EventDetailPage() {
                 )}
                 <Tooltip content={<CustomTooltip />} />
 
-                {/* Limit bar/line (left axis) */}
-                {hasLimits && showLimit && (
+                {/* Limit bar — visible only when toggled on */}
+                {hasLimits && (
                   <Bar
                     yAxisId="limit"
                     dataKey="limit"
                     name="Limit"
-                    fill="rgba(99,102,241,0.15)"
-                    stroke="rgba(99,102,241,0.4)"
+                    fill={showLimit ? "rgba(99,102,241,0.15)" : "transparent"}
+                    stroke={showLimit ? "rgba(99,102,241,0.4)" : "transparent"}
                     strokeWidth={1}
                     radius={[2, 2, 0, 0]}
                     isAnimationActive={false}
