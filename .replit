@@ -1,4 +1,4 @@
-modules = ["nodejs-24"]
+modules = ["nodejs-24", "postgresql-16"]
 
 [[artifacts]]
 id = "artifacts/api-server"
@@ -28,5 +28,10 @@ timeoutMs = 120000
 [userenv]
 
 [userenv.shared]
-POLL_INTERVAL_MS = "60000"
-MIN_DROP_PERCENT = "2"
+POLL_INTERVAL_MS = "30000"
+MIN_DROP_PERCENT = "0.5"
+PINNACLE_SPORT_NAMES = "soccer"
+PINNACLE_MARKET_TYPES = "moneyline"
+
+[nix]
+channel = "stable-25_05"

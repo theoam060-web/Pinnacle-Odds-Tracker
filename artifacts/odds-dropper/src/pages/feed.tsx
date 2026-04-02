@@ -1,6 +1,6 @@
 import { useRef, useState, useEffect } from "react";
 import { Link } from "wouter";
-import { useGetOddsDrops, getGetOddsDropsQueryKey } from "@workspace/api-client-react";
+import { useGetOddsDrops, useGetOddsSummary, getGetOddsDropsQueryKey } from "@workspace/api-client-react";
 import { Layout } from "@/components/layout";
 import { OddsSparkline } from "@/components/odds-sparkline";
 import { LogBetModal } from "@/components/log-bet-modal";
@@ -166,6 +166,10 @@ export default function FeedPage() {
     },
   });
 
+  const { data: summary } = useGetOddsSummary({
+    query: { refetchInterval: 30000 },
+  });
+
   const liveRows = buildRows(events, configs, sortBy);
 
   // When paused: track new rows vs frozen snapshot
@@ -225,6 +229,11 @@ export default function FeedPage() {
         <span className="text-sm text-muted-foreground">
           <span className="font-semibold text-foreground">{displayRows.length}</span> drops matching your alert configs
         </span>
+        {summary && summary.totalEvents > 0 && (
+          <span className="text-xs text-muted-foreground/60 border-l border-border pl-3">
+            Monitoring <span className="font-semibold text-muted-foreground">{summary.totalEvents.toLocaleString()}</span> live markets
+          </span>
+        )}
         {/* Pending events badge */}
         {paused && pendingCount > 0 && (
           <button
@@ -305,12 +314,22 @@ export default function FeedPage() {
             ) : displayRows.length === 0 ? (
               <TableRow>
                 <TableCell colSpan={7} className="text-center py-14 text-muted-foreground">
-                  No drops detected in the last 60 minutes matching your alert configurations.
-                  <Link href="/alert-configurations">
-                    <span className="block text-sm mt-1.5 text-primary hover:underline cursor-pointer">
-                      Adjust Alert Configurations →
-                    </span>
-                  </Link>
+                  <div className="flex flex-col items-center gap-2">
+                    <TrendingDown className="w-7 h-7 text-muted-foreground/30 mb-1" />
+                    <span className="font-medium text-sm text-foreground">No drops detected yet</span>
+                    {summary && summary.totalEvents > 0 ? (
+                      <span className="text-xs text-muted-foreground">
+                        Monitoring <span className="font-semibold text-primary">{summary.totalEvents.toLocaleString()}</span> real Pinnacle football markets — drops appear as lines move.
+                      </span>
+                    ) : (
+                      <span className="text-xs">Waiting for Pinnacle data...</span>
+                    )}
+                    <Link href="/alert-configurations">
+                      <span className="text-sm mt-1 text-primary hover:underline cursor-pointer">
+                        Adjust drop threshold →
+                      </span>
+                    </Link>
+                  </div>
                 </TableCell>
               </TableRow>
             ) : (

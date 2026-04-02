@@ -285,6 +285,20 @@ function parseSportIdsFromEnv(): number[] | null {
   return values.length ? values : null;
 }
 
+function parseSportNamesFromEnv(): string[] | null {
+  const raw = process.env["PINNACLE_SPORT_NAMES"];
+  if (!raw) return null;
+  const values = raw.split(",").map((v) => v.trim().toLowerCase()).filter(Boolean);
+  return values.length ? values : null;
+}
+
+export function parseMarketTypesFromEnv(): string[] | null {
+  const raw = process.env["PINNACLE_MARKET_TYPES"];
+  if (!raw) return null;
+  const values = raw.split(",").map((v) => v.trim().toLowerCase()).filter(Boolean);
+  return values.length ? values : null;
+}
+
 export async function fetchSportsCatalog(): Promise<PinnacleSport[]> {
   const config = await discoverGuestConfig();
   const now = Date.now();
@@ -301,6 +315,20 @@ async function discoverSportIds(config: PinnacleGuestConfig): Promise<number[]> 
   if (fromEnv) return fromEnv;
 
   const sports = await fetchSportsCatalog();
+
+  const nameFilter = parseSportNamesFromEnv();
+  if (nameFilter) {
+    const matched = sports.filter((s) => {
+      const slug = toSlug(s.name);
+      return nameFilter.some((n) => slug.includes(n) || s.name.toLowerCase().includes(n));
+    });
+    if (matched.length > 0) {
+      logger.info({ matched: matched.map((s) => `${s.name} (id=${s.id})`) }, "Filtered sports by PINNACLE_SPORT_NAMES");
+      return matched.map((s) => s.id);
+    }
+    logger.warn({ nameFilter }, "No sports matched PINNACLE_SPORT_NAMES — falling back to all sports");
+  }
+
   const maxSports = Number.parseInt(process.env["PINNACLE_MAX_SPORTS"] ?? "", 10);
   const limit = Number.isFinite(maxSports) && maxSports > 0 ? maxSports : 999;
   return sports

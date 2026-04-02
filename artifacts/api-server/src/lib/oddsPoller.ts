@@ -8,7 +8,7 @@ import {
 } from "@workspace/db";
 import { eq } from "drizzle-orm";
 import { logger } from "./logger";
-import { fetchAllPinnacleData, fetchPinnacleOdds } from "./pinnacleClient";
+import { fetchAllPinnacleData, fetchPinnacleOdds, parseMarketTypesFromEnv } from "./pinnacleClient";
 import type { PollResult, NormalizedMarket, NormalizedMatchup } from "./pinnacleClient";
 import { seedDatabase } from "./oddsGenerator";
 import { startMockSimulator } from "./mockSimulator";
@@ -397,22 +397,23 @@ async function pollOnce(minDropPercent: number, state: PollerState): Promise<voi
 
   state.consecutiveEmpty = 0;
   const now = new Date();
-  let totalMatchups = 0;
   let totalMarkets = 0;
   let totalChanged = 0;
   let totalDrops = 0;
 
+  // Apply market type filter before heavy persistence to keep per-poll time manageable
+  const marketTypeFilter = parseMarketTypesFromEnv();
+
   for (const result of allResults) {
     try {
-      await persistMatchups(result.matchups, now);
-      totalMatchups += result.matchups.length;
-    } catch (err) {
-      logger.warn({ err, sport: result.sport }, "Failed to persist matchups");
-    }
+      const filteredMarkets = result.markets.filter((m) => {
+        if (m.period !== 0 || m.isAlternate || m.status !== "open") return false;
+        if (marketTypeFilter && !marketTypeFilter.includes(m.type)) return false;
+        return true;
+      });
 
-    try {
-      const { changed, drops } = await persistMarkets(result.markets, now);
-      totalMarkets += result.markets.length;
+      const { changed, drops } = await persistMarkets(filteredMarkets, now);
+      totalMarkets += filteredMarkets.length;
       totalChanged += changed;
       totalDrops += drops;
     } catch (err) {
@@ -421,7 +422,7 @@ async function pollOnce(minDropPercent: number, state: PollerState): Promise<voi
   }
 
   logger.info(
-    { totalMatchups, totalMarkets, totalChanged, totalDrops, sports: allResults.length },
+    { totalMarkets, totalChanged, totalDrops, sports: allResults.length },
     "Full market poll complete",
   );
 
@@ -432,6 +433,7 @@ async function pollOnce(minDropPercent: number, state: PollerState): Promise<voi
       const seen = new Set<string>();
       for (const market of r.markets) {
         if (market.period !== 0 || market.isAlternate || market.status !== "open") continue;
+        if (marketTypeFilter && !marketTypeFilter.includes(market.type)) continue;
         if (seen.has(market.id)) continue;
         seen.add(market.id);
         const lines = market.prices.map((p) => ({
@@ -457,6 +459,7 @@ async function pollOnce(minDropPercent: number, state: PollerState): Promise<voi
       }
       return events;
     });
+    logger.info({ count: legacyEvents.length, marketTypeFilter }, "Persisting legacy events");
     await persistLegacyEvents(legacyEvents, now, minDropPercent);
   } catch (err) {
     logger.warn({ err }, "Failed to persist legacy events");
