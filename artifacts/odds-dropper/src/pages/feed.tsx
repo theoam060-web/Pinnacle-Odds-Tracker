@@ -1,4 +1,4 @@
-import { useRef, useState, useEffect } from "react";
+import { useRef, useState, useEffect, useMemo } from "react";
 import { Link } from "wouter";
 import { useGetOddsDrops, useGetOddsSummary, getGetOddsDropsQueryKey } from "@workspace/api-client-react";
 import { Layout } from "@/components/layout";
@@ -163,10 +163,30 @@ function dropIntensityBg(abs: number): string {
   return "";
 }
 
+// Persisted map of rowKey → currentOdds that have already been shown
+const SEEN_KEY = "st:seen-drops:v1";
+
+function loadSeenMap(): Map<string, number> {
+  try {
+    const raw = localStorage.getItem(SEEN_KEY);
+    if (raw) return new Map(JSON.parse(raw) as [string, number][]);
+  } catch {}
+  return new Map();
+}
+
+function saveSeenMap(map: Map<string, number>) {
+  try {
+    localStorage.setItem(SEEN_KEY, JSON.stringify([...map.entries()]));
+  } catch {}
+}
+
 export default function FeedPage() {
   const { configs, novigMethod } = useAlertStore();
   const [logBetRow, setLogBetRow] = useState<(FeedRow & { novigOdds: number }) | null>(null);
   const [sortBy, setSortBy] = useState<SortOption>("newest");
+
+  // Seen-drop deduplication: key = "eventId:selection", value = last shown currentOdds
+  const seenDropsRef = useRef<Map<string, number>>(loadSeenMap());
 
   // Pause state
   const [paused, setPaused] = useState(false);
@@ -184,21 +204,42 @@ export default function FeedPage() {
     query: { refetchInterval: 30000 },
   });
 
-  const liveRows = buildRows(events, configs, sortBy);
+  const liveRows = useMemo(() => buildRows(events, configs, sortBy), [events, configs, sortBy]);
 
-  // When paused: track new rows vs frozen snapshot
+  // Filter to only show rows whose odds changed since they were last shown.
+  // Rows are marked as "seen" on first appearance; re-shown only when currentOdds changes.
+  const filteredLiveRows = useMemo(() => {
+    const visible: FeedRow[] = [];
+    let dirty = false;
+    for (const row of liveRows) {
+      const key = rowKey(row);
+      const lastOdds = seenDropsRef.current.get(key);
+      if (lastOdds === row.currentOdds) continue; // Already seen at this price — suppress
+      seenDropsRef.current.set(key, row.currentOdds);
+      dirty = true;
+      visible.push(row);
+    }
+    if (dirty) saveSeenMap(seenDropsRef.current);
+    return visible;
+  // liveRows identity changes only when events/configs/sort change
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [liveRows]);
+
+  // When paused: count new/changed rows vs frozen snapshot
   useEffect(() => {
     if (!paused || frozenRowsRef.current === null) return;
-    const frozenKeys = new Set(frozenRowsRef.current.map(rowKey));
-    const newCount = liveRows.filter(r => !frozenKeys.has(rowKey(r))).length;
+    const frozenMap = new Map(frozenRowsRef.current.map(r => [rowKey(r), r.currentOdds]));
+    const newCount = filteredLiveRows.filter(r => {
+      const frozenOdds = frozenMap.get(rowKey(r));
+      return frozenOdds === undefined || frozenOdds !== r.currentOdds;
+    }).length;
     setPendingCount(newCount);
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [events, paused]);
 
-
   function handlePause() {
     if (!paused) {
-      frozenRowsRef.current = [...liveRows];
+      frozenRowsRef.current = [...filteredLiveRows];
       setPendingCount(0);
       setPaused(true);
     } else {
@@ -222,7 +263,7 @@ export default function FeedPage() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [sortBy]);
 
-  const displayRows = paused && frozenRowsRef.current !== null ? frozenRowsRef.current : liveRows;
+  const displayRows = paused && frozenRowsRef.current !== null ? frozenRowsRef.current : filteredLiveRows;
   const activeConfigs = configs.filter(c => c.enabled);
 
   return (
