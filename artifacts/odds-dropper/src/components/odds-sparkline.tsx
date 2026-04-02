@@ -85,10 +85,10 @@ export function OddsSparkline({ eventId, selection, currentOdds, openingOdds }: 
         onClick={() => setModalOpen(true)}
         title="Click for full chart"
       >
-        {/* Mini chart */}
-        <div className="w-[90px] h-[38px] opacity-80 group-hover:opacity-100 transition-opacity rounded overflow-hidden">
+        {/* Chart — trading style matching event-detail */}
+        <div className="w-[130px] h-[54px] opacity-85 group-hover:opacity-100 transition-opacity rounded overflow-hidden bg-white/[0.02] border border-white/5">
           <ResponsiveContainer width="100%" height="100%">
-            <LineChart data={points} margin={{ top: 3, right: 2, left: 2, bottom: 3 }}>
+            <LineChart data={points} margin={{ top: 5, right: 4, left: 4, bottom: 5 }}>
               <YAxis domain={["auto", "auto"]} hide />
               {/* No-vig line (red) */}
               {hasHistory && (
@@ -96,7 +96,7 @@ export function OddsSparkline({ eventId, selection, currentOdds, openingOdds }: 
                   type="stepAfter"
                   dataKey="novig"
                   stroke="#f87171"
-                  strokeWidth={1}
+                  strokeWidth={1.2}
                   dot={false}
                   isAnimationActive={false}
                   connectNulls
@@ -107,18 +107,13 @@ export function OddsSparkline({ eventId, selection, currentOdds, openingOdds }: 
                 type="stepAfter"
                 dataKey="odds"
                 stroke={isDrop ? "#38bdf8" : "#94a3b8"}
-                strokeWidth={1.5}
+                strokeWidth={2}
                 dot={false}
                 isAnimationActive={false}
                 connectNulls
               />
             </LineChart>
           </ResponsiveContainer>
-        </div>
-
-        {/* Drop % label */}
-        <div className={`text-[11px] font-mono font-bold tabular-nums leading-none ${isDrop ? "text-green-400" : "text-red-400"}`}>
-          {isDrop ? "↓" : "↑"}{Math.abs(((currentOdds - openingOdds) / openingOdds) * 100).toFixed(1)}%
         </div>
       </div>
 

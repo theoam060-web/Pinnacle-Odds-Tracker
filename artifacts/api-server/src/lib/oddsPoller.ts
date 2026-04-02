@@ -262,8 +262,12 @@ function getBiggestRise(lines: OddsLine[]): number {
   return rises.length ? Math.max(...rises) : 0;
 }
 
+type LegacyEventShape = Awaited<ReturnType<typeof fetchPinnacleOdds>>[number] & {
+  maxRiskStake?: number | null;
+};
+
 async function persistLegacyEvents(
-  events: Awaited<ReturnType<typeof fetchPinnacleOdds>>,
+  events: LegacyEventShape[],
   now: Date,
   minDropPercent: number,
 ): Promise<void> {
@@ -367,10 +371,27 @@ async function persistLegacyEvents(
     }
 
     for (const line of updatedLines) {
+      // Only store a movement tick when odds actually changed from the previously recorded value
+      const existingLines = existing ? (existing.lines as OddsLine[]) : null;
+      const prevLine = existingLines
+        ? existingLines.find(
+            (l) =>
+              l.selection === line.selection ||
+              l.selection.split(" ")[0] === line.selection.split(" ")[0],
+          )
+        : null;
+      const oddsChanged =
+        !existing ||
+        !prevLine ||
+        Math.abs((prevLine.currentOdds - line.currentOdds) / (prevLine.currentOdds || 1)) > 0.0005;
+
+      if (!oddsChanged) continue;
+
       await db.insert(oddsMovementsTable).values({
         eventId: shape.id,
         selection: line.selection,
         odds: line.currentOdds,
+        limit: shape.maxRiskStake ?? null,
         recordedAt: now,
       }).onConflictDoNothing();
     }
@@ -439,6 +460,7 @@ async function pollOnce(minDropPercent: number, state: PollerState): Promise<voi
           commenceTime: market.startTime,
           marketType: market.type === "team_total" ? "total" : market.type as "moneyline" | "spread" | "total" | "asian_handicap",
           lines,
+          maxRiskStake: market.maxRiskStake,
         });
       }
       return events;

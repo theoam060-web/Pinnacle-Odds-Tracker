@@ -104,14 +104,14 @@ function buildRows(
   sort: SortOption,
 ): FeedRow[] {
   if (!events) return [];
-  // Show events whose drop was detected within the last 1 hour
-  const oneHourAgo = Date.now() - 60 * 60 * 1000;
+  // Show events whose drop was detected within the last 6 hours
+  const sixHoursAgo = Date.now() - 6 * 60 * 60 * 1000;
   const rows: FeedRow[] = [];
 
   for (const event of events) {
-    // Keep events with drops detected in the last 1 hour (regardless of match started status)
+    // Keep events with drops detected in the last 6 hours
     const updatedAt = new Date(event.lastUpdated as Date).getTime();
-    if (updatedAt < oneHourAgo) continue;
+    if (updatedAt < sixHoursAgo) continue;
 
     const allCurrentOdds = event.lines.map(l => l.currentOdds);
     event.lines.forEach((line, lineIndex) => {
@@ -216,7 +216,7 @@ export default function FeedPage() {
       <div className="mb-5">
         <h1 className="text-2xl font-bold tracking-tight mb-1 text-foreground">Live Market Feed</h1>
         <p className="text-muted-foreground text-sm">
-          Events with odds drops detected in the last 60 minutes.
+          Events with odds drops detected in the last 6 hours.
           {activeConfigs.length > 0 && (
             <span className="ml-2 text-primary font-medium">{activeConfigs.length} active alert config{activeConfigs.length !== 1 ? "s" : ""}.</span>
           )}
@@ -377,30 +377,33 @@ export default function FeedPage() {
                     </TableCell>
 
                     <TableCell className="text-center">
-                      <div className="flex items-center justify-center gap-1 font-mono">
-                        <span className="text-muted-foreground text-sm line-through">
-                          {formatOdds(row.openingOdds)}
-                        </span>
-                        <ArrowRight className="w-3 h-3 text-muted-foreground/40 shrink-0" />
-                        <span className="text-foreground text-sm font-bold">
-                          {formatOdds(row.currentOdds)}
+                      <div className="flex flex-col items-center gap-0.5">
+                        <div className="flex items-center justify-center gap-1 font-mono">
+                          <span className="text-muted-foreground text-sm line-through">
+                            {formatOdds(row.openingOdds)}
+                          </span>
+                          <ArrowRight className="w-3 h-3 text-muted-foreground/40 shrink-0" />
+                          <span className="text-foreground text-sm font-bold">
+                            {formatOdds(row.currentOdds)}
+                          </span>
+                        </div>
+                        <span className="text-[10px] font-mono text-red-400 tabular-nums">
+                          NV {formatOdds(computeNovig(row.allCurrentOdds, row.lineIndex)[novigMethod])}
                         </span>
                       </div>
                     </TableCell>
 
                     <TableCell className="text-right">
-                      <div className="flex flex-col items-end gap-1">
+                      <div className="flex flex-col items-end gap-1.5">
                         <span className="text-sm font-mono font-bold text-green-400">
                           {dropAbs.toFixed(2)}%
                         </span>
-                        <div className="w-full max-w-[110px]">
-                          <OddsSparkline
-                            eventId={row.eventId}
-                            selection={row.selection}
-                            openingOdds={row.openingOdds}
-                            currentOdds={row.currentOdds}
-                          />
-                        </div>
+                        <OddsSparkline
+                          eventId={row.eventId}
+                          selection={row.selection}
+                          openingOdds={row.openingOdds}
+                          currentOdds={row.currentOdds}
+                        />
                       </div>
                     </TableCell>
 

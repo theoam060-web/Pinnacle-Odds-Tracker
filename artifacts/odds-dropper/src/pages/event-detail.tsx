@@ -55,6 +55,7 @@ interface LogRow {
   novig: number;
   delta: number;
   limit?: number;
+  limitDelta?: number;
 }
 
 function computeVigPct(lines: EventLine[]): number {
@@ -114,12 +115,17 @@ function buildLogRows(chartPoints: ChartPoint[]): LogRow[] {
     const p = chartPoints[i];
     if (p.odds === undefined) continue;
     const prev = chartPoints.slice(0, i).filter(q => q.odds !== undefined).at(-1);
+    const prevWithLimit = chartPoints.slice(0, i).filter(q => q.limit != null).at(-1);
     rows.push({
       time: p.time,
       odds: p.odds,
       novig: p.novig ?? p.odds,
       delta: prev?.odds !== undefined ? parseFloat((p.odds - prev.odds).toFixed(3)) : 0,
       limit: p.limit,
+      limitDelta:
+        p.limit != null && prevWithLimit?.limit != null
+          ? Math.round(p.limit - prevWithLimit.limit)
+          : undefined,
     });
   }
   return rows;
@@ -420,15 +426,16 @@ export default function EventDetailPage() {
             <table className="w-full text-xs">
               <thead className="sticky top-0 bg-card border-b border-border/50">
                 <tr>
-                  <th className="text-left px-4 py-2 text-muted-foreground font-medium">Date</th>
-                  <th className="text-left px-4 py-2 text-muted-foreground font-medium">Odds</th>
+                  <th className="text-left px-4 py-2 text-muted-foreground font-medium">Time</th>
+                  <th className="text-left px-4 py-2 text-muted-foreground font-medium">Odds / NV</th>
                   <th className="text-right px-4 py-2 text-muted-foreground font-medium">Limit ($)</th>
+                  <th className="text-right px-4 py-2 text-muted-foreground font-medium">Limit Δ</th>
                 </tr>
               </thead>
               <tbody>
                 {logRows.length === 0 ? (
                   <tr>
-                    <td colSpan={3} className="text-center py-8 text-muted-foreground">No ticks recorded yet</td>
+                    <td colSpan={4} className="text-center py-8 text-muted-foreground">No ticks recorded yet</td>
                   </tr>
                 ) : (
                   logRows.map((row, i) => (
@@ -447,6 +454,15 @@ export default function EventDetailPage() {
                       <td className="px-4 py-1.5 text-right font-mono text-muted-foreground">
                         {row.limit != null ? row.limit.toLocaleString() : "—"}
                       </td>
+                      <td className="px-4 py-1.5 text-right font-mono">
+                        {row.limitDelta != null ? (
+                          <span className={row.limitDelta >= 0 ? "text-green-400" : "text-red-400"}>
+                            {row.limitDelta > 0 ? "+" : ""}{row.limitDelta.toLocaleString()}
+                          </span>
+                        ) : (
+                          <span className="text-muted-foreground/40">—</span>
+                        )}
+                      </td>
                     </tr>
                   ))
                 )}
@@ -461,9 +477,12 @@ export default function EventDetailPage() {
             <h3 className="text-xs font-medium uppercase tracking-wider text-muted-foreground">Current Lines</h3>
           </div>
           <div className="p-3 space-y-2.5">
-            {event.lines.map(line => {
+            {event.lines.map((line, lineIdx) => {
               const drop = line.changePercent < 0;
               const pct = Math.abs(line.changePercent);
+              const allCurrentOdds = event.lines.map(l => l.currentOdds);
+              const novig = computeNovig(allCurrentOdds, lineIdx);
+              const novigVal = novig[novigMethod];
               return (
                 <div key={line.selection} className="bg-background/40 border border-border/40 rounded-md p-3">
                   <div className="flex items-center justify-between mb-2">
@@ -484,6 +503,11 @@ export default function EventDetailPage() {
                       <div className={`font-mono text-base font-bold ${drop ? "text-green-400" : "text-foreground"}`}>
                         {formatOdds(line.currentOdds)}
                       </div>
+                      {novigVal && (
+                        <div className="font-mono text-[10px] text-red-400 mt-0.5">
+                          NV {formatOdds(novigVal)}
+                        </div>
+                      )}
                     </div>
                   </div>
                 </div>
