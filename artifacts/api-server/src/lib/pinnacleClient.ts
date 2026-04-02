@@ -1,100 +1,502 @@
 import { logger } from "./logger";
 
-const BASE_URL = "https://pinnacle-odds.p.rapidapi.com";
+const APP_CONFIG_URL = "https://www.pinnacle.com/config/app.json";
+const DEFAULT_GUEST_ROOT = "https://guest.api.arcadia.pinnacle.com";
+const DEFAULT_API_VERSION = "0.1";
+const CONFIG_CACHE_MS = 10 * 60 * 1000;
+const SPORT_DISCOVERY_TTL_MS = 2 * 60 * 1000;
+const REQUEST_TIMEOUT_MS = 20_000;
+const MAX_RETRIES = 2;
+const RETRY_DELAY_MS = 1_000;
+const INTER_SPORT_DELAY_MS = 300;
 
-async function delay(ms: number): Promise<void> {
-  return new Promise(resolve => setTimeout(resolve, ms));
+// ---------------------------------------------------------------------------
+// Public types
+// ---------------------------------------------------------------------------
+
+export type MarketType = "moneyline" | "spread" | "total" | "team_total";
+
+export interface NormalizedMarket {
+  id: string;
+  matchupId: number;
+  marketKey: string;
+  sportId: number;
+  sport: string;
+  leagueId: number;
+  league: string;
+  leagueName: string;
+  homeTeam: string;
+  awayTeam: string;
+  startTime: Date;
+  isLive: boolean;
+  type: MarketType;
+  period: number;
+  isAlternate: boolean;
+  status: string;
+  cutoffAt: string | null;
+  version: number | null;
+  side: string | null;
+  prices: NormalizedPrice[];
+  maxRiskStake: number | null;
+  rawKey: string;
 }
 
-async function fetchFromPinnacle(path: string, apiKey: string): Promise<unknown> {
-  const url = `${BASE_URL}${path}`;
-  const response = await fetch(url, {
-    headers: {
-      "x-rapidapi-key": apiKey,
-      "x-rapidapi-host": "pinnacle-odds.p.rapidapi.com",
-      "Accept-Encoding": "gzip",
-    },
-  });
-
-  if (!response.ok) {
-    const text = await response.text();
-    throw new Error(`Pinnacle API error ${response.status}: ${text}`);
-  }
-
-  return response.json();
+export interface NormalizedPrice {
+  designation: string;
+  points: number | null;
+  americanPrice: number;
+  decimalPrice: number;
+  participantId: number | null;
 }
 
-const SPORT_IDS: Record<string, number> = {
-  soccer: 29,
-  basketball: 4,
-  tennis: 33,
-  hockey: 19,
-  american_football: 15,
-  baseball: 3,
-};
-
-const LEAGUE_NAME_TO_SLUG: Record<string, string> = {
-  "England - Premier League": "premier_league",
-  "Premier League": "premier_league",
-  "Spain - La Liga": "la_liga",
-  "La Liga": "la_liga",
-  "Germany - Bundesliga": "bundesliga",
-  "Bundesliga": "bundesliga",
-  "Italy - Serie A": "serie_a",
-  "Serie A": "serie_a",
-  "France - Ligue 1": "ligue_1",
-  "Ligue 1": "ligue_1",
-  "UEFA Champions League": "champions_league",
-  "Europe - UEFA Champions League": "champions_league",
-  "NBA": "nba",
-  "USA - NBA": "nba",
-  "EuroLeague": "euroleague",
-  "USA - NCAA Basketball": "ncaa",
-  "ATP": "atp",
-  "WTA": "wta",
-  "NHL": "nhl",
-  "USA - NHL": "nhl",
-  "USA - MLB": "mlb",
-  "MLB": "mlb",
-  "USA - NFL": "nfl",
-  "NFL": "nfl",
-  "UFC": "ufc",
-};
-
-function leagueNameToSlug(name: string): string {
-  const direct = LEAGUE_NAME_TO_SLUG[name];
-  if (direct) return direct;
-  return name.toLowerCase().replace(/[^a-z0-9]+/g, "_").replace(/^_|_$/g, "");
-}
-
-interface PinnacleApiPeriod {
-  number: number;
-  moneyline?: { home: number; draw?: number; away: number };
-  spreads?: Array<{ hdp: number; home: number; away: number }>;
-  totals?: Array<{ points: number; over: number; under: number }>;
-}
-
-interface PinnacleApiEvent {
+export interface NormalizedMatchup {
   id: number;
-  starts: string;
-  home: string;
-  away: string;
-  periods?: PinnacleApiPeriod[];
+  parentId: number | null;
+  type: "matchup" | "special";
+  sportId: number;
+  sport: string;
+  leagueId: number;
+  league: string;
+  leagueName: string;
+  homeTeam: string;
+  awayTeam: string;
+  startTime: Date;
+  isLive: boolean;
+  isHighlighted: boolean;
+  status: string;
+  participants: PinnacleParticipant[];
+  periods: PinnaclePeriod[];
+  totalMarketCount: number;
 }
 
-interface PinnacleApiLeague {
+export interface PollResult {
+  matchups: NormalizedMatchup[];
+  markets: NormalizedMarket[];
+  sportId: number;
+  sport: string;
+  fetchedAt: Date;
+}
+
+// ---------------------------------------------------------------------------
+// Internal Pinnacle response types
+// ---------------------------------------------------------------------------
+
+interface PinnacleAppConfig {
+  api?: {
+    haywire?: {
+      apiVersion?: string;
+      apiKey?: string;
+      routes?: {
+        curacao?: { guestRoot?: string };
+      };
+    };
+  };
+}
+
+interface PinnacleGuestConfig {
+  apiKey: string;
+  guestRoot: string;
+  apiVersion: string;
+}
+
+interface PinnacleSport {
   id: number;
   name: string;
-  events?: PinnacleApiEvent[];
+  matchupCount?: number;
+  isFeatured?: boolean;
+  isHidden?: boolean;
+  primaryMarketType?: string;
 }
 
-interface PinnacleApiResponse {
-  sport_id: number;
-  last?: number;
-  leagues?: PinnacleApiLeague[];
-  events?: PinnacleApiEvent[];
+export interface PinnacleParticipant {
+  alignment?: "home" | "away" | "neutral";
+  name: string;
+  id?: number;
+  order?: number;
+  rotation?: number;
+  state?: Record<string, unknown>;
+  stats?: Array<Record<string, unknown>>;
 }
 
+export interface PinnaclePeriod {
+  period: number;
+  cutoffAt?: string | null;
+  status?: string;
+  hasMoneyline?: boolean;
+  hasSpread?: boolean;
+  hasTotal?: boolean;
+  hasTeamTotal?: boolean;
+}
+
+interface PinnacleLeagueRef {
+  id: number;
+  name: string;
+  group?: string;
+  sport?: {
+    id: number;
+    name: string;
+    primaryMarketType?: string;
+  };
+}
+
+interface PinnacleMatchupRaw {
+  id: number;
+  parentId?: number | null;
+  type?: "matchup" | "special";
+  startTime?: string;
+  isLive?: boolean;
+  isHighlighted?: boolean;
+  status?: string;
+  league?: PinnacleLeagueRef;
+  participants?: PinnacleParticipant[];
+  parent?: {
+    id?: number;
+    participants?: PinnacleParticipant[];
+    startTime?: string;
+    isLive?: boolean;
+  } | null;
+  periods?: PinnaclePeriod[];
+  totalMarketCount?: number;
+}
+
+interface PinnacleMarketPrice {
+  designation?: string;
+  points?: number;
+  price: number;
+  participantId?: number;
+}
+
+interface PinnacleMarketRaw {
+  key: string;
+  matchupId: number;
+  period: number;
+  isAlternate?: boolean;
+  status?: string;
+  type: string;
+  side?: string;
+  cutoffAt?: string;
+  version?: number;
+  prices: PinnacleMarketPrice[];
+  limits?: Array<{ amount: number; type: string }>;
+}
+
+// ---------------------------------------------------------------------------
+// Config discovery & caching
+// ---------------------------------------------------------------------------
+
+let configCache: { expiresAt: number; value: PinnacleGuestConfig } | null = null;
+let sportsCatalogCache: { expiresAt: number; value: PinnacleSport[] } | null = null;
+
+function delay(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+function toSlug(value: string): string {
+  return value.toLowerCase().replace(/[^a-z0-9]+/g, "_").replace(/^_|_$/g, "");
+}
+
+async function fetchJsonWithRetry<T>(
+  url: string,
+  headers: Record<string, string>,
+  retries = MAX_RETRIES,
+): Promise<T> {
+  let lastError: unknown;
+  for (let attempt = 0; attempt <= retries; attempt++) {
+    try {
+      const abortController = new AbortController();
+      const timeout = setTimeout(() => abortController.abort(), REQUEST_TIMEOUT_MS);
+      const response = await fetch(url, {
+        headers: { ...headers, "Accept-Encoding": "gzip" },
+        signal: abortController.signal,
+      });
+      clearTimeout(timeout);
+
+      if (!response.ok) {
+        const text = await response.text();
+        throw new Error(`Pinnacle API ${response.status} for ${url}: ${text.slice(0, 200)}`);
+      }
+      return (await response.json()) as T;
+    } catch (err) {
+      lastError = err;
+      if (attempt < retries) {
+        await delay(RETRY_DELAY_MS * (attempt + 1));
+      }
+    }
+  }
+  throw lastError;
+}
+
+async function discoverGuestConfig(): Promise<PinnacleGuestConfig> {
+  const now = Date.now();
+  if (configCache && configCache.expiresAt > now) {
+    return configCache.value;
+  }
+
+  const configuredKey = process.env["PINNACLE_API_KEY"]?.trim();
+  if (configuredKey) {
+    const value: PinnacleGuestConfig = {
+      apiKey: configuredKey,
+      guestRoot: process.env["PINNACLE_GUEST_ROOT"] ?? DEFAULT_GUEST_ROOT,
+      apiVersion: DEFAULT_API_VERSION,
+    };
+    configCache = { expiresAt: now + CONFIG_CACHE_MS, value };
+    return value;
+  }
+
+  try {
+    const config = await fetchJsonWithRetry<PinnacleAppConfig>(APP_CONFIG_URL, {}, 1);
+    const apiVersion = config.api?.haywire?.apiVersion ?? DEFAULT_API_VERSION;
+    const apiKey = config.api?.haywire?.apiKey ?? "";
+    const guestRoot = config.api?.haywire?.routes?.curacao?.guestRoot ?? DEFAULT_GUEST_ROOT;
+    if (!apiKey) throw new Error("Missing guest API key in frontend config");
+    const value = { apiKey, guestRoot, apiVersion };
+    configCache = { expiresAt: now + CONFIG_CACHE_MS, value };
+    return value;
+  } catch (err) {
+    logger.warn({ err }, "Failed to discover Pinnacle guest config, using fallback defaults");
+    const value: PinnacleGuestConfig = { apiKey: "", guestRoot: DEFAULT_GUEST_ROOT, apiVersion: DEFAULT_API_VERSION };
+    configCache = { expiresAt: now + 60_000, value };
+    return value;
+  }
+}
+
+function buildUrl(config: PinnacleGuestConfig, endpoint: string): string {
+  return `${config.guestRoot}/${config.apiVersion}${endpoint}`;
+}
+
+async function fetchGuestApi<T>(config: PinnacleGuestConfig, endpoint: string): Promise<T> {
+  if (!config.apiKey) {
+    throw new Error("No Pinnacle guest API key available");
+  }
+  return fetchJsonWithRetry<T>(buildUrl(config, endpoint), {
+    "X-API-Key": config.apiKey,
+    "X-Language": process.env["PINNACLE_LANGUAGE"] ?? "en",
+  });
+}
+
+// ---------------------------------------------------------------------------
+// Sport discovery
+// ---------------------------------------------------------------------------
+
+function parseSportIdsFromEnv(): number[] | null {
+  const raw = process.env["PINNACLE_SPORT_IDS"];
+  if (!raw) return null;
+  const values = raw.split(",").map((v) => Number.parseInt(v.trim(), 10)).filter((v) => Number.isFinite(v) && v > 0);
+  return values.length ? values : null;
+}
+
+export async function fetchSportsCatalog(): Promise<PinnacleSport[]> {
+  const config = await discoverGuestConfig();
+  const now = Date.now();
+  if (sportsCatalogCache && sportsCatalogCache.expiresAt > now) {
+    return sportsCatalogCache.value;
+  }
+  const sports = await fetchGuestApi<PinnacleSport[]>(config, "/sports");
+  sportsCatalogCache = { expiresAt: now + SPORT_DISCOVERY_TTL_MS, value: sports };
+  return sports;
+}
+
+async function discoverSportIds(config: PinnacleGuestConfig): Promise<number[]> {
+  const fromEnv = parseSportIdsFromEnv();
+  if (fromEnv) return fromEnv;
+
+  const sports = await fetchSportsCatalog();
+  const maxSports = Number.parseInt(process.env["PINNACLE_MAX_SPORTS"] ?? "", 10);
+  const limit = Number.isFinite(maxSports) && maxSports > 0 ? maxSports : 999;
+  return sports
+    .filter((s) => !s.isHidden && (s.matchupCount ?? 0) > 0)
+    .sort((a, b) => (b.matchupCount ?? 0) - (a.matchupCount ?? 0))
+    .slice(0, limit)
+    .map((s) => s.id);
+}
+
+// ---------------------------------------------------------------------------
+// Normalization helpers
+// ---------------------------------------------------------------------------
+
+function americanToDecimal(price: number): number {
+  if (price === 0) return 1;
+  if (price > 0) return parseFloat((1 + price / 100).toFixed(4));
+  return parseFloat((1 + 100 / Math.abs(price)).toFixed(4));
+}
+
+function extractHomeAway(matchup: PinnacleMatchupRaw): { homeTeam: string; awayTeam: string } {
+  const participants = matchup.participants ?? matchup.parent?.participants ?? [];
+  const home = participants.find((p) => p.alignment === "home")?.name;
+  const away = participants.find((p) => p.alignment === "away")?.name;
+  return {
+    homeTeam: home ?? participants[0]?.name ?? "Home",
+    awayTeam: away ?? participants[1]?.name ?? "Away",
+  };
+}
+
+function normalizeMatchup(raw: PinnacleMatchupRaw): NormalizedMatchup {
+  const { homeTeam, awayTeam } = extractHomeAway(raw);
+  const league = raw.league;
+  const startTime = raw.startTime ?? raw.parent?.startTime ?? new Date().toISOString();
+  return {
+    id: raw.id,
+    parentId: raw.parentId ?? null,
+    type: raw.type === "special" ? "special" : "matchup",
+    sportId: league?.sport?.id ?? 0,
+    sport: toSlug(league?.sport?.name ?? "unknown"),
+    leagueId: league?.id ?? 0,
+    league: toSlug(league?.name ?? "unknown"),
+    leagueName: league?.name ?? "Unknown League",
+    homeTeam,
+    awayTeam,
+    startTime: new Date(startTime),
+    isLive: raw.isLive ?? raw.parent?.isLive ?? false,
+    isHighlighted: raw.isHighlighted ?? false,
+    status: raw.status ?? "unknown",
+    participants: raw.participants ?? [],
+    periods: raw.periods ?? [],
+    totalMarketCount: raw.totalMarketCount ?? 0,
+  };
+}
+
+function getMarketType(raw: PinnacleMarketRaw): MarketType {
+  switch (raw.type) {
+    case "moneyline": return "moneyline";
+    case "spread": return "spread";
+    case "total": return "total";
+    case "team_total": return "team_total";
+    default: return "moneyline";
+  }
+}
+
+function normalizeMarket(
+  raw: PinnacleMarketRaw,
+  matchup: NormalizedMatchup,
+): NormalizedMarket {
+  const prices: NormalizedPrice[] = (raw.prices ?? []).map((p) => ({
+    designation: p.designation ?? "unknown",
+    points: p.points ?? null,
+    americanPrice: p.price,
+    decimalPrice: americanToDecimal(p.price),
+    participantId: p.participantId ?? null,
+  }));
+
+  const maxRiskLimit = raw.limits?.find((l) => l.type === "maxRiskStake");
+  const stableId = `pin-${raw.matchupId}-${raw.key}`;
+
+  return {
+    id: stableId,
+    matchupId: raw.matchupId,
+    marketKey: raw.key,
+    sportId: matchup.sportId,
+    sport: matchup.sport,
+    leagueId: matchup.leagueId,
+    league: matchup.league,
+    leagueName: matchup.leagueName,
+    homeTeam: matchup.homeTeam,
+    awayTeam: matchup.awayTeam,
+    startTime: matchup.startTime,
+    isLive: matchup.isLive,
+    type: getMarketType(raw),
+    period: raw.period,
+    isAlternate: raw.isAlternate ?? false,
+    status: raw.status ?? "unknown",
+    cutoffAt: raw.cutoffAt ?? null,
+    version: raw.version ?? null,
+    side: raw.side ?? null,
+    prices,
+    maxRiskStake: maxRiskLimit?.amount ?? null,
+    rawKey: raw.key,
+  };
+}
+
+// ---------------------------------------------------------------------------
+// Full-sport fetch: matchups + markets
+// ---------------------------------------------------------------------------
+
+async function fetchSportFull(
+  config: PinnacleGuestConfig,
+  sportId: number,
+): Promise<PollResult> {
+  const fetchedAt = new Date();
+
+  const [rawMatchups, rawMarkets] = await Promise.all([
+    fetchGuestApi<PinnacleMatchupRaw[]>(config, `/sports/${sportId}/matchups`),
+    fetchGuestApi<PinnacleMarketRaw[]>(config, `/sports/${sportId}/markets/straight?primaryOnly=false`),
+  ]);
+
+  const matchupsById = new Map<number, NormalizedMatchup>();
+  for (const raw of rawMatchups) {
+    matchupsById.set(raw.id, normalizeMatchup(raw));
+  }
+
+  const sportName = rawMatchups[0]?.league?.sport?.name ?? "Unknown";
+
+  const markets: NormalizedMarket[] = [];
+  for (const rawMarket of rawMarkets) {
+    let matchup = matchupsById.get(rawMarket.matchupId);
+    if (!matchup) {
+      matchup = {
+        id: rawMarket.matchupId,
+        parentId: null,
+        type: "matchup",
+        sportId,
+        sport: toSlug(sportName),
+        leagueId: 0,
+        league: "unknown",
+        leagueName: "Unknown League",
+        homeTeam: "Unknown",
+        awayTeam: "Unknown",
+        startTime: new Date(),
+        isLive: false,
+        isHighlighted: false,
+        status: "unknown",
+        participants: [],
+        periods: [],
+        totalMarketCount: 0,
+      };
+      matchupsById.set(rawMarket.matchupId, matchup);
+    }
+    markets.push(normalizeMarket(rawMarket, matchup));
+  }
+
+  return {
+    matchups: [...matchupsById.values()],
+    markets,
+    sportId,
+    sport: toSlug(sportName),
+    fetchedAt,
+  };
+}
+
+// ---------------------------------------------------------------------------
+// Public API
+// ---------------------------------------------------------------------------
+
+export async function fetchAllPinnacleData(): Promise<PollResult[]> {
+  const config = await discoverGuestConfig();
+  const sportIds = await discoverSportIds(config);
+  const results: PollResult[] = [];
+
+  for (let i = 0; i < sportIds.length; i++) {
+    const sportId = sportIds[i];
+    if (i > 0) await delay(INTER_SPORT_DELAY_MS);
+
+    try {
+      const result = await fetchSportFull(config, sportId);
+      results.push(result);
+      logger.info(
+        { sportId, sport: result.sport, matchups: result.matchups.length, markets: result.markets.length },
+        "Fetched Pinnacle sport snapshot",
+      );
+    } catch (err) {
+      logger.warn({ err, sportId }, "Failed to fetch Pinnacle data for sport — skipping");
+    }
+  }
+
+  return results;
+}
+
+/**
+ * Backward-compatible: returns NormalizedEvent-shaped objects for existing poller.
+ * Extracts primary (period=0, non-alternate) markets grouped by matchup.
+ */
 export interface NormalizedEvent {
   id: string;
   homeTeam: string;
@@ -114,113 +516,58 @@ export interface NormalizedEvent {
   }>;
 }
 
-function extractPeriod(periods: PinnacleApiPeriod[] | undefined): PinnacleApiPeriod | undefined {
-  if (!periods || periods.length === 0) return undefined;
-  return periods.find(p => p.number === 0) ?? periods[0];
+function formatSelectionLabel(price: NormalizedPrice, market: NormalizedMarket): string {
+  const designation = price.designation.charAt(0).toUpperCase() + price.designation.slice(1);
+  if (price.points === null) return designation;
+  const points = price.points >= 0 ? `+${price.points}` : `${price.points}`;
+  return `${designation} ${points}`;
 }
 
-function buildOddsLine(
-  selection: string,
-  price: number,
-): NormalizedEvent["lines"][number] {
-  const odds = parseFloat(price.toFixed(3));
-  return {
-    selection,
-    openingOdds: odds,
-    currentOdds: odds,
-    changePercent: 0,
-    changeAbsolute: 0,
-    direction: "stable",
-  };
-}
-
-function normalizeEvent(
-  ev: PinnacleApiEvent,
-  sportSlug: string,
-  leagueName: string,
-): NormalizedEvent | null {
-  const period = extractPeriod(ev.periods);
-  if (!period) return null;
-
-  let lines: NormalizedEvent["lines"] = [];
-  let marketType: NormalizedEvent["marketType"] = "moneyline";
-
-  if (period.moneyline) {
-    const ml = period.moneyline;
-    lines = [buildOddsLine(ev.home, ml.home), buildOddsLine(ev.away, ml.away)];
-    if (ml.draw !== undefined && ml.draw > 0) {
-      lines.push(buildOddsLine("Draw", ml.draw));
-    }
-    marketType = "moneyline";
-  } else if (period.spreads && period.spreads.length > 0) {
-    const s = period.spreads[0];
-    lines = [
-      buildOddsLine(`${ev.home} ${s.hdp >= 0 ? "+" : ""}${s.hdp}`, s.home),
-      buildOddsLine(`${ev.away} ${-s.hdp >= 0 ? "+" : ""}${-s.hdp}`, s.away),
-    ];
-    marketType = "spread";
-  } else if (period.totals && period.totals.length > 0) {
-    const t = period.totals[0];
-    lines = [
-      buildOddsLine(`Over ${t.points}`, t.over),
-      buildOddsLine(`Under ${t.points}`, t.under),
-    ];
-    marketType = "total";
+function legacyMarketType(type: MarketType): NormalizedEvent["marketType"] {
+  if (type === "team_total") return "total";
+  if (type === "spread") {
+    return "spread";
   }
-
-  if (lines.length === 0) return null;
-
-  return {
-    id: `pin-${ev.id}`,
-    homeTeam: ev.home,
-    awayTeam: ev.away,
-    sport: sportSlug,
-    league: leagueNameToSlug(leagueName),
-    leagueName,
-    commenceTime: new Date(ev.starts),
-    marketType,
-    lines,
-  };
+  return type as NormalizedEvent["marketType"];
 }
 
-export async function fetchPinnacleOdds(apiKey: string): Promise<NormalizedEvent[]> {
-  const results: NormalizedEvent[] = [];
-  const sportSlugs = Object.keys(SPORT_IDS);
+export async function fetchPinnacleOdds(): Promise<NormalizedEvent[]> {
+  const allResults = await fetchAllPinnacleData();
+  const events: NormalizedEvent[] = [];
+  const seen = new Set<string>();
 
-  for (let i = 0; i < sportSlugs.length; i++) {
-    const sportSlug = sportSlugs[i];
-    const sportId = SPORT_IDS[sportSlug];
+  for (const result of allResults) {
+    for (const market of result.markets) {
+      if (market.period !== 0) continue;
+      if (market.isAlternate) continue;
+      if (market.status !== "open") continue;
+      if (seen.has(market.id)) continue;
+      seen.add(market.id);
 
-    if (i > 0) {
-      await delay(1200);
-    }
+      const lines = market.prices.map((p) => ({
+        selection: formatSelectionLabel(p, market),
+        openingOdds: p.decimalPrice,
+        currentOdds: p.decimalPrice,
+        changePercent: 0,
+        changeAbsolute: 0,
+        direction: "stable" as const,
+      }));
 
-    try {
-      const data = await fetchFromPinnacle(
-        `/kit/v1/markets?sport_id=${sportId}&is_live=false&odds_format=decimal`,
-        apiKey,
-      ) as PinnacleApiResponse;
+      if (lines.length === 0) continue;
 
-      if (data.leagues && Array.isArray(data.leagues)) {
-        for (const league of data.leagues) {
-          if (!league.events) continue;
-          for (const ev of league.events) {
-            const normalized = normalizeEvent(ev, sportSlug, league.name);
-            if (normalized) results.push(normalized);
-          }
-        }
-      } else if (data.events && Array.isArray(data.events)) {
-        for (const ev of data.events) {
-          const normalized = normalizeEvent(ev, sportSlug, sportSlug);
-          if (normalized) results.push(normalized);
-        }
-      }
-
-      logger.info({ sportSlug, count: results.length }, "Fetched sport odds");
-    } catch (err) {
-      logger.warn({ err, sportSlug }, "Failed to fetch Pinnacle odds for sport");
+      events.push({
+        id: market.id,
+        homeTeam: market.homeTeam,
+        awayTeam: market.awayTeam,
+        sport: market.sport,
+        league: market.league,
+        leagueName: market.leagueName,
+        commenceTime: market.startTime,
+        marketType: legacyMarketType(market.type),
+        lines,
+      });
     }
   }
 
-  return results;
+  return events;
 }

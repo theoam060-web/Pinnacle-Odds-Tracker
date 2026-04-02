@@ -1,7 +1,12 @@
 import { db, oddsEventsTable, oddsMovementsTable } from "@workspace/db";
 import { eq, like } from "drizzle-orm";
 import { logger } from "./logger";
-import { broadcastOddsDrop, type OddsDropEvent } from "./sseManager";
+import {
+  broadcastOddsDrop,
+  broadcastOddsUpdate,
+  type OddsDropEvent,
+  type OddsEventUpdate,
+} from "./sseManager";
 import { sendTelegramDrop } from "./telegramNotifier";
 
 interface OddsLine {
@@ -58,6 +63,23 @@ export async function simulateTick(): Promise<void> {
       await db.update(oddsEventsTable)
         .set({ lines: updatedLines, biggestDrop, biggestRise, lastUpdated: now })
         .where(eq(oddsEventsTable.id, event.id));
+
+      const update: OddsEventUpdate = {
+        id: event.id,
+        homeTeam: event.homeTeam,
+        awayTeam: event.awayTeam,
+        sport: event.sport,
+        league: event.league,
+        leagueName: event.leagueName,
+        commenceTime: event.commenceTime.toISOString(),
+        marketType: event.marketType as OddsEventUpdate["marketType"],
+        lines: updatedLines,
+        biggestDrop,
+        biggestRise,
+        newDropAt: event.newDropAt ? event.newDropAt.toISOString() : null,
+        lastUpdated: now.toISOString(),
+      };
+      broadcastOddsUpdate(update);
 
       const prevBiggestDrop = (event.lines as OddsLine[])
         .filter(l => l.direction === "drop")

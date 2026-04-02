@@ -5,6 +5,9 @@
   "type": "module",
   "scripts": {
     "hello": "tsx ./src/hello.ts",
+    "pinnacle:smoke": "tsx ./src/pinnacle-smoke.ts",
+    "pinnacle:coverage": "tsx ./src/pinnacle-market-coverage.ts",
+    "pinnacle:adapter": "tsx ./src/pinnacle-adapter-test.ts",
     "typecheck": "tsc -p tsconfig.json --noEmit"
   },
   "devDependencies": {
