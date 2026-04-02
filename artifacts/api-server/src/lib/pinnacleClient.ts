@@ -435,6 +435,46 @@ function normalizeMarket(
 }
 
 // ---------------------------------------------------------------------------
+// Known league IDs for sports whose sport-level /matchups endpoint is blocked
+// (Pinnacle guest API returns 403 for these at the sport level)
+// ---------------------------------------------------------------------------
+const SPORT_FALLBACK_LEAGUES: Record<number, number[]> = {
+  19: [1456], // Hockey → NHL
+  15: [889],  // Football → NFL
+};
+
+async function fetchMatchupsForSport(
+  config: PinnacleGuestConfig,
+  sportId: number,
+): Promise<PinnacleMatchupRaw[]> {
+  try {
+    return await fetchGuestApi<PinnacleMatchupRaw[]>(config, `/sports/${sportId}/matchups`);
+  } catch (err: unknown) {
+    const is403 =
+      err instanceof Error && (err.message.includes("403") || err.message.includes("Access denied"));
+    if (!is403) throw err;
+
+    const leagueIds = SPORT_FALLBACK_LEAGUES[sportId];
+    if (!leagueIds?.length) throw err; // no fallback available — re-throw original error
+
+    logger.info(
+      { sportId, leagueIds },
+      "Sport-level matchups blocked (403) — falling back to league-level matchup fetch",
+    );
+
+    const results = await Promise.all(
+      leagueIds.map((lid) =>
+        fetchGuestApi<PinnacleMatchupRaw[]>(config, `/leagues/${lid}/matchups`).catch((e: unknown) => {
+          logger.warn({ leagueId: lid, err: e }, "League matchup fallback failed");
+          return [] as PinnacleMatchupRaw[];
+        }),
+      ),
+    );
+    return results.flat();
+  }
+}
+
+// ---------------------------------------------------------------------------
 // Full-sport fetch: matchups + markets
 // ---------------------------------------------------------------------------
 
@@ -445,7 +485,7 @@ async function fetchSportFull(
   const fetchedAt = new Date();
 
   const [rawMatchups, rawMarkets] = await Promise.all([
-    fetchGuestApi<PinnacleMatchupRaw[]>(config, `/sports/${sportId}/matchups`),
+    fetchMatchupsForSport(config, sportId),
     fetchGuestApi<PinnacleMarketRaw[]>(config, `/sports/${sportId}/markets/straight?primaryOnly=false`),
   ]);
 
