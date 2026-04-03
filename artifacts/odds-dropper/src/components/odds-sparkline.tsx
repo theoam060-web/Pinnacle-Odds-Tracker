@@ -1,10 +1,9 @@
-import { useState } from "react";
 import { LineChart, Line, ResponsiveContainer, YAxis, CartesianGrid } from "recharts";
 import { useGetOddsDropById, getGetOddsDropByIdQueryKey } from "@workspace/api-client-react";
-import { formatOdds, formatTime } from "@/lib/format";
+import { formatTime } from "@/lib/format";
 import { computeNovig } from "@/lib/novig";
-import { OddsGraphModal } from "./odds-graph-modal";
 import { useAlertStore } from "@/lib/alert-context";
+import { useLocation } from "wouter";
 
 interface Props {
   eventId: string;
@@ -57,7 +56,7 @@ function buildPoints(
 }
 
 export function OddsSparkline({ eventId, selection, currentOdds, openingOdds }: Props) {
-  const [modalOpen, setModalOpen] = useState(false);
+  const [, navigate] = useLocation();
   const { novigMethod } = useAlertStore();
 
   const { data: event } = useGetOddsDropById(eventId, {
@@ -79,56 +78,43 @@ export function OddsSparkline({ eventId, selection, currentOdds, openingOdds }: 
   const hasHistory = points.length > 2;
 
   return (
-    <>
-      <div
-        className="cursor-pointer group flex flex-col items-end gap-0.5"
-        onClick={() => setModalOpen(true)}
-        title="Click for full chart"
-      >
-        {/* Chart — trading style matching event-detail (from user screenshot) */}
-        <div className="w-[150px] h-[72px] opacity-85 group-hover:opacity-100 transition-opacity rounded overflow-hidden bg-[#0c0e14] border border-white/8">
-          <ResponsiveContainer width="100%" height="100%">
-            <LineChart data={points} margin={{ top: 6, right: 6, left: 6, bottom: 6 }}>
-              <CartesianGrid
-                strokeDasharray="2 4"
-                stroke="rgba(255,255,255,0.04)"
-                vertical={false}
-              />
-              <YAxis domain={["auto", "auto"]} hide />
-              {/* No-vig line (green — sweeter/better price) */}
-              {hasHistory && (
-                <Line
-                  type="stepAfter"
-                  dataKey="novig"
-                  stroke="#f87171"
-                  strokeWidth={1.3}
-                  dot={false}
-                  isAnimationActive={false}
-                  connectNulls
-                />
-              )}
-              {/* Raw odds line (blue) */}
+    <div
+      className="cursor-pointer group flex flex-col items-end gap-0.5"
+      onClick={() => navigate(`/event/${eventId}`)}
+      title="Click for full chart"
+    >
+      <div className="w-[150px] h-[72px] opacity-85 group-hover:opacity-100 transition-opacity rounded overflow-hidden bg-[#0c0e14] border border-white/8">
+        <ResponsiveContainer width="100%" height="100%">
+          <LineChart data={points} margin={{ top: 6, right: 6, left: 6, bottom: 6 }}>
+            <CartesianGrid
+              strokeDasharray="2 4"
+              stroke="rgba(255,255,255,0.04)"
+              vertical={false}
+            />
+            <YAxis domain={["auto", "auto"]} hide />
+            {hasHistory && (
               <Line
                 type="stepAfter"
-                dataKey="odds"
-                stroke={isDrop ? "#38bdf8" : "#94a3b8"}
-                strokeWidth={2}
+                dataKey="novig"
+                stroke="#f87171"
+                strokeWidth={1.3}
                 dot={false}
                 isAnimationActive={false}
                 connectNulls
               />
-            </LineChart>
-          </ResponsiveContainer>
-        </div>
+            )}
+            <Line
+              type="stepAfter"
+              dataKey="odds"
+              stroke={isDrop ? "#38bdf8" : "#94a3b8"}
+              strokeWidth={2}
+              dot={false}
+              isAnimationActive={false}
+              connectNulls
+            />
+          </LineChart>
+        </ResponsiveContainer>
       </div>
-
-      {modalOpen && event && (
-        <OddsGraphModal
-          event={event}
-          defaultSelection={selection}
-          onClose={() => setModalOpen(false)}
-        />
-      )}
-    </>
+    </div>
   );
 }
