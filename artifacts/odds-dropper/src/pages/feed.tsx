@@ -23,6 +23,8 @@ const SPORT_LABELS: Record<string, string> = {
   hockey: "🏒 Ice Hockey",
   american_football: "🏈 Am. Football",
   baseball: "⚾ Baseball",
+  handball: "🤾 Handball",
+  volleyball: "🏐 Volleyball",
   boxing: "🥊 Boxing",
   mma: "🥋 MMA",
 };

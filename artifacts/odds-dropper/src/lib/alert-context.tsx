@@ -12,23 +12,64 @@ export const NOVIG_METHOD_LABELS: Record<NovigMethod, string> = {
 };
 
 export const MARKET_TYPE_OPTIONS = [
-  { slug: "moneyline", label: "Moneyline" },
+  { slug: "moneyline",   label: "Moneyline" },
+  { slug: "spread",      label: "Handicaps" },
+  { slug: "total",       label: "Totals" },
   { slug: "draw_no_bet", label: "Draw No Bet" },
-  { slug: "asian_handicap", label: "Handicaps" },
-  { slug: "total", label: "Totals" },
-  { slug: "btts", label: "Both Teams To Score" },
-  { slug: "spread", label: "Spreads" },
+  { slug: "btts",        label: "Both Teams To Score" },
 ];
 
 // "All Sports" option intentionally removed — users must select a specific sport
 export const SPORT_OPTIONS = [
-  { slug: "soccer", label: "⚽ Football" },
-  { slug: "basketball", label: "🏀 Basketball" },
-  { slug: "tennis", label: "🎾 Tennis" },
-  { slug: "hockey", label: "🏒 Ice Hockey" },
+  { slug: "soccer",            label: "⚽ Football" },
+  { slug: "basketball",        label: "🏀 Basketball" },
+  { slug: "tennis",            label: "🎾 Tennis" },
+  { slug: "hockey",            label: "🏒 Ice Hockey" },
   { slug: "american_football", label: "🏈 American Football" },
-  { slug: "baseball", label: "⚾ Baseball" },
+  { slug: "baseball",          label: "⚾ Baseball" },
+  { slug: "handball",          label: "🤾 Handball" },
+  { slug: "volleyball",        label: "🏐 Volleyball" },
 ];
+
+/**
+ * Markets available per sport, based on what Pinnacle provides.
+ * draw_no_bet and btts are included for sports where they exist in the market
+ * and will match once/if the backend produces those market types.
+ */
+export const SPORT_MARKETS: Record<string, string[]> = {
+  soccer:            ["moneyline", "spread", "total", "draw_no_bet", "btts"],
+  basketball:        ["moneyline", "spread", "total"],
+  tennis:            ["moneyline", "spread", "total"],
+  hockey:            ["moneyline", "spread", "total"],
+  american_football: ["moneyline", "spread", "total"],
+  baseball:          ["moneyline", "spread", "total"],
+  handball:          ["moneyline", "spread", "total"],
+  volleyball:        ["moneyline", "spread", "total"],
+};
+
+export interface SportDefaults {
+  minDropPercent: number;
+  maxHoursUntilMatch: number;
+  minOdds: number;
+  maxOdds: number;
+}
+
+/**
+ * Optimized alert defaults per sport.
+ * Football/Am.Football: longer time windows, broader odds ranges.
+ * Tennis/Volleyball:    faster markets, tighter windows.
+ * Basketball/Handball:  medium behaviour.
+ */
+export const SPORT_DEFAULTS: Record<string, SportDefaults> = {
+  soccer:            { minDropPercent: 2,   maxHoursUntilMatch: 48, minOdds: 1.3,  maxOdds: 20  },
+  basketball:        { minDropPercent: 2,   maxHoursUntilMatch: 12, minOdds: 1.3,  maxOdds: 10  },
+  tennis:            { minDropPercent: 3,   maxHoursUntilMatch: 6,  minOdds: 1.1,  maxOdds: 15  },
+  hockey:            { minDropPercent: 2,   maxHoursUntilMatch: 24, minOdds: 1.2,  maxOdds: 10  },
+  american_football: { minDropPercent: 2,   maxHoursUntilMatch: 48, minOdds: 1.3,  maxOdds: 10  },
+  baseball:          { minDropPercent: 2,   maxHoursUntilMatch: 12, minOdds: 1.3,  maxOdds: 8   },
+  handball:          { minDropPercent: 2,   maxHoursUntilMatch: 12, minOdds: 1.2,  maxOdds: 15  },
+  volleyball:        { minDropPercent: 3,   maxHoursUntilMatch: 6,  minOdds: 1.1,  maxOdds: 15  },
+};
 
 export interface AlertConfig {
   id: string;
@@ -46,11 +87,11 @@ export interface AlertConfig {
 
 export const DEFAULT_ALERT_CONFIG: Omit<AlertConfig, "id" | "name"> = {
   enabled: true,
-  sport: "soccer", // defaults to Football; users must pick a specific sport
+  sport: "soccer",
   minDropPercent: 2,
-  maxHoursUntilMatch: 24,
-  minOdds: 1.0,
-  maxOdds: 50,
+  maxHoursUntilMatch: 48,
+  minOdds: 1.3,
+  maxOdds: 20,
   minLimit: 0,
   maxLimit: 999999,
   markets: [],

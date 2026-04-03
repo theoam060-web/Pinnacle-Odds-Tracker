@@ -15,6 +15,8 @@ import {
   AlertConfig,
   SPORT_OPTIONS,
   MARKET_TYPE_OPTIONS,
+  SPORT_MARKETS,
+  SPORT_DEFAULTS,
   NOVIG_METHOD_LABELS,
   NovigMethod,
 } from "@/lib/alert-context";
@@ -63,7 +65,18 @@ function ConfigCard({ config }: { config: AlertConfig }) {
         {/* Sport */}
         <div>
           <Label className="text-xs text-muted-foreground mb-1.5 block">Sport</Label>
-          <Select value={config.sport} onValueChange={v => patch({ sport: v })}>
+          <Select
+            value={config.sport}
+            onValueChange={v => {
+              const defaults = SPORT_DEFAULTS[v] ?? {};
+              const validSlugs = SPORT_MARKETS[v] ?? [];
+              patch({
+                sport: v,
+                markets: config.markets.filter(m => validSlugs.includes(m)),
+                ...defaults,
+              });
+            }}
+          >
             <SelectTrigger className="h-8 text-sm">
               <SelectValue />
             </SelectTrigger>
@@ -164,11 +177,13 @@ function ConfigCard({ config }: { config: AlertConfig }) {
           <p className="text-[10px] text-muted-foreground mt-1">Leave max empty for no upper limit. Requires live API for limit data.</p>
         </div>
 
-        {/* Markets */}
+        {/* Markets — filtered to what's relevant for the selected sport */}
         <div>
-          <Label className="text-xs text-muted-foreground mb-2 block">Markets <span className="text-[10px]">(empty = all)</span></Label>
+          <Label className="text-xs text-muted-foreground mb-2 block">
+            Markets <span className="text-[10px]">(empty = all)</span>
+          </Label>
           <div className="grid grid-cols-2 gap-x-4 gap-y-2">
-            {MARKET_TYPE_OPTIONS.map(m => (
+            {MARKET_TYPE_OPTIONS.filter(m => (SPORT_MARKETS[config.sport] ?? []).includes(m.slug)).map(m => (
               <div key={m.slug} className="flex items-center gap-2">
                 <Checkbox
                   id={`${config.id}-mkt-${m.slug}`}

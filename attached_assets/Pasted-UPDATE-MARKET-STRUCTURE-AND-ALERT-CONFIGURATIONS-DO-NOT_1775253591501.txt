@@ -1,0 +1,138 @@
+UPDATE MARKET STRUCTURE AND ALERT CONFIGURATIONS (DO NOT REBUILD ANYTHING)
+
+---
+
+## GOAL
+
+1. Organize all markets correctly per sport
+2. Ensure alert configurations are optimized per sport
+3. Connect all sports and markets to the correct incoming data (from my colleague)
+4. Include ALL markets (no missing ones)
+
+---
+
+## MARKETS BY SPORT
+
+FOOTBALL:
+
+* Moneyline
+* Draw No Bet
+* Handicaps
+* Totals
+* Both Teams To Score
+* Team Totals
+* Corners
+* Bookings
+
+BASKETBALL:
+
+* Moneyline
+* Draw No Bet
+* Handicaps
+* Totals
+* Team Totals
+
+HOCKEY:
+
+* Moneyline
+* Draw No Bet
+* Handicaps
+* Totals
+
+TENNIS:
+
+* Moneyline
+* Handicaps
+* Totals
+
+BASEBALL:
+
+* Moneyline
+* Handicaps
+* Totals
+* Team Totals
+
+HANDBALL:
+
+* Moneyline
+* Handicaps
+* Totals
+
+VOLLEYBALL:
+
+* Moneyline
+* Handicaps
+* Totals
+
+---
+
+## ALERT CONFIGURATIONS (SMART + OPTIMIZED)
+
+* Each alert must be based on selected sport
+
+* ONLY show relevant markets for that sport
+
+* Optimize each alert configuration automatically based on sport:
+
+  * Odds range
+  * Drop %
+  * Time before match start
+  * Market behavior
+
+Examples:
+
+* Football → more markets, longer time windows
+* Tennis → faster markets, shorter time windows
+* Basketball → medium behavior
+
+---
+
+## DATA MAPPING (IMPORTANT)
+
+* Connect each:
+
+  * Sport
+  * Market
+    to the correct data fields from my colleague
+
+* Use the same mapping logic already implemented earlier
+
+* Extend it to include ALL markets listed above
+
+Ensure:
+
+* No market is missing
+* No incorrect mapping (e.g. tennis data showing as football)
+* Each event is correctly tagged with:
+
+  * Sport
+  * Market
+  * Odds
+  * Limits
+
+---
+
+## VALIDATION
+
+* If incoming data does not match correct sport/market → ignore or flag it
+* Prevent incorrect or mixed data in the feed
+
+---
+
+## UI BEHAVIOR
+
+* Alert configurations should feel smart and automatic:
+
+  * Adapt based on sport
+  * Only show relevant choices
+  * Reduce manual filtering
+
+---
+
+## IMPORTANT
+
+* Do NOT include subscription logic
+* Do NOT rebuild system
+* Only extend current structure
+* Reuse existing logic where possible
+* Explain clearly how mapping and filtering works
