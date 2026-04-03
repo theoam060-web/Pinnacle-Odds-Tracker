@@ -180,7 +180,7 @@ export default function BetTrackerPage() {
                   <TableHead className="text-center">Result</TableHead>
                   <TableHead className="text-center">Closing odds</TableHead>
                   <TableHead className="text-center">CLV %</TableHead>
-                  <TableHead className="text-center">EV ({sym})</TableHead>
+                  <TableHead className="text-center">EV%</TableHead>
                   <TableHead className="text-center">P&amp;L ({sym})</TableHead>
                   <TableHead className="text-right">Logged</TableHead>
                   <TableHead className="w-10" />
@@ -201,7 +201,7 @@ export default function BetTrackerPage() {
                   </TableRow>
                 ) : filteredBets.map(bet => {
                   const clv = bet.closingOdds ? calcCLV(bet.bettingOdds, bet.closingOdds) : null;
-                  const ev = calcEV(bet.bettingOdds, bet.novigOdds, bet.stake);
+                  const ev = calcEV(bet.bettingOdds, bet.novigOdds);
                   const pl = bet.result === "win"
                     ? bet.potentialProfit
                     : bet.result === "loss"
@@ -266,10 +266,10 @@ export default function BetTrackerPage() {
                         )}
                       </TableCell>
 
-                      {/* EV */}
+                      {/* EV% */}
                       <TableCell className="text-center font-mono">
-                        <span className={ev >= 0 ? "text-sky-400" : "text-red-400"}>
-                          {ev >= 0 ? "+" : ""}{ev.toFixed(2)}
+                        <span className={ev >= 0 ? "text-green-400 font-semibold" : "text-red-400"}>
+                          {ev >= 0 ? "+" : ""}{ev.toFixed(1)}%
                         </span>
                       </TableCell>
 

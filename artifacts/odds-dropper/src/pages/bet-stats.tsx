@@ -4,7 +4,7 @@ import {
   ReferenceLine, BarChart, Bar, Cell,
 } from "recharts";
 import { Layout } from "@/components/layout";
-import { useBetStore, CURRENCIES, getCurrencySymbol, calcCLV, calcEV, LoggedBet } from "@/lib/bet-store";
+import { useBetStore, CURRENCIES, getCurrencySymbol, calcCLV, calcEVCurrency, LoggedBet } from "@/lib/bet-store";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { BarChart2, TrendingUp, CalendarDays } from "lucide-react";
 import { formatOdds } from "@/lib/format";
@@ -72,8 +72,8 @@ export default function BetStatsPage() {
     ? clvBets.reduce((s, b) => s + calcCLV(b.bettingOdds, b.closingOdds!), 0) / clvBets.length
     : null;
 
-  // Total EV on filtered bets
-  const totalEV = filteredBets.reduce((s, b) => s + calcEV(b.bettingOdds, b.novigOdds, b.stake), 0);
+  // Total EV on filtered bets (in currency: stake × EV% / 100)
+  const totalEV = filteredBets.reduce((s, b) => s + calcEVCurrency(b.bettingOdds, b.novigOdds, b.stake), 0);
 
   // CLV chart — cumulative CLV over time
   const clvChartData = clvBets
@@ -95,7 +95,7 @@ export default function BetStatsPage() {
     .slice()
     .sort((a, b) => new Date(a.loggedAt).getTime() - new Date(b.loggedAt).getTime())
     .reduce<{ date: string; ev: number; cumEV: number }[]>((acc, b) => {
-      const ev = calcEV(b.bettingOdds, b.novigOdds, b.stake);
+      const ev = calcEVCurrency(b.bettingOdds, b.novigOdds, b.stake);
       const prev = acc.length > 0 ? acc[acc.length - 1].cumEV : 0;
       acc.push({
         date: new Date(b.loggedAt).toLocaleDateString([], { month: "short", day: "numeric" }),

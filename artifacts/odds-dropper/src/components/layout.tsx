@@ -5,7 +5,7 @@ import { useAlertStore } from "@/lib/alert-context";
 import { useGetOddsSummary, getGetOddsSummaryQueryKey } from "@workspace/api-client-react";
 import { SettingsModal } from "@/components/settings-modal";
 import { useOddsStream, type OddsDropEvent, type OddsStreamFilters } from "@/hooks/use-odds-stream";
-import { useBetStore, getCurrencySymbol, calcEV } from "@/lib/bet-store";
+import { useBetStore, getCurrencySymbol, calcEVCurrency } from "@/lib/bet-store";
 
 const NAV_ITEMS = [
   { href: "/", label: "Live Feed", icon: TrendingDown },
@@ -83,7 +83,7 @@ export function Layout({ children, notificationFilters }: LayoutProps) {
   const settledLosses = bets.filter(b => b.result === "loss");
   const currentPL = settledWins.reduce((s, b) => s + b.potentialProfit, 0)
     - settledLosses.reduce((s, b) => s + b.stake, 0);
-  const expectedProfit = unsettled.reduce((s, b) => s + calcEV(b.bettingOdds, b.novigOdds, b.stake), 0);
+  const expectedProfit = unsettled.reduce((s, b) => s + calcEVCurrency(b.bettingOdds, b.novigOdds, b.stake), 0);
 
   return (
     <div className="min-h-screen bg-background text-foreground flex">

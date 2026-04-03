@@ -119,10 +119,19 @@ export function calcCLV(bettingOdds: number, closingOdds: number): number {
   return parseFloat(((bettingOdds / closingOdds - 1) * 100).toFixed(2));
 }
 
-export function calcEV(bettingOdds: number, novigOdds: number, stake: number): number {
-  if (!novigOdds || novigOdds <= 1) return 0;
+/**
+ * EV% = (bettingOdds × (1/novigOdds) − 1) × 100
+ * Returns a percentage value (e.g. +8.1 means +8.1%).
+ * Positive = value bet, Negative = negative EV.
+ */
+export function calcEV(bettingOdds: number, novigOdds: number): number {
+  if (!novigOdds || novigOdds <= 1 || !bettingOdds || bettingOdds <= 1) return 0;
   const fairProb = 1 / novigOdds;
-  const profit = (bettingOdds - 1) * stake;
-  const ev = fairProb * profit - (1 - fairProb) * stake;
-  return parseFloat(ev.toFixed(2));
+  const pct = parseFloat(((bettingOdds * fairProb - 1) * 100).toFixed(1));
+  return pct === 0 ? 0 : pct; // guard against floating-point -0
+}
+
+/** EV in currency units: stake × EV% / 100. Used for P&L projections. */
+export function calcEVCurrency(bettingOdds: number, novigOdds: number, stake: number): number {
+  return parseFloat((calcEV(bettingOdds, novigOdds) / 100 * stake).toFixed(2));
 }

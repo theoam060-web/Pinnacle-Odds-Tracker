@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { formatOdds } from "@/lib/format";
-import { useBetStore, getCurrencySymbol } from "@/lib/bet-store";
+import { useBetStore, getCurrencySymbol, calcEV } from "@/lib/bet-store";
 import { useSettings, calcKellyStake, calcUnitStake } from "@/lib/settings-context";
 
 interface Props {
@@ -46,8 +46,9 @@ export function LogBetModal({ row, onClose }: Props) {
   const potentialProfit = parsedOdds > 1 ? parseFloat(((parsedOdds - 1) * parsedStake).toFixed(2)) : 0;
   const totalReturn = parseFloat((parsedOdds * parsedStake).toFixed(2));
 
-  const ev = parsedOdds > 1 && row.novigOdds > 1
-    ? parseFloat(((1 / row.novigOdds) * potentialProfit - (1 - 1 / row.novigOdds) * parsedStake).toFixed(2))
+  // EV% = (bet_odds × (1/novig_odds) − 1) × 100
+  const evPct = parsedOdds > 1 && row.novigOdds > 1
+    ? calcEV(parsedOdds, row.novigOdds)
     : 0;
 
   function handleSave() {
@@ -142,9 +143,9 @@ export function LogBetModal({ row, onClose }: Props) {
                 <div className="font-mono font-bold text-foreground">{totalReturn.toFixed(2)}</div>
               </div>
               <div>
-                <div className="text-muted-foreground">EV</div>
-                <div className={`font-mono font-bold ${ev >= 0 ? "text-sky-400" : "text-red-400"}`}>
-                  {ev >= 0 ? "+" : ""}{ev.toFixed(2)}
+                <div className="text-muted-foreground">EV%</div>
+                <div className={`font-mono font-bold ${evPct >= 0 ? "text-green-400" : "text-red-400"}`}>
+                  {evPct >= 0 ? "+" : ""}{evPct.toFixed(1)}%
                 </div>
               </div>
             </div>
