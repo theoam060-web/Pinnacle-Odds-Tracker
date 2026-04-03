@@ -359,8 +359,8 @@ export default function BetStatsPage() {
               <span className="text-sm font-medium">Profit</span>
               <span className="text-[10px] text-muted-foreground ml-auto">Cumulative across {filteredBets.length} bets</span>
             </div>
-            {profitComparisonData.length < 2 ? (
-              <SectionEmpty message="Log at least 2 bets to see this chart." />
+            {resolved.length < 2 ? (
+              <SectionEmpty message="Settle at least 2 bets to see the profit comparison chart." />
             ) : (
               <>
                 <div className="h-[200px]">
@@ -529,6 +529,10 @@ export default function BetStatsPage() {
                 <span className="text-sm font-medium">Daily Performance</span>
               </div>
             </div>
+            {resolved.length < 1 ? (
+              <SectionEmpty message="Settle at least 1 bet to see daily performance." />
+            ) : (
+            <>
             {/* Month navigation */}
             <div className="flex items-center justify-between mb-3">
               <button
@@ -592,25 +596,29 @@ export default function BetStatsPage() {
                 );
               })}
             </div>
+            </>
+            )}
           </div>
 
           {/* ── NEW: Bets By Market ────────────────────────────────────────── */}
-          {marketData.length > 0 && (
-            <div className="bg-card border rounded-md p-4 mb-4">
-              <div className="flex items-center justify-between mb-3">
-                <div className="flex items-center gap-2">
-                  <BarChart2 className="w-4 h-4 text-primary" />
-                  <span className="text-sm font-medium">Bets By Market</span>
-                </div>
-                {marketData.length > 5 && (
-                  <button
-                    onClick={() => setShowAllMarkets(v => !v)}
-                    className="text-[11px] text-muted-foreground hover:text-foreground transition-colors"
-                  >
-                    {showAllMarkets ? "Show less" : `View all (${marketData.length})`}
-                  </button>
-                )}
+          <div className="bg-card border rounded-md p-4 mb-4">
+            <div className="flex items-center justify-between mb-3">
+              <div className="flex items-center gap-2">
+                <BarChart2 className="w-4 h-4 text-primary" />
+                <span className="text-sm font-medium">Bets By Market</span>
               </div>
+              {marketData.length > 5 && (
+                <button
+                  onClick={() => setShowAllMarkets(v => !v)}
+                  className="text-[11px] text-muted-foreground hover:text-foreground transition-colors"
+                >
+                  {showAllMarkets ? "Show less" : `View all (${marketData.length})`}
+                </button>
+              )}
+            </div>
+            {resolved.length < 1 ? (
+              <SectionEmpty message="Settle at least 1 bet to see performance by market." />
+            ) : (
               <div className="divide-y divide-border/30">
                 {visibleMarkets.map(({ market, pl, totalCount }) => (
                   <div key={market} className="flex items-center justify-between py-2.5">
@@ -627,8 +635,8 @@ export default function BetStatsPage() {
                   </div>
                 ))}
               </div>
-            </div>
-          )}
+            )}
+          </div>
 
           {/* ── Existing: P/L by League ────────────────────────────────────── */}
           {sportPLData.length >= 2 && (
