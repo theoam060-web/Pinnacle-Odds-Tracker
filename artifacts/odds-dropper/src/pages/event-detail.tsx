@@ -90,10 +90,17 @@ function buildChartData(
   commenceTime?: Date | string,
 ): ChartPoint[] {
   const now = Date.now();
-  // For games that have already kicked off, cap the right edge at kick-off time
-  // so we don't draw a long empty flat tail into the in-play period
+  // For games that have already kicked off, cap the right edge to avoid
+  // drawing a long empty flat tail into the in-play period.
+  // Use max(kickoffMs, lastMovementMs) so late-ingested ticks are never clipped.
   const kickoffMs = commenceTime ? new Date(commenceTime).getTime() : Infinity;
-  const rightEdge = kickoffMs < now ? kickoffMs : now;
+  const lastMovementMs = movements.length
+    ? Math.max(...movements.map(m => new Date(m.timestamp).getTime()))
+    : 0;
+  const rightEdge =
+    kickoffMs < now
+      ? Math.min(now, Math.max(kickoffMs, lastMovementMs))
+      : now;
   const windowStart = rightEdge - CHART_WINDOW_MS;
 
   const selMovements = movements
@@ -343,11 +350,17 @@ export default function EventDetailPage() {
   const highOdds = oddsPoints.length ? Math.max(...oddsPoints.map(p => p.odds!)) : undefined;
   const vigPct = event ? computeVigPct(event.lines) : undefined;
 
-  // Right edge of chart window — capped at kickoff for live/past games
+  // Right edge of chart window — for kicked-off games: max(kickoff, lastMovement).
+  // This avoids an empty flat tail while never clipping late-ingested ticks.
   const chartRightEdge = useMemo(() => {
-    if (!event) return Date.now();
+    const now = Date.now();
+    if (!event) return now;
     const kickoffMs = new Date(event.commenceTime).getTime();
-    return kickoffMs < Date.now() ? kickoffMs : Date.now();
+    if (kickoffMs >= now) return now;
+    const lastMvMs = event.movements.length
+      ? Math.max(...event.movements.map(m => new Date(m.timestamp).getTime()))
+      : 0;
+    return Math.min(now, Math.max(kickoffMs, lastMvMs));
   }, [event]);
 
   // Whether to show dots — only for sparse charts (≤14 meaningful ticks)
