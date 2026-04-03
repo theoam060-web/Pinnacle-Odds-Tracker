@@ -53,6 +53,7 @@ interface FeedRow {
   lineIndex: number;
   lastUpdated: Date | string;
   newDropAt: Date | string | null;
+  alertedAt: number;
 }
 
 function formatAlertAge(dropAt: Date | string | null): string {
@@ -94,20 +95,22 @@ function applySort(rows: FeedRow[], sort: SortOption): FeedRow[] {
       );
     case "newest":
       return sorted.sort((a, b) => {
-        const tDiff = new Date(b.lastUpdated as Date).getTime() - new Date(a.lastUpdated as Date).getTime();
-        if (tDiff !== 0) return tDiff;
-        return a.changePercent - b.changePercent;
+        const aTime = a.newDropAt ? new Date(a.newDropAt).getTime() : a.alertedAt;
+        const bTime = b.newDropAt ? new Date(b.newDropAt).getTime() : b.alertedAt;
+        if (bTime !== aTime) return bTime - aTime;
+        return b.alertedAt - a.alertedAt;
       });
     case "oldest":
       return sorted.sort((a, b) => {
-        const tDiff = new Date(a.lastUpdated as Date).getTime() - new Date(b.lastUpdated as Date).getTime();
-        if (tDiff !== 0) return tDiff;
-        return a.changePercent - b.changePercent;
+        const aTime = a.newDropAt ? new Date(a.newDropAt).getTime() : a.alertedAt;
+        const bTime = b.newDropAt ? new Date(b.newDropAt).getTime() : b.alertedAt;
+        if (aTime !== bTime) return aTime - bTime;
+        return a.alertedAt - b.alertedAt;
       });
     case "drop_desc":
-      return sorted.sort((a, b) => Math.abs(a.changePercent) - Math.abs(b.changePercent));
-    case "drop_asc":
       return sorted.sort((a, b) => Math.abs(b.changePercent) - Math.abs(a.changePercent));
+    case "drop_asc":
+      return sorted.sort((a, b) => Math.abs(a.changePercent) - Math.abs(b.changePercent));
   }
 }
 
@@ -146,6 +149,7 @@ function buildRows(
         lineIndex,
         lastUpdated: event.lastUpdated,
         newDropAt: event.newDropAt ?? null,
+        alertedAt: Date.now(),
       });
     });
   }
