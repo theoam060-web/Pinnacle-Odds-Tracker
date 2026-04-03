@@ -102,8 +102,6 @@ export default function BetStatsPage() {
     ? clvBets.reduce((s, b) => s + (b.bettingOdds / b.closingOdds! - 1) * 100, 0) / clvBets.length
     : null;
 
-  const totalEV = filteredBets.reduce((s, b) => s + calcEVCurrency(b.bettingOdds, b.novigOdds, b.stake), 0);
-
   // ─── PROFIT COMPARISON CHART (3 lines) ────────────────────────────────────
   const profitComparisonData = useMemo(() => {
     const sorted = filteredBets
@@ -211,40 +209,6 @@ export default function BetStatsPage() {
     }
     return { won, lost, pushed };
   }, [filteredBets]);
-
-  // EV chart data (cumulative, for existing section)
-  const evChartData = useMemo(() => {
-    return filteredBets
-      .slice()
-      .sort((a, b) => new Date(a.loggedAt).getTime() - new Date(b.loggedAt).getTime())
-      .reduce<{ date: string; ev: number; cumEV: number }[]>((acc, b) => {
-        const ev = calcEVCurrency(b.bettingOdds, b.novigOdds, b.stake);
-        const prev = acc.length > 0 ? acc[acc.length - 1].cumEV : 0;
-        acc.push({
-          date: new Date(b.loggedAt).toLocaleDateString([], { month: "short", day: "numeric" }),
-          ev,
-          cumEV: parseFloat((prev + ev).toFixed(2)),
-        });
-        return acc;
-      }, []);
-  }, [filteredBets]);
-
-  // CLV chart data (cumulative, for existing section)
-  const clvChartData = useMemo(() => {
-    return clvBets
-      .slice()
-      .sort((a, b) => new Date(a.loggedAt).getTime() - new Date(b.loggedAt).getTime())
-      .reduce<{ date: string; clv: number; cumCLV: number }[]>((acc, b) => {
-        const clv = parseFloat(((b.bettingOdds / b.closingOdds! - 1) * 100).toFixed(2));
-        const prev = acc.length > 0 ? acc[acc.length - 1].cumCLV : 0;
-        acc.push({
-          date: new Date(b.loggedAt).toLocaleDateString([], { month: "short", day: "numeric" }),
-          clv,
-          cumCLV: parseFloat((prev + clv).toFixed(2)),
-        });
-        return acc;
-      }, []);
-  }, [clvBets]);
 
   // P/L by league (bar chart) — existing
   const sportPLData = useMemo(() => {
@@ -450,80 +414,9 @@ export default function BetStatsPage() {
             )}
           </div>
 
-          {/* ── Existing: EV performance chart ────────────────────────────── */}
-          {evChartData.length >= 2 && (
-            <div className="bg-card border rounded-md p-4 mb-4">
-              <div className="flex items-center gap-2 mb-3">
-                <TrendingUp className="w-4 h-4 text-amber-400" />
-                <span className="text-sm font-medium">EV Performance</span>
-                <span className="text-[10px] text-muted-foreground ml-auto">
-                  Total EV: <span className={`font-semibold ${totalEV >= 0 ? "text-amber-400" : "text-red-400"}`}>
-                    {totalEV >= 0 ? "+" : ""}{sym}{Math.abs(totalEV).toFixed(2)}
-                  </span>
-                </span>
-              </div>
-              <div className="h-[180px]">
-                <ResponsiveContainer width="100%" height="100%">
-                  <ComposedChart data={evChartData} margin={{ top: 4, right: 8, left: -20, bottom: 4 }}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" />
-                    <XAxis dataKey="date" tick={{ fontSize: 10, fill: "#888" }} />
-                    <YAxis tick={{ fontSize: 10, fill: "#888" }} tickFormatter={v => `${sym}${v}`} />
-                    <Tooltip
-                      contentStyle={{ background: "#1a1a1a", border: "1px solid #333", borderRadius: 6, fontSize: 11 }}
-                      formatter={(value: number, name: string) => [
-                        `${value >= 0 ? "+" : ""}${sym}${value.toFixed(2)}`,
-                        name === "cumEV" ? "Cumulative EV" : "EV per bet",
-                      ]}
-                    />
-                    <ReferenceLine y={0} stroke="#555" strokeDasharray="4 2" />
-                    <Line type="monotone" dataKey="cumEV" name="cumEV" stroke="#f59e0b" strokeWidth={2} dot={{ r: 3 }} activeDot={{ r: 5 }} />
-                    <Line type="monotone" dataKey="ev" name="ev" stroke="#94a3b8" strokeWidth={1} strokeDasharray="4 2" dot={false} />
-                  </ComposedChart>
-                </ResponsiveContainer>
-              </div>
-              <p className="text-[10px] text-muted-foreground mt-2">
-                <span className="text-amber-400 font-medium">Cumulative EV</span> is your expected long-run profitability based on no-vig model odds.
-              </p>
-            </div>
-          )}
-
-          {/* ── Existing: CLV performance chart ───────────────────────────── */}
-          {clvChartData.length >= 2 && (
-            <div className="bg-card border rounded-md p-4 mb-4">
-              <div className="flex items-center gap-2 mb-3">
-                <TrendingUp className="w-4 h-4 text-sky-400" />
-                <span className="text-sm font-medium">CLV Performance</span>
-                <span className="text-[10px] text-muted-foreground ml-auto">Cumulative edge vs closing odds</span>
-              </div>
-              <div className="h-[180px]">
-                <ResponsiveContainer width="100%" height="100%">
-                  <ComposedChart data={clvChartData} margin={{ top: 4, right: 8, left: -20, bottom: 4 }}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" />
-                    <XAxis dataKey="date" tick={{ fontSize: 10, fill: "#888" }} />
-                    <YAxis tick={{ fontSize: 10, fill: "#888" }} tickFormatter={v => `${v}%`} />
-                    <Tooltip
-                      contentStyle={{ background: "#1a1a1a", border: "1px solid #333", borderRadius: 6, fontSize: 11 }}
-                      formatter={(value: number, name: string) => [
-                        `${value >= 0 ? "+" : ""}${value.toFixed(2)}%`,
-                        name === "cumCLV" ? "Cumulative CLV" : "CLV per bet",
-                      ]}
-                    />
-                    <ReferenceLine y={0} stroke="#555" strokeDasharray="4 2" />
-                    <Line type="monotone" dataKey="cumCLV" name="cumCLV" stroke="#38bdf8" strokeWidth={2} dot={{ r: 3 }} activeDot={{ r: 5 }} />
-                    <Line type="monotone" dataKey="clv" name="clv" stroke="#94a3b8" strokeWidth={1} strokeDasharray="4 2" dot={false} />
-                  </ComposedChart>
-                </ResponsiveContainer>
-              </div>
-              <p className="text-[10px] text-muted-foreground mt-2">
-                <span className="text-sky-400 font-medium">Cumulative CLV</span> above zero means you consistently beat the closing line — the gold standard for sharp bettors.
-                Enter closing odds in the Bet Tracker to populate this chart.
-              </p>
-            </div>
-          )}
-
           {/* ── NEW: Daily Performance Calendar ───────────────────────────── */}
-          <div className="bg-card border rounded-md p-4 mb-4">
-            <div className="flex items-center justify-between mb-4">
+          <div className="bg-card border rounded-md p-3 mb-4">
+            <div className="flex items-center justify-between mb-2">
               <div className="flex items-center gap-2">
                 <CalendarDays className="w-4 h-4 text-primary" />
                 <span className="text-sm font-medium">Daily Performance</span>
@@ -534,17 +427,18 @@ export default function BetStatsPage() {
             ) : (
             <>
             {/* Month navigation */}
-            <div className="flex items-center justify-between mb-3">
+            <div className="max-w-xs mx-auto">
+            <div className="flex items-center justify-between mb-1.5">
               <button
                 onClick={() => setCalendarMonth(m => {
                   const d = new Date(m.year, m.month - 1, 1);
                   return { year: d.getFullYear(), month: d.getMonth() };
                 })}
-                className="p-1 rounded hover:bg-muted/30 transition-colors"
+                className="p-0.5 rounded hover:bg-muted/30 transition-colors"
               >
-                <ChevronLeft className="w-4 h-4 text-muted-foreground" />
+                <ChevronLeft className="w-3.5 h-3.5 text-muted-foreground" />
               </button>
-              <span className="text-sm font-medium">
+              <span className="text-xs font-medium">
                 {MONTH_NAMES[calendarMonth.month]} {calendarMonth.year}
               </span>
               <button
@@ -552,19 +446,19 @@ export default function BetStatsPage() {
                   const d = new Date(m.year, m.month + 1, 1);
                   return { year: d.getFullYear(), month: d.getMonth() };
                 })}
-                className="p-1 rounded hover:bg-muted/30 transition-colors"
+                className="p-0.5 rounded hover:bg-muted/30 transition-colors"
               >
-                <ChevronRight className="w-4 h-4 text-muted-foreground" />
+                <ChevronRight className="w-3.5 h-3.5 text-muted-foreground" />
               </button>
             </div>
             {/* Day-of-week header */}
-            <div className="grid grid-cols-7 gap-1 mb-1">
+            <div className="grid grid-cols-7 gap-0.5 mb-0.5">
               {["MO","TU","WE","TH","FR","SA","SU"].map(d => (
-                <div key={d} className="text-center text-[10px] text-muted-foreground font-medium py-1">{d}</div>
+                <div key={d} className="text-center text-[9px] text-muted-foreground font-medium py-0.5">{d}</div>
               ))}
             </div>
             {/* Calendar cells */}
-            <div className="grid grid-cols-7 gap-1">
+            <div className="grid grid-cols-7 gap-0.5">
               {calendarDays.map((day, idx) => {
                 if (day === null) {
                   return <div key={`empty-${idx}`} className="aspect-square rounded border border-border/20 bg-muted/10" />;
@@ -595,6 +489,7 @@ export default function BetStatsPage() {
                   </div>
                 );
               })}
+            </div>
             </div>
             </>
             )}
@@ -783,42 +678,6 @@ export default function BetStatsPage() {
             </div>
           )}
 
-          {/* ── Existing: Quick summary table ─────────────────────────────── */}
-          {filteredBets.length > 0 && (
-            <div className="bg-card border rounded-md p-4">
-              <div className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold mb-3">Breakdown</div>
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 text-sm">
-                <div>
-                  <div className="text-[10px] text-muted-foreground mb-1">Avg stake</div>
-                  <div className="font-mono font-bold">
-                    {filteredBets.length > 0
-                      ? `${sym}${(filteredBets.reduce((s, b) => s + b.stake, 0) / filteredBets.length).toFixed(2)}`
-                      : "—"}
-                  </div>
-                </div>
-                <div>
-                  <div className="text-[10px] text-muted-foreground mb-1">Avg odds</div>
-                  <div className="font-mono font-bold">
-                    {filteredBets.length > 0
-                      ? formatOdds(filteredBets.reduce((s, b) => s + b.bettingOdds, 0) / filteredBets.length)
-                      : "—"}
-                  </div>
-                </div>
-                <div>
-                  <div className="text-[10px] text-muted-foreground mb-1">Total staked</div>
-                  <div className="font-mono font-bold">
-                    {sym}{filteredBets.reduce((s, b) => s + b.stake, 0).toFixed(2)}
-                  </div>
-                </div>
-                <div>
-                  <div className="text-[10px] text-muted-foreground mb-1">Expected profit (EV)</div>
-                  <div className={`font-mono font-bold ${totalEV >= 0 ? "text-amber-400" : "text-red-400"}`}>
-                    {totalEV >= 0 ? "+" : ""}{sym}{Math.abs(totalEV).toFixed(2)}
-                  </div>
-                </div>
-              </div>
-            </div>
-          )}
         </>
       )}
     </Layout>
