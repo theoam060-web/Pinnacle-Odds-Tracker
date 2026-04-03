@@ -466,7 +466,7 @@ export default function FeedPage() {
                             {formatOdds(row.currentOdds)}
                           </span>
                         </div>
-                        <span className="text-[10px] font-mono text-emerald-400 tabular-nums font-semibold">
+                        <span className="text-xs font-mono text-emerald-400 tabular-nums font-semibold">
                           NV {formatOdds(computeNovig(row.allCurrentOdds, row.lineIndex)[novigMethod])}
                         </span>
                       </div>
