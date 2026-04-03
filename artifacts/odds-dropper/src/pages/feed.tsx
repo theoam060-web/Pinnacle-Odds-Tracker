@@ -225,8 +225,21 @@ export default function FeedPage() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [liveRows]);
 
-  // Display: sort the accumulated log by user's chosen sort
-  const sortedShownRows = useMemo(() => applySort(shownRows, sortBy), [shownRows, sortBy]);
+  // Display: filter accumulated rows by current configs (so config changes take effect immediately),
+  // then sort. This ensures rows that no longer match a tightened config disappear instantly.
+  const sortedShownRows = useMemo(() => {
+    const filtered = shownRows.filter(row =>
+      configs.some(c =>
+        lineMatchesConfig(
+          { sport: row.sport, marketType: row.marketType },
+          { changePercent: row.changePercent, currentOdds: row.currentOdds },
+          row.commenceTime,
+          c,
+        )
+      )
+    );
+    return applySort(filtered, sortBy);
+  }, [shownRows, sortBy, configs]);
 
   // When paused: count new entries that arrived after the freeze
   useEffect(() => {
