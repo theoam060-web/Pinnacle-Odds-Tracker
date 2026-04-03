@@ -16,8 +16,13 @@ function deriveSport(leagueName: string): string {
   return "soccer";
 }
 
-const POLL_INTERVAL = 3 * 60 * 1000; // 3 minutes
-// A match is considered potentially finished 2.5 hours after kick-off
+// Closing odds: capture as soon as the match kicks off
+const CLOSING_ODDS_POLL_INTERVAL = 60 * 1000; // 1 minute
+// Look back up to 12 hours for matches we haven't captured yet
+const CLOSING_ODDS_LOOKBACK_MS = 12 * 60 * 60 * 1000;
+
+// Result settle: check after 2.5 hours (match likely finished)
+const SETTLE_POLL_INTERVAL = 3 * 60 * 1000; // 3 minutes
 const SETTLE_AFTER_MS = 2.5 * 60 * 60 * 1000;
 
 interface ResolveRequest {
@@ -37,16 +42,80 @@ interface ResolveResult {
   matchedEvent: string | null;
 }
 
+interface ClosingOddsResult {
+  index: number;
+  closingOdds: number | null;
+}
+
 export function useAutoSettle() {
   const { bets, updateBet } = useBetStore();
   const { settings } = useSettings();
   const { toast } = useToast();
-  const runningRef = useRef(false);
+  const closingRunningRef = useRef(false);
+  const settleRunningRef = useRef(false);
 
+  // ── Closing odds capture ──────────────────────────────────────────────────
+  const captureClosingOdds = useCallback(async () => {
+    if (!settings.autoSettle) return;
+    if (closingRunningRef.current) return;
+    closingRunningRef.current = true;
+
+    try {
+      const now = Date.now();
+      // Pending bets whose kick-off has passed but closing odds not yet set
+      const candidates = bets.filter((b: LoggedBet) => {
+        if (b.closingOdds && b.closingOdds > 1) return false; // already captured
+        const kicked = new Date(b.commenceTime).getTime();
+        return kicked < now && now - kicked < CLOSING_ODDS_LOOKBACK_MS;
+      });
+
+      if (candidates.length === 0) return;
+
+      const payload = candidates.map((b: LoggedBet) => ({
+        eventId: b.eventId,
+        selection: b.selection,
+      }));
+
+      const res = await fetch(`${API_BASE}/api/odds/closing-odds`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ bets: payload }),
+        signal: AbortSignal.timeout(10000),
+      });
+
+      if (!res.ok) return;
+
+      const data = (await res.json()) as { results: ClosingOddsResult[] };
+      let captured = 0;
+
+      for (const r of data.results) {
+        if (r.closingOdds && r.closingOdds > 1) {
+          const bet = candidates[r.index];
+          if (bet) {
+            updateBet(bet.id, { closingOdds: r.closingOdds });
+            captured++;
+          }
+        }
+      }
+
+      if (captured > 0) {
+        toast({
+          title: `Closing odds captured for ${captured} bet${captured > 1 ? "s" : ""}`,
+          description: "Pinnacle closing line saved automatically at kick-off.",
+        });
+      }
+    } catch {
+      // Silent
+    } finally {
+      closingRunningRef.current = false;
+    }
+  }, [bets, settings.autoSettle, updateBet, toast]);
+
+  // ── Result settlement ─────────────────────────────────────────────────────
   const checkAndSettle = useCallback(async () => {
     if (!settings.autoSettle) return;
-    if (runningRef.current) return;
-    runningRef.current = true;
+    if (settleRunningRef.current) return;
+    settleRunningRef.current = true;
 
     try {
       const now = Date.now();
@@ -97,16 +166,23 @@ export function useAutoSettle() {
         });
       }
     } catch {
-      // Silent — auto-settle failing should not disrupt the UI
+      // Silent
     } finally {
-      runningRef.current = false;
+      settleRunningRef.current = false;
     }
   }, [bets, settings.autoSettle, updateBet, toast]);
 
-  // Run on mount and then every 3 minutes
+  // Run closing odds capture every minute
+  useEffect(() => {
+    captureClosingOdds();
+    const interval = setInterval(captureClosingOdds, CLOSING_ODDS_POLL_INTERVAL);
+    return () => clearInterval(interval);
+  }, [captureClosingOdds]);
+
+  // Run result settlement every 3 minutes
   useEffect(() => {
     checkAndSettle();
-    const interval = setInterval(checkAndSettle, POLL_INTERVAL);
+    const interval = setInterval(checkAndSettle, SETTLE_POLL_INTERVAL);
     return () => clearInterval(interval);
   }, [checkAndSettle]);
 }
