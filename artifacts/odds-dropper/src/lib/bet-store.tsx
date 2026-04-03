@@ -80,7 +80,15 @@ export function BetStoreProvider({ children }: { children: ReactNode }) {
   }
 
   function updateBet(id: string, patch: Partial<LoggedBet>) {
-    setBets(prev => prev.map(b => b.id === id ? { ...b, ...patch } : b));
+    setBets(prev => prev.map(b => {
+      if (b.id !== id) return b;
+      const updated = { ...b, ...patch };
+      // Recalculate potentialProfit whenever odds or stake change so P&L stays accurate
+      if (patch.bettingOdds !== undefined || patch.stake !== undefined) {
+        updated.potentialProfit = parseFloat(((updated.bettingOdds - 1) * updated.stake).toFixed(2));
+      }
+      return updated;
+    }));
   }
 
   function removeBet(id: string) {

@@ -107,6 +107,19 @@ export function SettingsModal({ onClose }: Props) {
 
             <div className="flex items-center justify-between">
               <div>
+                <Label className="text-xs font-semibold">Auto-Settle Bets</Label>
+                <p className="text-[10px] text-muted-foreground mt-0.5">
+                  Show "Match Started" on pending bets once the match kick-off time has passed
+                </p>
+              </div>
+              <Switch
+                checked={settings.autoSettle}
+                onCheckedChange={v => updateSettings({ autoSettle: v })}
+              />
+            </div>
+
+            <div className="flex items-center justify-between">
+              <div>
                 <Label className="text-xs font-semibold">Compact Mode</Label>
                 <p className="text-[10px] text-muted-foreground mt-0.5">Reduce row height in the feed table</p>
               </div>

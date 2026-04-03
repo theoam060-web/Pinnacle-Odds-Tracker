@@ -9,6 +9,7 @@ export interface AppSettings {
   compactMode: boolean;
   oddsFormat: OddsFormat;
   showNovig: boolean;
+  autoSettle: boolean;
 
   betSizingEnabled: boolean;
   bankroll: number;
@@ -26,6 +27,7 @@ const DEFAULTS: AppSettings = {
   compactMode: false,
   oddsFormat: "decimal",
   showNovig: true,
+  autoSettle: true,
 
   betSizingEnabled: false,
   bankroll: 1000,

@@ -1,12 +1,14 @@
 import { useState } from "react";
 import { Layout } from "@/components/layout";
 import { useBetStore, CURRENCIES, getCurrencySymbol, calcCLV, calcEV, BetResult, LoggedBet } from "@/lib/bet-store";
+import { useSettings } from "@/lib/settings-context";
+import { EditBetModal } from "@/components/edit-bet-modal";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { BookMarked, Trash2, CalendarDays } from "lucide-react";
+import { BookMarked, Trash2, CalendarDays, Pencil } from "lucide-react";
 import { formatOdds, formatDate, formatTime } from "@/lib/format";
 
 type TimeFilter = "all" | "today" | "7d" | "30d" | "this_month";
@@ -99,8 +101,10 @@ function ClosingOddsCell({ bet, onUpdate }: { bet: LoggedBet; onUpdate: (closing
 
 export default function BetTrackerPage() {
   const { bets, currency, setCurrency, updateBet, removeBet } = useBetStore();
+  const { settings } = useSettings();
   const sym = getCurrencySymbol(currency);
   const [timeFilter, setTimeFilter] = useState<TimeFilter>("all");
+  const [editBet, setEditBet] = useState<LoggedBet | null>(null);
 
   const filteredBets = filterByTime(bets, timeFilter);
 
@@ -156,6 +160,9 @@ export default function BetTrackerPage() {
         </div>
       </div>
 
+      {/* Edit modal */}
+      {editBet && <EditBetModal bet={editBet} onClose={() => setEditBet(null)} />}
+
       {/* Empty state */}
       {bets.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-24 text-center border border-dashed rounded-xl">
@@ -207,6 +214,10 @@ export default function BetTrackerPage() {
                     : bet.result === "loss"
                       ? -bet.stake
                       : null;
+                  // Auto-settle: match has kicked off but no result yet
+                  const matchKickedOff = settings.autoSettle
+                    && bet.result === "pending"
+                    && new Date(bet.commenceTime) < new Date();
 
                   return (
                     <TableRow key={bet.id} className="hover:bg-muted/20">
@@ -239,12 +250,19 @@ export default function BetTrackerPage() {
                         {sym}{bet.stake.toFixed(2)}
                       </TableCell>
 
-                      {/* Result cycler */}
+                      {/* Result — cycler + "Match Started" indicator */}
                       <TableCell className="text-center">
-                        <ResultCycler
-                          result={bet.result}
-                          onChange={r => updateBet(bet.id, { result: r })}
-                        />
+                        <div className="flex flex-col items-center gap-1">
+                          {matchKickedOff && (
+                            <span className="text-[9px] font-semibold px-1.5 py-0.5 rounded bg-amber-900/50 text-amber-300 border border-amber-700/50 leading-none">
+                              Match Started
+                            </span>
+                          )}
+                          <ResultCycler
+                            result={bet.result}
+                            onChange={r => updateBet(bet.id, { result: r })}
+                          />
+                        </div>
                       </TableCell>
 
                       {/* Closing odds (click to edit) */}
@@ -290,16 +308,28 @@ export default function BetTrackerPage() {
                         <div>{new Date(bet.loggedAt).toLocaleDateString([], { month: "short", day: "numeric" })}</div>
                       </TableCell>
 
-                      {/* Delete */}
+                      {/* Edit + Delete */}
                       <TableCell>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="h-7 w-7 text-muted-foreground hover:text-destructive"
-                          onClick={() => removeBet(bet.id)}
-                        >
-                          <Trash2 className="w-3.5 h-3.5" />
-                        </Button>
+                        <div className="flex items-center gap-0.5">
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-7 w-7 text-muted-foreground hover:text-foreground"
+                            onClick={() => setEditBet(bet)}
+                            title="Edit bet"
+                          >
+                            <Pencil className="w-3.5 h-3.5" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-7 w-7 text-muted-foreground hover:text-destructive"
+                            onClick={() => removeBet(bet.id)}
+                            title="Delete bet"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </Button>
+                        </div>
                       </TableCell>
                     </TableRow>
                   );
@@ -310,7 +340,8 @@ export default function BetTrackerPage() {
 
           <p className="text-[10px] text-muted-foreground mt-2">
             Click a result badge to cycle: Pending → Win → Loss → Void.
-            Click a closing odds cell to enter the final market odds — this unlocks CLV tracking in Bet Stats.
+            Click the <Pencil className="inline w-2.5 h-2.5 mx-0.5" /> icon to edit odds, stake, selection, or result.
+            Click a closing odds cell to enter the final market odds — unlocks CLV tracking in Bet Stats.
           </p>
         </>
       )}
