@@ -80,37 +80,46 @@ function computeVigPct(lines: EventLine[]): number {
   return (sum - 1) * 100;
 }
 
+const CHART_WINDOW_MS = 12 * 60 * 60 * 1000; // 12-hour look-back window
+
 function buildChartData(
   movements: OddsMovement[],
   lines: EventLine[],
   sel: string,
   novigMethod: NovigMethod,
 ): ChartPoint[] {
+  const now = Date.now();
+  const windowStart = now - CHART_WINDOW_MS;
+
   const selMovements = movements
     .filter(m => m.selection === sel)
     .sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime());
 
   if (!selMovements.length) return [];
 
-  // Only keep ticks where odds actually changed (change-detection).
-  // Always keep the very first and very last readings as anchors.
+  // All movements within the 12-hour window (plus the last one just before it for context)
+  const lastBefore = selMovements.filter(m => new Date(m.timestamp).getTime() < windowStart).pop();
+  const inWindow = selMovements.filter(m => new Date(m.timestamp).getTime() >= windowStart);
+
+  // Change-detection: only emit points when odds actually moved
+  const toProcess = lastBefore ? [lastBefore, ...inWindow] : inWindow;
   const significant: OddsMovement[] = [];
   let prevOdds: number | null = null;
-  for (const m of selMovements) {
+  for (const m of toProcess) {
     if (prevOdds === null || Math.abs(m.odds - prevOdds) > 0.0001) {
       significant.push(m);
       prevOdds = m.odds;
     }
   }
-  // Always include the latest reading so the chart is up to date
+  // Always include the very latest reading
   const last = selMovements[selMovements.length - 1];
   if (significant.length === 0 || significant[significant.length - 1] !== last) {
     significant.push(last);
   }
 
   const selIdx = lines.findIndex(l => l.selection === sel);
+  const openLine = lines.find(l => l.selection === sel);
 
-  // Helper: find all sides' odds at a given timestamp
   function allOddsAt(ts: number): number[] {
     return lines.map(l => {
       const latest = movements
@@ -120,22 +129,27 @@ function buildChartData(
     });
   }
 
-  const openLine = lines.find(l => l.selection === sel);
   const points: ChartPoint[] = [];
 
-  // Opening anchor — only add if opening odds differ from the first significant tick
+  // Opening anchor at the start of the window (12h ago or first movement, whichever is later)
+  // This ensures the chart always starts at a meaningful time
   if (openLine) {
+    const firstSigTs = new Date(significant[0].timestamp).getTime();
+    const openTs = Math.max(windowStart, firstSigTs - 1);
     const allOddsAtOpen = lines.map(l => l.openingOdds);
     const novigAtOpen = computeNovig(allOddsAtOpen, selIdx);
     const overroundOpen = allOddsAtOpen.reduce((s, o) => s + 1 / o, 0);
-    const firstTs = new Date(significant[0].timestamp).getTime();
-    points.push({
-      time: "Open",
-      rawMs: firstTs - 1,
-      odds: parseFloat(openLine.openingOdds.toFixed(3)),
-      novig: parseFloat((novigAtOpen[novigMethod] ?? openLine.openingOdds).toFixed(3)),
-      vig: parseFloat(((overroundOpen - 1) * 100).toFixed(2)),
-    });
+    // Only add an explicit "Open" anchor if the first significant tick is within the window
+    // (i.e. not the "lastBefore" carryover point)
+    if (firstSigTs >= windowStart) {
+      points.push({
+        time: "Open",
+        rawMs: openTs,
+        odds: parseFloat(openLine.openingOdds.toFixed(3)),
+        novig: parseFloat((novigAtOpen[novigMethod] ?? openLine.openingOdds).toFixed(3)),
+        vig: parseFloat(((overroundOpen - 1) * 100).toFixed(2)),
+      });
+    }
   }
 
   for (const m of significant) {
@@ -151,6 +165,19 @@ function buildChartData(
       novig: parseFloat((novigAll[novigMethod] ?? m.odds).toFixed(3)),
       limit: m.limit != null ? Math.round(m.limit) : undefined,
       vig: parseFloat(((overround - 1) * 100).toFixed(2)),
+    });
+  }
+
+  // Trailing "now" anchor — extends the last known line to the current moment
+  const lastPoint = points[points.length - 1];
+  if (lastPoint && now - lastPoint.rawMs! > 60_000) {
+    points.push({
+      time: format(new Date(now), "HH:mm"),
+      rawMs: now,
+      odds: lastPoint.odds,
+      novig: lastPoint.novig,
+      limit: lastPoint.limit,
+      vig: lastPoint.vig,
     });
   }
 
@@ -462,11 +489,22 @@ export default function EventDetailPage() {
 
                   <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" vertical={false} />
                   <XAxis
-                    dataKey="time"
+                    dataKey="rawMs"
+                    type="number"
+                    scale="time"
+                    domain={[
+                      (dataMin: number) => Math.min(dataMin, Date.now() - CHART_WINDOW_MS),
+                      () => Date.now(),
+                    ]}
+                    tickFormatter={(v: number) => {
+                      const firstPt = chartData[0];
+                      if (firstPt && Math.abs(v - firstPt.rawMs!) < 60_000) return "Open";
+                      return format(new Date(v), "HH:mm");
+                    }}
                     tick={{ fontSize: 10, fill: "#4b5563" }}
                     tickLine={false}
                     axisLine={false}
-                    minTickGap={55}
+                    tickCount={7}
                   />
                   {/* Left axis: limit (if data available) */}
                   {hasLimits ? (
@@ -534,11 +572,14 @@ export default function EventDetailPage() {
                   {/* Odds area fill (blue glow under line) */}
                   {showOdds && (
                     <Area
+                      key="odds-area"
                       yAxisId="odds"
                       type="linear"
                       dataKey="odds"
+                      name="odds-area"
                       stroke="none"
                       fill="url(#oddsGrad)"
+                      legendType="none"
                       connectNulls
                       isAnimationActive={false}
                     />
@@ -547,6 +588,7 @@ export default function EventDetailPage() {
                   {/* Odds line (blue) — on top */}
                   {showOdds && (
                     <Line
+                      key="odds-line"
                       yAxisId="odds"
                       type="linear"
                       dataKey="odds"
