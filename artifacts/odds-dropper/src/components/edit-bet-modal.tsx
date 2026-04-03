@@ -11,6 +11,14 @@ interface Props {
   onClose: () => void;
 }
 
+type MarketType = "moneyline" | "spread" | "total";
+
+const MARKET_OPTIONS: { value: MarketType; label: string }[] = [
+  { value: "moneyline", label: "Moneyline" },
+  { value: "spread", label: "Spread" },
+  { value: "total", label: "Total (Over/Under)" },
+];
+
 const RESULT_OPTIONS: { value: BetResult; label: string }[] = [
   { value: "pending", label: "Pending" },
   { value: "win", label: "Win" },
@@ -18,25 +26,63 @@ const RESULT_OPTIONS: { value: BetResult; label: string }[] = [
   { value: "void", label: "Void" },
 ];
 
+// Direction options per market type
+const DIRECTIONS: Record<MarketType, string[]> = {
+  moneyline: ["Home", "Away", "Draw"],
+  spread: ["Home", "Away"],
+  total: ["Over", "Under"],
+};
+
+// Parse existing selection string into { direction, line }
+// e.g. "home 0.5" → { direction: "Home", line: "0.5" }
+// e.g. "over 2.75" → { direction: "Over", line: "2.75" }
+// e.g. "draw" → { direction: "Draw", line: "" }
+function parseSelection(sel: string): { direction: string; line: string } {
+  const [dir, ...rest] = sel.trim().split(" ");
+  const direction = dir.charAt(0).toUpperCase() + dir.slice(1).toLowerCase();
+  return { direction, line: rest.join(" ") };
+}
+
+function normalizeMarket(raw: string): MarketType {
+  const m = raw.toLowerCase();
+  if (m === "spread") return "spread";
+  if (m === "total" || m === "totals") return "total";
+  return "moneyline";
+}
+
 export function EditBetModal({ bet, onClose }: Props) {
   const { updateBet } = useBetStore();
 
   const [odds, setOdds] = useState(bet.bettingOdds.toString());
   const [stake, setStake] = useState(bet.stake.toString());
-  const [selection, setSelection] = useState(bet.selection);
-  const [marketType, setMarketType] = useState(bet.marketType);
   const [result, setResult] = useState<BetResult>(bet.result);
+  const [marketType, setMarketType] = useState<MarketType>(normalizeMarket(bet.marketType));
+
+  const { direction: initDir, line: initLine } = parseSelection(bet.selection);
+  const [direction, setDirection] = useState(initDir);
+  const [line, setLine] = useState(initLine);
 
   const parsedOdds = parseFloat(odds);
   const parsedStake = parseFloat(stake);
   const oddsValid = !isNaN(parsedOdds) && parsedOdds > 1;
   const stakeValid = !isNaN(parsedStake) && parsedStake > 0;
-  const canSave = oddsValid && stakeValid && selection.trim().length > 0;
+  const canSave = oddsValid && stakeValid && direction.length > 0;
 
-  // Live preview of P&L based on current inputs
-  const previewProfit = oddsValid && stakeValid
-    ? parseFloat(((parsedOdds - 1) * parsedStake).toFixed(2))
-    : null;
+  // When market type changes, reset direction to the first valid option
+  function handleMarketChange(m: MarketType) {
+    setMarketType(m);
+    const dirs = DIRECTIONS[m];
+    if (!dirs.includes(direction)) {
+      setDirection(dirs[0]);
+    }
+    if (m === "moneyline") setLine("");
+  }
+
+  // Reconstruct full selection string
+  const finalSelection = line.trim() ? `${direction} ${line.trim()}` : direction;
+
+  // Live P&L preview
+  const previewProfit = oddsValid && stakeValid ? parseFloat(((parsedOdds - 1) * parsedStake).toFixed(2)) : null;
   const previewPL = result === "win" && previewProfit !== null
     ? previewProfit
     : result === "loss" && stakeValid
@@ -48,8 +94,8 @@ export function EditBetModal({ bet, onClose }: Props) {
     updateBet(bet.id, {
       bettingOdds: parsedOdds,
       stake: parsedStake,
-      selection: selection.trim(),
-      marketType: marketType.trim(),
+      selection: finalSelection,
+      marketType,
       result,
     });
     onClose();
@@ -66,6 +112,53 @@ export function EditBetModal({ bet, onClose }: Props) {
         </DialogHeader>
 
         <div className="space-y-4 py-1">
+          {/* Market type */}
+          <div>
+            <Label className="text-xs mb-1.5 block">Market type</Label>
+            <Select value={marketType} onValueChange={v => handleMarketChange(v as MarketType)}>
+              <SelectTrigger className="h-8 text-xs">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {MARKET_OPTIONS.map(o => (
+                  <SelectItem key={o.value} value={o.value} className="text-xs">{o.label}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          {/* Selection — direction + optional line value */}
+          <div>
+            <Label className="text-xs mb-1.5 block">Selection</Label>
+            <div className="flex gap-2">
+              <Select value={direction} onValueChange={setDirection}>
+                <SelectTrigger className="h-8 text-xs flex-1">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {DIRECTIONS[marketType].map(d => (
+                    <SelectItem key={d} value={d} className="text-xs">{d}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+
+              {/* Line value only shown for spread and total */}
+              {(marketType === "spread" || marketType === "total") && (
+                <Input
+                  type="number"
+                  step="0.25"
+                  value={line}
+                  onChange={e => setLine(e.target.value)}
+                  placeholder="Line (e.g. 2.5)"
+                  className="h-8 text-xs font-mono w-[110px]"
+                />
+              )}
+            </div>
+            <p className="text-[10px] text-muted-foreground mt-1">
+              Selection: <span className="font-mono text-foreground">{finalSelection}</span>
+            </p>
+          </div>
+
           {/* Odds */}
           <div>
             <Label className="text-xs mb-1.5 block">Odds taken (decimal)</Label>
@@ -95,28 +188,6 @@ export function EditBetModal({ bet, onClose }: Props) {
             />
           </div>
 
-          {/* Selection */}
-          <div>
-            <Label className="text-xs mb-1.5 block">Selection</Label>
-            <Input
-              value={selection}
-              onChange={e => setSelection(e.target.value)}
-              className="h-8 text-xs"
-              placeholder="e.g. Home, Away, Draw, Over 2.5"
-            />
-          </div>
-
-          {/* Market type */}
-          <div>
-            <Label className="text-xs mb-1.5 block">Market type</Label>
-            <Input
-              value={marketType}
-              onChange={e => setMarketType(e.target.value)}
-              className="h-8 text-xs"
-              placeholder="e.g. moneyline, spread, total"
-            />
-          </div>
-
           {/* Result */}
           <div>
             <Label className="text-xs mb-1.5 block">Result</Label>
@@ -126,9 +197,7 @@ export function EditBetModal({ bet, onClose }: Props) {
               </SelectTrigger>
               <SelectContent>
                 {RESULT_OPTIONS.map(o => (
-                  <SelectItem key={o.value} value={o.value} className="text-xs">
-                    {o.label}
-                  </SelectItem>
+                  <SelectItem key={o.value} value={o.value} className="text-xs">{o.label}</SelectItem>
                 ))}
               </SelectContent>
             </Select>
