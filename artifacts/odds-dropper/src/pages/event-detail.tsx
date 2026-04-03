@@ -4,8 +4,8 @@ import { useGetOddsDropById, getGetOddsDropByIdQueryKey } from "@workspace/api-c
 import { Layout } from "@/components/layout";
 import { Badge } from "@/components/ui/badge";
 import {
-  ComposedChart, Line, XAxis, YAxis, CartesianGrid,
-  Tooltip, ResponsiveContainer, ReferenceLine,
+  ComposedChart, Line, Area, XAxis, YAxis, CartesianGrid,
+  Tooltip, ResponsiveContainer,
 } from "recharts";
 import { formatOdds, formatTime, formatDate } from "@/lib/format";
 import { computeNovig } from "@/lib/novig";
@@ -283,6 +283,29 @@ export default function EventDetailPage() {
   const oddsPoints = chartData.filter(p => p.odds !== undefined);
   const openOdds = oddsPoints[0]?.odds;
   const closeOdds = oddsPoints[oddsPoints.length - 1]?.odds;
+
+  // Tight Y-axis domain — zoom into actual data range with small padding
+  const oddsDomain = useMemo<[number, number]>(() => {
+    const allV = chartData.flatMap(p =>
+      [p.odds, p.novig].filter((v): v is number => v !== undefined && !isNaN(v))
+    );
+    if (allV.length === 0) return [1, 2];
+    const lo = Math.min(...allV);
+    const hi = Math.max(...allV);
+    const pad = Math.max((hi - lo) * 0.18, 0.04);
+    return [parseFloat((lo - pad).toFixed(3)), parseFloat((hi + pad).toFixed(3))];
+  }, [chartData]);
+
+  const limitDomain = useMemo<[number, number]>(() => {
+    const allV = chartData.flatMap(p =>
+      [p.limit].filter((v): v is number => v !== undefined && !isNaN(v))
+    );
+    if (allV.length === 0) return [0, 1000];
+    const lo = Math.min(...allV);
+    const hi = Math.max(...allV);
+    const pad = Math.max((hi - lo) * 0.2, 10);
+    return [Math.max(0, lo - pad), hi + pad];
+  }, [chartData]);
   const lowOdds = oddsPoints.length ? Math.min(...oddsPoints.map(p => p.odds!)) : undefined;
   const highOdds = oddsPoints.length ? Math.max(...oddsPoints.map(p => p.odds!)) : undefined;
   const vigPct = event ? computeVigPct(event.lines) : undefined;
@@ -424,19 +447,26 @@ export default function EventDetailPage() {
 
           {/* Chart */}
           {chartData.length > 1 ? (
-            <div className="h-[290px] w-full">
+            <div className="h-[300px] w-full">
               <ResponsiveContainer width="100%" height="100%">
                 <ComposedChart
                   data={chartData}
-                  margin={{ top: 10, right: 56, left: hasLimits ? 8 : -20, bottom: 4 }}
+                  margin={{ top: 12, right: 52, left: hasLimits ? 4 : -22, bottom: 4 }}
                 >
-                  <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.04)" vertical={false} />
+                  <defs>
+                    <linearGradient id="oddsGrad" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="#38bdf8" stopOpacity={0.15} />
+                      <stop offset="95%" stopColor="#38bdf8" stopOpacity={0} />
+                    </linearGradient>
+                  </defs>
+
+                  <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" vertical={false} />
                   <XAxis
                     dataKey="time"
-                    tick={{ fontSize: 10, fill: "#555" }}
+                    tick={{ fontSize: 10, fill: "#4b5563" }}
                     tickLine={false}
                     axisLine={false}
-                    minTickGap={50}
+                    minTickGap={55}
                   />
                   {/* Left axis: limit (if data available) */}
                   {hasLimits ? (
@@ -444,56 +474,42 @@ export default function EventDetailPage() {
                       yAxisId="limit"
                       orientation="left"
                       tick={showLimit ? { fontSize: 10, fill: "#818cf8" } : false}
-                      tickFormatter={v => v >= 1000 ? `${(v / 1000).toFixed(0)}k` : String(v)}
-                      domain={["auto", "auto"]}
+                      tickFormatter={v => v >= 1000 ? `${(v / 1000).toFixed(0)}k` : String(Math.round(v))}
+                      domain={limitDomain}
                       tickLine={false}
                       axisLine={false}
                       width={36}
                     />
                   ) : (
-                    /* No limits: use left axis for vig% as a subtle guide */
-                    <YAxis
-                      yAxisId="limit"
-                      orientation="left"
-                      hide
-                      domain={["auto", "auto"]}
-                    />
+                    <YAxis yAxisId="limit" orientation="left" hide domain={[0, 1]} />
                   )}
-                  {/* Right axis: odds */}
+                  {/* Right axis: odds — tight zoom */}
                   <YAxis
                     yAxisId="odds"
                     orientation="right"
                     tick={{ fontSize: 10, fill: "#38bdf8" }}
                     tickFormatter={v => formatOdds(v)}
-                    domain={["auto", "auto"]}
+                    domain={oddsDomain}
                     tickLine={false}
                     axisLine={false}
                     width={46}
+                    tickCount={6}
                   />
 
                   <Tooltip content={<CustomTooltip />} />
 
-                  {/* Current odds reference line */}
-                  {closeOdds !== undefined && (
-                    <ReferenceLine
-                      yAxisId="odds"
-                      y={closeOdds}
-                      stroke="rgba(56,189,248,0.15)"
-                      strokeDasharray="4 4"
-                    />
-                  )}
-
-                  {/* No-vig line (red) */}
+                  {/* No-vig line (coral red) */}
                   {showNovig && (
                     <Line
                       yAxisId="odds"
-                      type="stepAfter"
+                      type="linear"
                       dataKey="novig"
                       name="No-vig"
                       stroke="#f87171"
                       strokeWidth={1.5}
-                      dot={false}
-                      activeDot={{ r: 3, fill: "#f87171" }}
+                      strokeOpacity={0.85}
+                      dot={{ r: 2.5, fill: "#f87171", strokeWidth: 0 }}
+                      activeDot={{ r: 4, fill: "#f87171" }}
                       connectNulls
                       isAnimationActive={false}
                     />
@@ -503,13 +519,26 @@ export default function EventDetailPage() {
                   {hasLimits && showLimit && (
                     <Line
                       yAxisId="limit"
-                      type="stepAfter"
+                      type="linear"
                       dataKey="limit"
                       name="Limit"
                       stroke="#818cf8"
                       strokeWidth={1.5}
-                      dot={false}
-                      activeDot={{ r: 3, fill: "#818cf8" }}
+                      dot={{ r: 2.5, fill: "#818cf8", strokeWidth: 0 }}
+                      activeDot={{ r: 4, fill: "#818cf8" }}
+                      connectNulls
+                      isAnimationActive={false}
+                    />
+                  )}
+
+                  {/* Odds area fill (blue glow under line) */}
+                  {showOdds && (
+                    <Area
+                      yAxisId="odds"
+                      type="linear"
+                      dataKey="odds"
+                      stroke="none"
+                      fill="url(#oddsGrad)"
                       connectNulls
                       isAnimationActive={false}
                     />
@@ -519,12 +548,12 @@ export default function EventDetailPage() {
                   {showOdds && (
                     <Line
                       yAxisId="odds"
-                      type="stepAfter"
+                      type="linear"
                       dataKey="odds"
                       name="Odds"
                       stroke="#38bdf8"
-                      strokeWidth={2.5}
-                      dot={false}
+                      strokeWidth={2}
+                      dot={{ r: 3, fill: "#38bdf8", strokeWidth: 0 }}
                       activeDot={{ r: 5, fill: "#38bdf8", strokeWidth: 2, stroke: "#0c4a6e" }}
                       connectNulls
                       isAnimationActive={false}
