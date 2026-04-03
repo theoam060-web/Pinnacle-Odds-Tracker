@@ -96,11 +96,21 @@ const DEFAULT_STORE: AlertStore = {
 
 const STORAGE_KEY = "pt:alerts:v1";
 
+const VALID_MARKET_SLUGS = new Set(MARKET_TYPE_OPTIONS.map(m => m.slug));
+const VALID_SPORT_SLUGS  = new Set(SPORT_OPTIONS.map(s => s.slug));
+
+function sanitizeConfig(c: AlertConfig): AlertConfig {
+  const cleanMarkets = c.markets.filter(m => VALID_MARKET_SLUGS.has(m));
+  const cleanSport   = VALID_SPORT_SLUGS.has(c.sport) ? c.sport : DEFAULT_ALERT_CONFIG.sport;
+  return { ...c, markets: cleanMarkets, sport: cleanSport };
+}
+
 function loadStore(): AlertStore {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
     if (!raw) return DEFAULT_STORE;
-    return { ...DEFAULT_STORE, ...JSON.parse(raw) };
+    const parsed: AlertStore = { ...DEFAULT_STORE, ...JSON.parse(raw) };
+    return { ...parsed, configs: parsed.configs.map(sanitizeConfig) };
   } catch {
     return DEFAULT_STORE;
   }
