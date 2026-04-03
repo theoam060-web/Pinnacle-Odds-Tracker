@@ -9,6 +9,7 @@ export interface LoggedBet {
   homeTeam: string;
   awayTeam: string;
   leagueName: string;
+  sport?: string;
   selection: string;
   marketType: string;
   commenceTime: string;

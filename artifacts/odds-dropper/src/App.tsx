@@ -5,6 +5,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { AlertStoreProvider } from "@/lib/alert-context";
 import { BetStoreProvider } from "@/lib/bet-store";
 import { SettingsProvider } from "@/lib/settings-context";
+import { useAutoSettle } from "@/hooks/use-auto-settle";
 import NotFound from "@/pages/not-found";
 import FeedPage from "@/pages/feed";
 import EventDetailPage from "@/pages/event-detail";
@@ -13,6 +14,12 @@ import BetStatsPage from "@/pages/bet-stats";
 import AlertConfigurationsPage from "@/pages/alert-configurations";
 import TopMoversPage from "@/pages/top-movers";
 import MyBetsPage from "@/pages/my-bets";
+
+/** Runs background hooks that need access to all providers */
+function AppServices() {
+  useAutoSettle();
+  return null;
+}
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -45,6 +52,7 @@ function App() {
         <AlertStoreProvider>
           <BetStoreProvider>
             <TooltipProvider>
+              <AppServices />
               <WouterRouter base={import.meta.env.BASE_URL?.replace(/\/$/, "") || ""}>
                 <Router />
               </WouterRouter>

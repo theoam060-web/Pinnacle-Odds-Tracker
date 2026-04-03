@@ -14,6 +14,7 @@ interface Props {
     homeTeam: string;
     awayTeam: string;
     leagueName: string;
+    sport?: string;
     selection: string;
     marketType: string;
     commenceTime: Date | string;
@@ -58,6 +59,7 @@ export function LogBetModal({ row, onClose }: Props) {
       homeTeam: row.homeTeam,
       awayTeam: row.awayTeam,
       leagueName: row.leagueName,
+      sport: row.sport,
       selection: row.selection,
       marketType: row.marketType,
       commenceTime: typeof row.commenceTime === "string" ? row.commenceTime : row.commenceTime.toISOString(),
