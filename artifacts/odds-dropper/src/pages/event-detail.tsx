@@ -92,45 +92,55 @@ function buildChartData(
 
   if (!selMovements.length) return [];
 
-  // Deduplicate by odds value change and time bucket (group into 1-min buckets to avoid noise)
-  const seen = new Set<string>();
-  const deduped: OddsMovement[] = [];
+  // Only keep ticks where odds actually changed (change-detection).
+  // Always keep the very first and very last readings as anchors.
+  const significant: OddsMovement[] = [];
+  let prevOdds: number | null = null;
   for (const m of selMovements) {
-    const bucket = Math.floor(new Date(m.timestamp).getTime() / 60000);
-    const key = `${bucket}:${m.odds.toFixed(4)}`;
-    if (!seen.has(key)) {
-      seen.add(key);
-      deduped.push(m);
+    if (prevOdds === null || Math.abs(m.odds - prevOdds) > 0.0001) {
+      significant.push(m);
+      prevOdds = m.odds;
     }
+  }
+  // Always include the latest reading so the chart is up to date
+  const last = selMovements[selMovements.length - 1];
+  if (significant.length === 0 || significant[significant.length - 1] !== last) {
+    significant.push(last);
+  }
+
+  const selIdx = lines.findIndex(l => l.selection === sel);
+
+  // Helper: find all sides' odds at a given timestamp
+  function allOddsAt(ts: number): number[] {
+    return lines.map(l => {
+      const latest = movements
+        .filter(mv => mv.selection === l.selection && new Date(mv.timestamp).getTime() <= ts)
+        .sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime())[0];
+      return latest?.odds ?? l.currentOdds;
+    });
   }
 
   const openLine = lines.find(l => l.selection === sel);
   const points: ChartPoint[] = [];
 
+  // Opening anchor — only add if opening odds differ from the first significant tick
   if (openLine) {
     const allOddsAtOpen = lines.map(l => l.openingOdds);
-    const selIdx = lines.findIndex(l => l.selection === sel);
     const novigAtOpen = computeNovig(allOddsAtOpen, selIdx);
     const overroundOpen = allOddsAtOpen.reduce((s, o) => s + 1 / o, 0);
+    const firstTs = new Date(significant[0].timestamp).getTime();
     points.push({
       time: "Open",
-      rawMs: new Date(deduped[0]?.timestamp ?? Date.now()).getTime() - 60000,
+      rawMs: firstTs - 1,
       odds: parseFloat(openLine.openingOdds.toFixed(3)),
       novig: parseFloat((novigAtOpen[novigMethod] ?? openLine.openingOdds).toFixed(3)),
       vig: parseFloat(((overroundOpen - 1) * 100).toFixed(2)),
     });
   }
 
-  for (const m of deduped) {
+  for (const m of significant) {
     const ts = new Date(m.timestamp).getTime();
-    const allOdds = lines.map(l => {
-      const latest = movements
-        .filter(mv => mv.selection === l.selection && new Date(mv.timestamp).getTime() <= ts)
-        .sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime())[0];
-      return latest?.odds ?? l.currentOdds;
-    });
-
-    const selIdx = lines.findIndex(l => l.selection === sel);
+    const allOdds = allOddsAt(ts);
     const novigAll = computeNovig(allOdds, selIdx);
     const overround = allOdds.reduce((s, o) => s + 1 / o, 0);
 
@@ -148,13 +158,31 @@ function buildChartData(
 }
 
 function buildLogRows(movements: OddsMovement[], lines: EventLine[], sel: string, novigMethod: NovigMethod): LogRow[] {
+  // Sort chronologically, then change-detect (keep only ticks where odds moved)
   const selMovements = movements
     .filter(m => m.selection === sel)
-    .sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
+    .sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime());
 
+  const significant: OddsMovement[] = [];
+  let prevOdds: number | null = null;
+  for (const m of selMovements) {
+    if (prevOdds === null || Math.abs(m.odds - prevOdds) > 0.0001) {
+      significant.push(m);
+      prevOdds = m.odds;
+    }
+  }
+  // Always include the latest reading
+  const last = selMovements[selMovements.length - 1];
+  if (last && (significant.length === 0 || significant[significant.length - 1] !== last)) {
+    significant.push(last);
+  }
+
+  const selIdx = lines.findIndex(l => l.selection === sel);
+
+  // Build rows newest-first
   const rows: LogRow[] = [];
-  for (let i = 0; i < selMovements.length; i++) {
-    const m = selMovements[i];
+  for (let i = significant.length - 1; i >= 0; i--) {
+    const m = significant[i];
     const ts = new Date(m.timestamp).getTime();
     const allOdds = lines.map(l => {
       const latest = movements
@@ -162,11 +190,8 @@ function buildLogRows(movements: OddsMovement[], lines: EventLine[], sel: string
         .sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime())[0];
       return latest?.odds ?? l.currentOdds;
     });
-    const selIdx = lines.findIndex(l => l.selection === sel);
-    const novigAll = computeNovig(allOdds, selIdx);
-    const novigVal = novigAll[novigMethod] ?? m.odds;
-
-    const prevEntry = selMovements[i + 1];
+    const novigVal = computeNovig(allOdds, selIdx)[novigMethod] ?? m.odds;
+    const prevEntry = significant[i - 1];
     const delta = prevEntry ? parseFloat((m.odds - prevEntry.odds).toFixed(3)) : 0;
 
     rows.push({
@@ -242,7 +267,18 @@ export default function EventDetailPage() {
   }, [event, sel, novigMethod]);
 
   const hasLimits = useMemo(() => (event?.movements ?? []).some(m => m.limit != null), [event]);
-  const tickCount = (event?.movements ?? []).filter(m => m.selection === sel).length;
+  // Count actual odds changes (not raw poll count)
+  const tickCount = useMemo(() => {
+    const selMovs = (event?.movements ?? [])
+      .filter(m => m.selection === sel)
+      .sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime());
+    let count = 0;
+    let prev: number | null = null;
+    for (const m of selMovs) {
+      if (prev === null || Math.abs(m.odds - prev) > 0.0001) { count++; prev = m.odds; }
+    }
+    return count;
+  }, [event, sel]);
 
   const oddsPoints = chartData.filter(p => p.odds !== undefined);
   const openOdds = oddsPoints[0]?.odds;
