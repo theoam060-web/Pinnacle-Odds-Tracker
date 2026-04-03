@@ -548,7 +548,10 @@ export default function BetStatsPage() {
                     <XAxis dataKey="league" tick={{ fontSize: 9, fill: "#888" }} />
                     <YAxis tick={{ fontSize: 10, fill: "#888" }} tickFormatter={v => `${sym}${v}`} />
                     <Tooltip
-                      contentStyle={{ background: "#1a1a1a", border: "1px solid #333", borderRadius: 6, fontSize: 11 }}
+                      wrapperStyle={{ outline: "none" }}
+                      contentStyle={{ background: "#111827", border: "1px solid #374151", borderRadius: 6, padding: "6px 10px" }}
+                      labelStyle={{ color: "#9ca3af", fontSize: 12, marginBottom: 2 }}
+                      itemStyle={{ color: "#f9fafb", fontSize: 13, fontWeight: 600 }}
                       formatter={(value: number) => [`${value >= 0 ? "+" : ""}${sym}${value.toFixed(2)}`, "P/L"]}
                     />
                     <ReferenceLine y={0} stroke="#555" />
@@ -578,7 +581,10 @@ export default function BetStatsPage() {
                     <XAxis dataKey="label" tick={{ fontSize: 10, fill: "#888" }} axisLine={false} tickLine={false} />
                     <YAxis tick={{ fontSize: 10, fill: "#888" }} tickFormatter={v => `${sym}${v}`} axisLine={false} tickLine={false} />
                     <Tooltip
-                      contentStyle={{ background: "#1a1a1a", border: "1px solid #333", borderRadius: 6, fontSize: 11 }}
+                      wrapperStyle={{ outline: "none" }}
+                      contentStyle={{ background: "#111827", border: "1px solid #374151", borderRadius: 6, padding: "6px 10px" }}
+                      labelStyle={{ color: "#9ca3af", fontSize: 12, marginBottom: 2 }}
+                      itemStyle={{ color: "#f9fafb", fontSize: 13, fontWeight: 600 }}
                       formatter={(value: number, _: string, props: { payload?: { count?: number } }) => [
                         `${value >= 0 ? "+" : ""}${sym}${value.toFixed(2)} (${props.payload?.count ?? 0} bets)`,
                         "P/L",
