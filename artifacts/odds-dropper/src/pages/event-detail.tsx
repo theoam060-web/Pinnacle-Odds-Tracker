@@ -87,9 +87,14 @@ function buildChartData(
   lines: EventLine[],
   sel: string,
   novigMethod: NovigMethod,
+  commenceTime?: Date | string,
 ): ChartPoint[] {
   const now = Date.now();
-  const windowStart = now - CHART_WINDOW_MS;
+  // For games that have already kicked off, cap the right edge at kick-off time
+  // so we don't draw a long empty flat tail into the in-play period
+  const kickoffMs = commenceTime ? new Date(commenceTime).getTime() : Infinity;
+  const rightEdge = kickoffMs < now ? kickoffMs : now;
+  const windowStart = rightEdge - CHART_WINDOW_MS;
 
   const selMovements = movements
     .filter(m => m.selection === sel)
@@ -168,12 +173,13 @@ function buildChartData(
     });
   }
 
-  // Trailing "now" anchor — extends the last known line to the current moment
+  // Trailing anchor — extends the line to the right edge of the chart window.
+  // For kicked-off games this is commenceTime; for pre-match it is now.
   const lastPoint = points[points.length - 1];
-  if (lastPoint && now - lastPoint.rawMs! > 60_000) {
+  if (lastPoint && rightEdge - lastPoint.rawMs! > 60_000) {
     points.push({
-      time: format(new Date(now), "HH:mm"),
-      rawMs: now,
+      time: format(new Date(rightEdge), "HH:mm"),
+      rawMs: rightEdge,
       odds: lastPoint.odds,
       novig: lastPoint.novig,
       limit: lastPoint.limit,
@@ -285,7 +291,7 @@ export default function EventDetailPage() {
 
   const chartData = useMemo(() => {
     if (!event) return [];
-    return buildChartData(event.movements, event.lines, sel, novigMethod);
+    return buildChartData(event.movements, event.lines, sel, novigMethod, event.commenceTime);
   }, [event, sel, novigMethod]);
 
   const logRows = useMemo(() => {
@@ -336,6 +342,16 @@ export default function EventDetailPage() {
   const lowOdds = oddsPoints.length ? Math.min(...oddsPoints.map(p => p.odds!)) : undefined;
   const highOdds = oddsPoints.length ? Math.max(...oddsPoints.map(p => p.odds!)) : undefined;
   const vigPct = event ? computeVigPct(event.lines) : undefined;
+
+  // Right edge of chart window — capped at kickoff for live/past games
+  const chartRightEdge = useMemo(() => {
+    if (!event) return Date.now();
+    const kickoffMs = new Date(event.commenceTime).getTime();
+    return kickoffMs < Date.now() ? kickoffMs : Date.now();
+  }, [event]);
+
+  // Whether to show dots — only for sparse charts (≤14 meaningful ticks)
+  const denseChart = tickCount >= 15;
 
   // Current novig for the active selection
   const activeLine = event?.lines.find(l => l.selection === sel);
@@ -493,8 +509,8 @@ export default function EventDetailPage() {
                     type="number"
                     scale="time"
                     domain={[
-                      (dataMin: number) => Math.min(dataMin, Date.now() - CHART_WINDOW_MS),
-                      () => Date.now(),
+                      (dataMin: number) => Math.min(dataMin, chartRightEdge - CHART_WINDOW_MS),
+                      () => chartRightEdge,
                     ]}
                     tickFormatter={(v: number) => {
                       const firstPt = chartData[0];
@@ -546,7 +562,7 @@ export default function EventDetailPage() {
                       stroke="#f87171"
                       strokeWidth={1.5}
                       strokeOpacity={0.85}
-                      dot={{ r: 2.5, fill: "#f87171", strokeWidth: 0 }}
+                      dot={denseChart ? false : { r: 2.5, fill: "#f87171", strokeWidth: 0 }}
                       activeDot={{ r: 4, fill: "#f87171" }}
                       connectNulls
                       isAnimationActive={false}
@@ -562,7 +578,7 @@ export default function EventDetailPage() {
                       name="Limit"
                       stroke="#818cf8"
                       strokeWidth={1.5}
-                      dot={{ r: 2.5, fill: "#818cf8", strokeWidth: 0 }}
+                      dot={denseChart ? false : { r: 2.5, fill: "#818cf8", strokeWidth: 0 }}
                       activeDot={{ r: 4, fill: "#818cf8" }}
                       connectNulls
                       isAnimationActive={false}
@@ -595,7 +611,7 @@ export default function EventDetailPage() {
                       name="Odds"
                       stroke="#38bdf8"
                       strokeWidth={2}
-                      dot={{ r: 3, fill: "#38bdf8", strokeWidth: 0 }}
+                      dot={denseChart ? false : { r: 3, fill: "#38bdf8", strokeWidth: 0 }}
                       activeDot={{ r: 5, fill: "#38bdf8", strokeWidth: 2, stroke: "#0c4a6e" }}
                       connectNulls
                       isAnimationActive={false}

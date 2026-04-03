@@ -383,7 +383,7 @@ async function persistLegacyEvents(
       const oddsChanged =
         !existing ||
         !prevLine ||
-        Math.abs((prevLine.currentOdds - line.currentOdds) / (prevLine.currentOdds || 1)) > 0.0005;
+        Math.abs((prevLine.currentOdds - line.currentOdds) / (prevLine.currentOdds || 1)) > 0.0002;
 
       if (!oddsChanged) continue;
 
