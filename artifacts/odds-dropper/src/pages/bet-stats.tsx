@@ -80,9 +80,14 @@ function formatMinutes(mins: number): string {
 
 function formatMinutesFull(mins: number): string {
   if (mins < 60) return `${Math.round(mins)}m`;
-  const h = Math.floor(mins / 60);
-  const m = Math.round(mins % 60);
-  if (mins >= 1440) return `${Math.floor(mins / 1440)}d ${h % 24}h`;
+  let h = Math.floor(mins / 60);
+  let m = Math.round(mins % 60);
+  if (m === 60) { h += 1; m = 0; }
+  if (h >= 24) {
+    const d = Math.floor(h / 24);
+    const rh = h % 24;
+    return rh === 0 ? `${d}d` : `${d}d ${rh}h`;
+  }
   return m === 0 ? `${h}h` : `${h}h ${m}m`;
 }
 
