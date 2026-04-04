@@ -194,11 +194,12 @@ export default function FeedPage() {
 
   // Accumulated log of alert rows shown this session.
   // On first load: all current drops are added.
-  // On each subsequent poll: only rows whose odds changed are prepended.
+  // On each subsequent poll: rows are prepended when EITHER odds changed OR
+  // newDropAt became more recent (covers 20-min cooldown re-alerts).
   // Rows never disappear — they stay visible, pushed down by newer ones.
   const [shownRows, setShownRows] = useState<FeedRow[]>([]);
-  // Tracks rowKey → last currentOdds that was added to shownRows (in-memory only)
-  const lastShownOddsRef = useRef<Map<string, number>>(new Map());
+  // Tracks rowKey → { odds, dropAt } last seen — both changes trigger a new feed entry
+  const lastShownRef = useRef<Map<string, { odds: number; dropAt: number }>>(new Map());
   const initializedRef = useRef(false);
 
   // Pause state
@@ -225,23 +226,29 @@ export default function FeedPage() {
 
     if (!initializedRef.current) {
       // First data: show ALL current drops immediately — no cap on initial load.
-      // Seed lastShownOddsRef for every row so subsequent polls only add entries
-      // when odds actually change (not re-show everything again).
+      // Seed lastShownRef for every row so subsequent polls only add entries
+      // when odds or newDropAt actually change (not re-show everything again).
       initializedRef.current = true;
-      liveRows.forEach(r => lastShownOddsRef.current.set(rowKey(r), r.currentOdds));
+      liveRows.forEach(r => lastShownRef.current.set(rowKey(r), {
+        odds: r.currentOdds,
+        dropAt: r.newDropAt ? new Date(r.newDropAt).getTime() : 0,
+      }));
       setShownRows(liveRows);
       return;
     }
 
-    // Subsequent polls: find rows whose odds changed since they were last shown
+    // Subsequent polls: find rows whose odds OR newDropAt changed since last shown.
+    // This catches both genuine odds movements AND 20-min cooldown re-alerts.
     const newEntries: FeedRow[] = [];
     for (const row of liveRows) {
       const key = rowKey(row);
-      const lastOdds = lastShownOddsRef.current.get(key);
-      // Not seen before OR odds changed → new alert entry
-      if (lastOdds === undefined || lastOdds !== row.currentOdds) {
-        lastShownOddsRef.current.set(key, row.currentOdds);
-        newEntries.push(row);
+      const last = lastShownRef.current.get(key);
+      const dropAtMs = row.newDropAt ? new Date(row.newDropAt).getTime() : 0;
+      const oddsChanged = !last || last.odds !== row.currentOdds;
+      const reAlerted = last && dropAtMs > 0 && dropAtMs > last.dropAt;
+      if (oddsChanged || reAlerted) {
+        lastShownRef.current.set(key, { odds: row.currentOdds, dropAt: dropAtMs });
+        newEntries.push({ ...row, alertedAt: Date.now() });
       }
     }
     if (newEntries.length > 0) {
