@@ -10,10 +10,11 @@ import {
 import { formatOdds, formatTime, formatDate } from "@/lib/format";
 import { computeNovig } from "@/lib/novig";
 import { useAlertStore, NovigMethod } from "@/lib/alert-context";
-import { ChevronLeft, TrendingDown, BookmarkPlus } from "lucide-react";
+import { ChevronLeft, TrendingDown, BookmarkPlus, BarChart2 } from "lucide-react";
 import { Link } from "wouter";
 import { useBetStore, getCurrencySymbol } from "@/lib/bet-store";
 import { LogBetModal } from "@/components/log-bet-modal";
+import { PinnacleOddsModal } from "@/components/pinnacle-odds-modal";
 import { format } from "date-fns";
 
 type OddsMovement = {
@@ -293,6 +294,8 @@ export default function EventDetailPage() {
     sport: string; selection: string; marketType: string; commenceTime: string;
     currentOdds: number; novigOdds: number;
   }>(null);
+  const [showPinnacleOdds, setShowPinnacleOdds] = useState(false);
+  const matchupId = id ? parseInt(id.split("-")[1]) : NaN;
 
   const sel = activeSelection || (event?.lines[0]?.selection ?? "");
 
@@ -420,29 +423,40 @@ export default function EventDetailPage() {
             <h1 className="text-base font-bold leading-tight">
               {event.homeTeam} <span className="text-muted-foreground font-normal text-sm">vs.</span> {event.awayTeam}
             </h1>
-            <button
-              className="shrink-0 flex items-center gap-1 text-xs border border-border rounded px-2 py-1 text-muted-foreground hover:text-foreground hover:border-white/20 transition-colors"
-              onClick={() => {
-                const line = event.lines.find(l => l.selection === sel);
-                if (!line) return;
-                const novig = computeNovig(event.lines.map(l => l.currentOdds), event.lines.findIndex(l => l.selection === sel));
-                setLogBetRow({
-                  eventId: event.id,
-                  homeTeam: event.homeTeam,
-                  awayTeam: event.awayTeam,
-                  leagueName: event.leagueName,
-                  sport: event.sport,
-                  selection: sel,
-                  marketType: event.marketType,
-                  commenceTime: typeof event.commenceTime === "string" ? event.commenceTime : new Date(event.commenceTime).toISOString(),
-                  currentOdds: line.currentOdds,
-                  novigOdds: novig[novigMethod],
-                });
-              }}
-            >
-              <BookmarkPlus className="w-3 h-3" />
-              Log bet
-            </button>
+            <div className="shrink-0 flex items-center gap-1">
+              {!isNaN(matchupId) && (
+                <button
+                  className="flex items-center gap-1 text-xs border border-border rounded px-2 py-1 text-muted-foreground hover:text-foreground hover:border-white/20 transition-colors"
+                  onClick={() => setShowPinnacleOdds(true)}
+                >
+                  <BarChart2 className="w-3 h-3" />
+                  Odds
+                </button>
+              )}
+              <button
+                className="flex items-center gap-1 text-xs border border-border rounded px-2 py-1 text-muted-foreground hover:text-foreground hover:border-white/20 transition-colors"
+                onClick={() => {
+                  const line = event.lines.find(l => l.selection === sel);
+                  if (!line) return;
+                  const novig = computeNovig(event.lines.map(l => l.currentOdds), event.lines.findIndex(l => l.selection === sel));
+                  setLogBetRow({
+                    eventId: event.id,
+                    homeTeam: event.homeTeam,
+                    awayTeam: event.awayTeam,
+                    leagueName: event.leagueName,
+                    sport: event.sport,
+                    selection: sel,
+                    marketType: event.marketType,
+                    commenceTime: typeof event.commenceTime === "string" ? event.commenceTime : new Date(event.commenceTime).toISOString(),
+                    currentOdds: line.currentOdds,
+                    novigOdds: novig[novigMethod],
+                  });
+                }}
+              >
+                <BookmarkPlus className="w-3 h-3" />
+                Log bet
+              </button>
+            </div>
           </div>
           <div className="text-[11px] text-muted-foreground mt-0.5">
             {format(new Date(event.commenceTime), "MM/dd, HH:mm")}
@@ -779,6 +793,10 @@ export default function EventDetailPage() {
       {/* Log bet modal */}
       {logBetRow && (
         <LogBetModal row={logBetRow} onClose={() => setLogBetRow(null)} />
+      )}
+      {/* Pinnacle odds modal */}
+      {showPinnacleOdds && !isNaN(matchupId) && (
+        <PinnacleOddsModal matchupId={matchupId} onClose={() => setShowPinnacleOdds(false)} />
       )}
     </Layout>
   );

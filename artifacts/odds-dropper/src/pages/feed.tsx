@@ -4,6 +4,7 @@ import { useGetOddsDrops, useGetOddsSummary, getGetOddsDropsQueryKey } from "@wo
 import { Layout } from "@/components/layout";
 import { OddsSparkline } from "@/components/odds-sparkline";
 import { LogBetModal } from "@/components/log-bet-modal";
+import { PinnacleOddsModal } from "@/components/pinnacle-odds-modal";
 import { CountdownTimer } from "@/components/countdown-timer";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
@@ -170,6 +171,7 @@ function dropIntensityBg(abs: number): string {
 export default function FeedPage() {
   const { configs, novigMethod } = useAlertStore();
   const [logBetRow, setLogBetRow] = useState<(FeedRow & { novigOdds: number }) | null>(null);
+  const [oddsMatchupId, setOddsMatchupId] = useState<number | null>(null);
   const [sortBy, setSortBy] = useState<SortOption>("newest");
 
   // Accumulated log of alert rows shown this session.
@@ -491,18 +493,31 @@ export default function FeedPage() {
                     </TableCell>
 
                     <TableCell className="text-center">
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        className="h-7 text-xs px-2 gap-1"
-                        onClick={() => {
-                          const novig = computeNovig(row.allCurrentOdds, row.lineIndex);
-                          setLogBetRow({ ...row, novigOdds: novig[novigMethod] });
-                        }}
-                      >
-                        <BookmarkPlus className="w-3 h-3" />
-                        Log
-                      </Button>
+                      <div className="flex items-center justify-center gap-1">
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          className="h-7 text-xs px-2 gap-1"
+                          onClick={() => {
+                            const matchupId = parseInt(row.eventId.split("-")[1]);
+                            if (!isNaN(matchupId)) setOddsMatchupId(matchupId);
+                          }}
+                        >
+                          Odds
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          className="h-7 text-xs px-2 gap-1"
+                          onClick={() => {
+                            const novig = computeNovig(row.allCurrentOdds, row.lineIndex);
+                            setLogBetRow({ ...row, novigOdds: novig[novigMethod] });
+                          }}
+                        >
+                          <BookmarkPlus className="w-3 h-3" />
+                          Log
+                        </Button>
+                      </div>
                     </TableCell>
                   </TableRow>
                 );
@@ -514,6 +529,9 @@ export default function FeedPage() {
 
       {logBetRow && (
         <LogBetModal row={logBetRow} onClose={() => setLogBetRow(null)} />
+      )}
+      {oddsMatchupId !== null && (
+        <PinnacleOddsModal matchupId={oddsMatchupId} onClose={() => setOddsMatchupId(null)} />
       )}
     </Layout>
   );
