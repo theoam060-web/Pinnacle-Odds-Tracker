@@ -12,9 +12,14 @@ export const NOVIG_METHOD_LABELS: Record<NovigMethod, string> = {
 };
 
 export const MARKET_TYPE_OPTIONS = [
-  { slug: "moneyline", label: "Moneyline" },
-  { slug: "spread",    label: "Handicaps" },
-  { slug: "total",     label: "Totals" },
+  { slug: "moneyline",    label: "Moneyline" },
+  { slug: "spread",       label: "Handicaps" },
+  { slug: "total",        label: "Totals" },
+  { slug: "team_total",   label: "Team Totals" },
+  { slug: "draw_no_bet",  label: "Draw No Bet" },
+  { slug: "btts",         label: "Both Teams to Score" },
+  { slug: "corners",      label: "Corners" },
+  { slug: "bookings",     label: "Bookings" },
 ];
 
 // "All Sports" option intentionally removed — users must select a specific sport
@@ -28,7 +33,7 @@ export const SPORT_OPTIONS = [
 ];
 
 export const SPORT_MARKETS: Record<string, string[]> = {
-  soccer:            ["moneyline", "spread", "total"],
+  soccer:            ["moneyline", "spread", "total", "team_total", "draw_no_bet", "btts", "corners", "bookings"],
   basketball:        ["moneyline", "spread", "total"],
   tennis:            ["moneyline", "spread", "total"],
   hockey:            ["moneyline", "spread", "total"],

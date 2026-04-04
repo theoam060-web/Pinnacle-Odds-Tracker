@@ -458,7 +458,7 @@ async function pollOnce(minDropPercent: number, state: PollerState): Promise<voi
           league: market.league,
           leagueName: market.leagueName,
           commenceTime: market.startTime,
-          marketType: market.type === "team_total" ? "total" : market.type as "moneyline" | "spread" | "total" | "asian_handicap",
+          marketType: market.type as "moneyline" | "spread" | "total" | "team_total" | "asian_handicap",
           lines,
           maxRiskStake: market.maxRiskStake,
         });
