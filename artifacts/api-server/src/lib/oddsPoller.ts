@@ -299,13 +299,25 @@ async function persistLegacyEvents(
     const biggestDrop = getBiggestDrop(updatedLines);
     const biggestRise = getBiggestRise(updatedLines);
     const prevBiggestDrop = existing?.biggestDrop ?? 0;
-    const isNewDrop = biggestDrop < -minDropPercent && biggestDrop < prevBiggestDrop;
+    // Bug 2 fix: persist the running minimum — biggestDrop in DB should never move back toward 0.
+    // The current poll's biggestDrop is used for alert comparison, but we store the historical worst.
+    const persistedBiggestDrop = Math.min(prevBiggestDrop, biggestDrop);
+    // Bug 1 fix: re-alert if the drop exceeds the threshold AND either:
+    //   (a) it's a new all-time low (deeper than previously persisted), OR
+    //   (b) the last alert was more than RE_ALERT_COOLDOWN_MS ago (persistent drop re-alert)
+    const RE_ALERT_COOLDOWN_MS = 20 * 60 * 1000; // 20 minutes
+    const lastAlertAge = existing?.newDropAt
+      ? Date.now() - new Date(existing.newDropAt).getTime()
+      : Infinity;
+    const isNewDrop =
+      biggestDrop < -minDropPercent &&
+      (biggestDrop < prevBiggestDrop || lastAlertAge > RE_ALERT_COOLDOWN_MS);
     const newDropAt = isNewDrop ? now : (existing?.newDropAt ?? null);
 
     const hasLineChanges =
       !existing ||
       JSON.stringify(existing.lines) !== JSON.stringify(updatedLines) ||
-      existing.biggestDrop !== biggestDrop;
+      existing.biggestDrop !== persistedBiggestDrop;
 
     if (!existing) {
       await db.insert(oddsEventsTable).values({
@@ -318,14 +330,14 @@ async function persistLegacyEvents(
         commenceTime: shape.commenceTime,
         marketType: shape.marketType,
         lines: updatedLines,
-        biggestDrop,
+        biggestDrop: persistedBiggestDrop,
         biggestRise,
         newDropAt,
         lastUpdated: now,
       }).onConflictDoNothing();
     } else {
       await db.update(oddsEventsTable)
-        .set({ homeTeam: shape.homeTeam, awayTeam: shape.awayTeam, commenceTime: shape.commenceTime, lines: updatedLines, biggestDrop, biggestRise, newDropAt, lastUpdated: now })
+        .set({ homeTeam: shape.homeTeam, awayTeam: shape.awayTeam, commenceTime: shape.commenceTime, lines: updatedLines, biggestDrop: persistedBiggestDrop, biggestRise, newDropAt, lastUpdated: now })
         .where(eq(oddsEventsTable.id, shape.id));
     }
 
@@ -340,7 +352,7 @@ async function persistLegacyEvents(
         commenceTime: shape.commenceTime.toISOString(),
         marketType: shape.marketType,
         lines: updatedLines,
-        biggestDrop,
+        biggestDrop: persistedBiggestDrop,
         biggestRise,
         newDropAt: newDropAt ? newDropAt.toISOString() : null,
         lastUpdated: now.toISOString(),

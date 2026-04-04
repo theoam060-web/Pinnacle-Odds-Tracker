@@ -16,6 +16,7 @@ import { ArrowRight, TrendingDown, BookmarkPlus, Pause, Play, ArrowUpDown, Check
 import { formatOdds, formatTime, formatDate } from "@/lib/format";
 import { computeNovig } from "@/lib/novig";
 import { useAlertStore, AlertConfig } from "@/lib/alert-context";
+import { playChime } from "@/lib/chime";
 
 const SPORT_LABELS: Record<string, string> = {
   soccer: "⚽ Football",
@@ -186,7 +187,7 @@ function dropIntensityBg(abs: number): string {
 }
 
 export default function FeedPage() {
-  const { configs, novigMethod } = useAlertStore();
+  const { configs, novigMethod, soundEnabled } = useAlertStore();
   const [logBetRow, setLogBetRow] = useState<(FeedRow & { novigOdds: number }) | null>(null);
   const [oddsMatchupId, setOddsMatchupId] = useState<number | null>(null);
   const [sortBy, setSortBy] = useState<SortOption>("newest");
@@ -244,6 +245,8 @@ export default function FeedPage() {
     if (newEntries.length > 0) {
       // Prepend new entries; cap total to MAX_FEED_ROWS (drop oldest)
       setShownRows(prev => [...newEntries, ...prev].slice(0, MAX_FEED_ROWS));
+      // Play chime from HTTP polling so alerts work even when SSE is disconnected
+      if (soundEnabled) playChime();
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [liveRows]);

@@ -6,6 +6,7 @@ import { useGetOddsSummary, getGetOddsSummaryQueryKey } from "@workspace/api-cli
 import { SettingsModal } from "@/components/settings-modal";
 import { useOddsStream, type OddsDropEvent, type OddsStreamFilters } from "@/hooks/use-odds-stream";
 import { useBetStore, getCurrencySymbol, calcEVCurrency } from "@/lib/bet-store";
+import { playChime } from "@/lib/chime";
 
 const NAV_ITEMS = [
   { href: "/", label: "Live Feed", icon: TrendingDown },
@@ -13,29 +14,6 @@ const NAV_ITEMS = [
   { href: "/bet-stats", label: "Bet Stats", icon: BarChart2 },
   { href: "/alert-configurations", label: "Alert Configurations", icon: BellRing },
 ];
-
-// Plays a short chime when a drop notification fires and sound is enabled
-function playChime() {
-  try {
-    const ctx = new AudioContext();
-    const osc1 = ctx.createOscillator();
-    const osc2 = ctx.createOscillator();
-    const gain = ctx.createGain();
-    osc1.connect(gain); osc2.connect(gain); gain.connect(ctx.destination);
-    osc1.type = "sine";
-    osc1.frequency.setValueAtTime(880, ctx.currentTime);
-    osc1.frequency.exponentialRampToValueAtTime(660, ctx.currentTime + 0.15);
-    osc2.type = "sine";
-    osc2.frequency.setValueAtTime(1100, ctx.currentTime + 0.05);
-    osc2.frequency.exponentialRampToValueAtTime(880, ctx.currentTime + 0.2);
-    gain.gain.setValueAtTime(0, ctx.currentTime);
-    gain.gain.linearRampToValueAtTime(0.18, ctx.currentTime + 0.02);
-    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.35);
-    osc1.start(ctx.currentTime); osc1.stop(ctx.currentTime + 0.35);
-    osc2.start(ctx.currentTime + 0.05); osc2.stop(ctx.currentTime + 0.35);
-    osc1.onended = () => ctx.close();
-  } catch {}
-}
 
 // OddsStreamListener subscribes to SSE and plays a chime when sound is enabled.
 // Toasts/popups are intentionally removed — only audio notification fires.
