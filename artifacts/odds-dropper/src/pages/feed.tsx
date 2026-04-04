@@ -57,8 +57,7 @@ interface FeedRow {
   alertedAt: number;
 }
 
-function formatAlertAge(dropAt: Date | string | null): string {
-  if (!dropAt) return "";
+function calcAlertAge(dropAt: Date | string): string {
   const diffMs = Date.now() - new Date(dropAt).getTime();
   if (diffMs < 0) return "just now";
   const secs = Math.floor(diffMs / 1000);
@@ -67,6 +66,22 @@ function formatAlertAge(dropAt: Date | string | null): string {
   if (mins < 60) return `${mins}m ago`;
   const hours = Math.floor(mins / 60);
   return `${hours}h ago`;
+}
+
+function LiveAlertAge({ dropAt }: { dropAt: Date | string | null }) {
+  const [label, setLabel] = useState(() => dropAt ? calcAlertAge(dropAt) : "");
+
+  useEffect(() => {
+    if (!dropAt) return;
+    setLabel(calcAlertAge(dropAt));
+    const id = setInterval(() => setLabel(calcAlertAge(dropAt)), 1000);
+    return () => clearInterval(id);
+  }, [dropAt]);
+
+  if (!dropAt) return <span className="text-[11px] text-muted-foreground/40">—</span>;
+  return (
+    <span className="text-[11px] font-mono text-amber-400 tabular-nums">{label}</span>
+  );
 }
 
 function lineMatchesConfig(
@@ -441,13 +456,7 @@ export default function FeedPage() {
                     </TableCell>
 
                     <TableCell className="text-center">
-                      {row.newDropAt ? (
-                        <span className="text-[11px] font-mono text-amber-400 tabular-nums">
-                          {formatAlertAge(row.newDropAt)}
-                        </span>
-                      ) : (
-                        <span className="text-[11px] text-muted-foreground/40">—</span>
-                      )}
+                      <LiveAlertAge dropAt={row.newDropAt} />
                     </TableCell>
 
                     <TableCell>
