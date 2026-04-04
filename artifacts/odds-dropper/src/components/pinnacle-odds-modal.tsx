@@ -2,6 +2,8 @@ import { useQuery } from "@tanstack/react-query";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { TrendingDown, TrendingUp, Loader2 } from "lucide-react";
 import { formatOdds } from "@/lib/format";
+import { computeNovig } from "@/lib/novig";
+import { useAlertStore } from "@/lib/alert-context";
 
 interface Price {
   designation: string;
@@ -63,7 +65,13 @@ function ChangeArrow({ direction, pct }: { direction: string | null; pct: number
   );
 }
 
-function PriceCell({ price, label }: { price: Price; label?: string }) {
+interface PriceCellProps {
+  price: Price;
+  label?: string;
+  novigOdds?: number;
+}
+
+function PriceCell({ price, label, novigOdds }: PriceCellProps) {
   const display = label ?? DESIGNATION_LABELS[price.designation] ?? price.designation;
   const isDrop = price.direction === "drop";
   const isRise = price.direction === "rise";
@@ -80,6 +88,7 @@ function PriceCell({ price, label }: { price: Price; label?: string }) {
 
   return (
     <div className="bg-black/30 border border-white/5 rounded-md p-2 flex flex-col gap-0.5 min-w-0">
+      {/* Header: label + change arrow */}
       <div className="flex items-center justify-between gap-1">
         <span className="text-[11px] text-muted-foreground font-medium truncate">
           {display}
@@ -90,6 +99,7 @@ function PriceCell({ price, label }: { price: Price; label?: string }) {
         <ChangeArrow direction={price.direction} pct={price.changePercent} />
       </div>
 
+      {/* Opening (strikethrough) → current odds */}
       <div className="flex items-baseline gap-1.5 flex-wrap">
         {changed && (
           <span className="text-[11px] font-mono text-muted-foreground/50 line-through">
@@ -101,6 +111,14 @@ function PriceCell({ price, label }: { price: Price; label?: string }) {
         </span>
       </div>
 
+      {/* No-vig odds — always shown, same visual weight as change% */}
+      {novigOdds != null && isFinite(novigOdds) && (
+        <div className="text-[11px] font-mono text-emerald-400 font-semibold">
+          NV {formatOdds(novigOdds)}
+        </div>
+      )}
+
+      {/* Opening label only when price hasn't moved */}
       {!changed && (
         <div className="text-[10px] text-muted-foreground/50 font-mono">
           Open: {formatOdds(price.openingDecimalPrice)}
@@ -159,24 +177,46 @@ const SECTIONS: SectionDef[] = [
   },
 ];
 
-function MarketSection({ label, markets, homeTeam, awayTeam }: {
+function resolveLabel(designation: string, homeTeam: string, awayTeam: string): string {
+  if (designation === "home") return homeTeam;
+  if (designation === "away") return awayTeam;
+  return DESIGNATION_LABELS[designation] ?? designation;
+}
+
+function MarketSection({
+  label,
+  markets,
+  homeTeam,
+  awayTeam,
+  novigMethod,
+}: {
   label: string;
   markets: Market[];
   homeTeam: string;
   awayTeam: string;
+  novigMethod: string;
 }) {
   if (markets.length === 0) return null;
 
-  const allPricePairs: Array<{ price: Price; label?: string }> = markets.flatMap(market =>
-    market.prices.map(price => ({
-      price,
-      label: resolveLabel(price.designation, homeTeam, awayTeam),
-    }))
-  );
+  // Build flat list of { price, label, novigOdds }
+  // No-vig is computed per-market (using all prices in that market as the universe)
+  const cells: Array<{ price: Price; displayLabel: string; novigOdds: number }> =
+    markets.flatMap(market => {
+      const allOdds = market.prices.map(p => p.decimalPrice);
+      return market.prices.map((price, idx) => {
+        const novigResult = computeNovig(allOdds, idx);
+        const novigOdds = (novigResult as any)[novigMethod] ?? novigResult.proportional;
+        return {
+          price,
+          displayLabel: resolveLabel(price.designation, homeTeam, awayTeam),
+          novigOdds,
+        };
+      });
+    });
 
-  if (allPricePairs.length === 0) return null;
+  if (cells.length === 0) return null;
 
-  const count = allPricePairs.length;
+  const count = cells.length;
   const cols =
     count <= 2 ? "grid-cols-2" : count === 3 ? "grid-cols-3" : "grid-cols-2";
 
@@ -186,21 +226,22 @@ function MarketSection({ label, markets, homeTeam, awayTeam }: {
         {label}
       </div>
       <div className={`grid ${cols} gap-1.5`}>
-        {allPricePairs.map(({ price, label: lbl }, i) => (
-          <PriceCell key={i} price={price} label={lbl} />
+        {cells.map(({ price, displayLabel, novigOdds }, i) => (
+          <PriceCell
+            key={i}
+            price={price}
+            label={displayLabel}
+            novigOdds={novigOdds}
+          />
         ))}
       </div>
     </div>
   );
 }
 
-function resolveLabel(designation: string, homeTeam: string, awayTeam: string): string {
-  if (designation === "home") return homeTeam;
-  if (designation === "away") return awayTeam;
-  return DESIGNATION_LABELS[designation] ?? designation;
-}
-
 export function PinnacleOddsModal({ matchupId, onClose }: Props) {
+  const { novigMethod } = useAlertStore();
+
   const { data, isLoading, isError } = useQuery<MatchupResponse>({
     queryKey: ["matchup", matchupId],
     queryFn: async () => {
@@ -266,6 +307,7 @@ export function PinnacleOddsModal({ matchupId, onClose }: Props) {
               markets={sec.markets}
               homeTeam={data?.matchup.homeTeam ?? "Home"}
               awayTeam={data?.matchup.awayTeam ?? "Away"}
+              novigMethod={novigMethod}
             />
           ))}
         </div>
