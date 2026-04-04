@@ -97,7 +97,7 @@ function BetTimingTooltip({ active, payload, sym }: TooltipProps<number, string>
       style={{ outline: "none", minWidth: 190 }}
     >
       <div className="text-[13px] font-semibold text-white leading-tight">{d.match}</div>
-      <div className="text-[11px] text-muted-foreground capitalize">{d.selection}</div>
+      <div className="text-[12px] text-muted-foreground capitalize">{d.selection}</div>
       <div className="border-t border-white/5 pt-1.5 space-y-1 text-xs">
         <div className="flex items-center justify-between gap-6">
           <span className="text-muted-foreground">Before kickoff</span>
