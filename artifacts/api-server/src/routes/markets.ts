@@ -4,8 +4,9 @@ import {
   pinnacleMatchupsTable,
   pinnacleMarketsTable,
   pinnacleMarketMovementsTable,
+  oddsEventsTable,
 } from "@workspace/db";
-import { eq, and, desc, asc, sql } from "drizzle-orm";
+import { eq, and, desc, asc, sql, like } from "drizzle-orm";
 
 const router: IRouter = Router();
 
@@ -185,6 +186,40 @@ router.get("/matchups", async (req, res): Promise<void> => {
   });
 });
 
+// Parse a legacy event line into a Price shape for the modal
+function parseEventLine(line: {
+  selection: string;
+  currentOdds: number;
+  openingOdds: number;
+  changePercent?: number;
+  direction?: string;
+}): {
+  designation: string;
+  decimalPrice: number;
+  openingDecimalPrice: number;
+  points: number | null;
+  changePercent: number | null;
+  direction: string | null;
+} {
+  const parts = line.selection.trim().split(/\s+/);
+  const designation = parts[0] ?? line.selection;
+  const points = parts[1] != null ? parseFloat(parts[1]) : null;
+  return {
+    designation,
+    decimalPrice: line.currentOdds,
+    openingDecimalPrice: line.openingOdds,
+    points: isNaN(points as number) ? null : points,
+    changePercent: line.changePercent ?? null,
+    direction: line.direction ?? null,
+  };
+}
+
+// Parse the period from a legacy event ID like "pin-1627512393-s;0;m"
+function parsePeriodFromEventId(eventId: string): number {
+  const m = eventId.match(/^pin-\d+-s;(\d+);/);
+  return m ? parseInt(m[1]) : 0;
+}
+
 router.get("/matchups/:id", async (req, res): Promise<void> => {
   const id = Number(req.params.id);
 
@@ -193,18 +228,58 @@ router.get("/matchups/:id", async (req, res): Promise<void> => {
     .from(pinnacleMatchupsTable)
     .where(eq(pinnacleMatchupsTable.id, id));
 
-  if (!matchup) {
+  if (matchup) {
+    const markets = await db
+      .select()
+      .from(pinnacleMarketsTable)
+      .where(eq(pinnacleMarketsTable.matchupId, id))
+      .orderBy(asc(pinnacleMarketsTable.period), asc(pinnacleMarketsTable.type));
+
+    res.json({ matchup, markets });
+    return;
+  }
+
+  // Fallback: reconstruct from legacy odds_events table
+  const legacyEvents = await db
+    .select()
+    .from(oddsEventsTable)
+    .where(like(oddsEventsTable.id, `pin-${id}-%`))
+    .orderBy(asc(oddsEventsTable.marketType));
+
+  if (legacyEvents.length === 0) {
     res.status(404).json({ error: "Matchup not found" });
     return;
   }
 
-  const markets = await db
-    .select()
-    .from(pinnacleMarketsTable)
-    .where(eq(pinnacleMarketsTable.matchupId, id))
-    .orderBy(asc(pinnacleMarketsTable.period), asc(pinnacleMarketsTable.type));
+  const first = legacyEvents[0];
+  const legacyMatchup = {
+    id,
+    homeTeam: first.homeTeam,
+    awayTeam: first.awayTeam,
+    leagueName: first.leagueName,
+    sport: first.sport,
+    startTime: first.commenceTime,
+  };
 
-  res.json({ matchup, markets });
+  const legacyMarkets = legacyEvents.map(ev => {
+    const lines = (ev.lines as Array<{
+      selection: string;
+      currentOdds: number;
+      openingOdds: number;
+      changePercent?: number;
+      direction?: string;
+    }>);
+    return {
+      id: ev.id,
+      type: ev.marketType,
+      period: parsePeriodFromEventId(ev.id),
+      side: null,
+      isAlternate: false,
+      prices: lines.map(parseEventLine),
+    };
+  });
+
+  res.json({ matchup: legacyMatchup, markets: legacyMarkets });
 });
 
 export default router;
