@@ -158,6 +158,8 @@ function buildRows(
   return applySort(rows, sort);
 }
 
+const MAX_FEED_ROWS = 200;
+
 function rowKey(r: FeedRow) {
   return `${r.eventId}:${r.selection}`;
 }
@@ -209,7 +211,7 @@ export default function FeedPage() {
       // First data: seed the feed with all current drops and record their odds
       initializedRef.current = true;
       liveRows.forEach(r => lastShownOddsRef.current.set(rowKey(r), r.currentOdds));
-      setShownRows(liveRows);
+      setShownRows(liveRows.slice(0, MAX_FEED_ROWS));
       return;
     }
 
@@ -225,8 +227,8 @@ export default function FeedPage() {
       }
     }
     if (newEntries.length > 0) {
-      // Prepend new entries; existing rows stay in place (push down)
-      setShownRows(prev => [...newEntries, ...prev]);
+      // Prepend new entries; cap total to MAX_FEED_ROWS (drop oldest)
+      setShownRows(prev => [...newEntries, ...prev].slice(0, MAX_FEED_ROWS));
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [liveRows]);
