@@ -203,8 +203,13 @@ function MarketChart({ marketId, prices }: { marketId: string; prices: Price[] }
   const allOdds = points.flatMap(p =>
     designations.map(d => p[d] as number).filter(v => v != null && isFinite(v))
   );
-  const yMin = Math.max(1, parseFloat((Math.min(...allOdds) * 0.98).toFixed(2)));
-  const yMax = parseFloat((Math.max(...allOdds) * 1.02).toFixed(2));
+  const rawMin = Math.min(...allOdds);
+  const rawMax = Math.max(...allOdds);
+  const range = rawMax - rawMin;
+  // Zoom in: padding = 15% of range, but at least 0.03 so even flat lines have room
+  const pad = Math.max(range * 0.15, 0.03);
+  const yMin = parseFloat(Math.max(1.001, rawMin - pad).toFixed(3));
+  const yMax = parseFloat((rawMax + pad).toFixed(3));
 
   const CustomTooltip = ({ active, payload, label }: any) => {
     if (!active || !payload?.length) return null;
@@ -227,8 +232,8 @@ function MarketChart({ marketId, prices }: { marketId: string; prices: Price[] }
 
   return (
     <div className="pt-2 pb-3 px-1">
-      <ResponsiveContainer width="100%" height={160}>
-        <ComposedChart data={points} margin={{ top: 4, right: 8, bottom: 0, left: -10 }}>
+      <ResponsiveContainer width="100%" height={190}>
+        <ComposedChart data={points} margin={{ top: 6, right: 10, bottom: 0, left: 4 }}>
           <CartesianGrid strokeDasharray="3 3" stroke="#1f2937" vertical={false} />
           <XAxis
             dataKey="time"
@@ -243,7 +248,7 @@ function MarketChart({ marketId, prices }: { marketId: string; prices: Price[] }
             axisLine={false}
             tickLine={false}
             tickFormatter={v => formatOdds(v)}
-            width={38}
+            width={46}
           />
           <Tooltip
             content={<CustomTooltip />}
