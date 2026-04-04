@@ -5,6 +5,7 @@ import {
   ComposedChart, Area, Line,
   ScatterChart, Scatter,
 } from "recharts";
+import type { TooltipProps } from "recharts";
 import { Layout } from "@/components/layout";
 import { useBetStore, CURRENCIES, getCurrencySymbol, calcEVCurrency, LoggedBet } from "@/lib/bet-store";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -62,40 +63,57 @@ function StatCard({ label, value, sub, color }: {
   );
 }
 
+type TimingPoint = {
+  x: number;
+  y: number;
+  match: string;
+  selection: string;
+  odds: number;
+  stake: number;
+};
+
 function formatMinutes(mins: number): string {
   if (mins < 60) return `${Math.round(mins)}m`;
   if (mins < 1440) return `${Math.round(mins / 60)}h`;
   return `${Math.round(mins / 1440)}d`;
 }
 
-function BetTimingTooltip({ active, payload, sym }: { active?: boolean; payload?: any[]; sym: string }) {
+function formatMinutesFull(mins: number): string {
+  if (mins < 60) return `${Math.round(mins)}m`;
+  const h = Math.floor(mins / 60);
+  const m = Math.round(mins % 60);
+  if (mins >= 1440) return `${Math.floor(mins / 1440)}d ${h % 24}h`;
+  return m === 0 ? `${h}h` : `${h}h ${m}m`;
+}
+
+function BetTimingTooltip({ active, payload, sym }: TooltipProps<number, string> & { sym: string }) {
   if (!active || !payload?.length) return null;
-  const d = payload[0]?.payload;
+  const d = payload[0]?.payload as TimingPoint | undefined;
   if (!d) return null;
-  const pl: number = d.y;
+  const pl = d.y;
   return (
     <div
       className="rounded-md border border-white/10 bg-[#0d1117] px-3 py-2.5 shadow-xl space-y-1.5"
-      style={{ outline: "none", minWidth: 180 }}
+      style={{ outline: "none", minWidth: 190 }}
     >
       <div className="text-[13px] font-semibold text-white leading-tight">{d.match}</div>
       <div className="text-[11px] text-muted-foreground capitalize">{d.selection}</div>
       <div className="border-t border-white/5 pt-1.5 space-y-1 text-xs">
         <div className="flex items-center justify-between gap-6">
           <span className="text-muted-foreground">Before kickoff</span>
-          <span className="font-mono text-white">{formatMinutes(d.x)}</span>
+          <span className="font-mono text-white">{formatMinutesFull(d.x)}</span>
         </div>
         <div className="flex items-center justify-between gap-6">
           <span className="text-muted-foreground">Odds</span>
-          <span className="font-mono text-white">{d.odds?.toFixed(3) ?? "—"}</span>
+          <span className="font-mono text-white">{d.odds.toFixed(3)}</span>
         </div>
         <div className="flex items-center justify-between gap-6">
           <span className="text-muted-foreground">Stake</span>
-          <span className="font-mono text-white">{sym}{d.stake?.toFixed(2) ?? "—"}</span>
+          <span className="font-mono text-white">{sym}{d.stake.toFixed(2)}</span>
         </div>
         <div className="flex items-center justify-between gap-6">
           <span className="text-muted-foreground">P/L</span>
-          <span className={`font-mono font-semibold ${pl >= 0 ? "text-green-400" : "text-red-400"}`}>
+          <span className="font-mono font-semibold text-white">
             {pl >= 0 ? "+" : ""}{sym}{Math.abs(pl).toFixed(2)}
           </span>
         </div>
@@ -227,10 +245,9 @@ export default function BetStatsPage() {
 
   // ─── BET TIMING SCATTER ────────────────────────────────────────────────────
   const betTimingPoints = useMemo(() => {
-    type TimingPt = { x: number; y: number; match: string; selection: string; odds: number; stake: number };
-    const won: TimingPt[] = [];
-    const lost: TimingPt[] = [];
-    const pushed: TimingPt[] = [];
+    const won: TimingPoint[] = [];
+    const lost: TimingPoint[] = [];
+    const pushed: TimingPoint[] = [];
 
     for (const b of filteredBets) {
       const minsBeforeKickoff = Math.max(0,
@@ -239,7 +256,7 @@ export default function BetStatsPage() {
       const pl = b.result === "win"  ? b.potentialProfit
                : b.result === "loss" ? -b.stake
                : 0;
-      const pt: TimingPt = {
+      const pt: TimingPoint = {
         x: minsBeforeKickoff,
         y: parseFloat(pl.toFixed(2)),
         match: `${b.homeTeam} vs ${b.awayTeam}`,
@@ -679,7 +696,7 @@ export default function BetStatsPage() {
                     />
                     <Tooltip
                       cursor={{ strokeDasharray: "3 3", stroke: "rgba(255,255,255,0.08)" }}
-                      content={(props: any) => <BetTimingTooltip {...props} sym={sym} />}
+                      content={(props: TooltipProps<number, string>) => <BetTimingTooltip {...props} sym={sym} />}
                       wrapperStyle={{ outline: "none" }}
                     />
                     <ReferenceLine y={0} stroke="#374151" strokeDasharray="4 2" />
