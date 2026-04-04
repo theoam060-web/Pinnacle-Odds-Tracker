@@ -174,7 +174,7 @@ function buildRows(
   return applySort(rows, sort);
 }
 
-const MAX_FEED_ROWS = 200;
+const MAX_FEED_ROWS = 1000;
 
 function rowKey(r: FeedRow) {
   return `${r.eventId}:${r.selection}`;
@@ -224,10 +224,12 @@ export default function FeedPage() {
     if (!liveRows.length && !initializedRef.current) return;
 
     if (!initializedRef.current) {
-      // First data: seed the feed with all current drops and record their odds
+      // First data: show ALL current drops immediately — no cap on initial load.
+      // Seed lastShownOddsRef for every row so subsequent polls only add entries
+      // when odds actually change (not re-show everything again).
       initializedRef.current = true;
       liveRows.forEach(r => lastShownOddsRef.current.set(rowKey(r), r.currentOdds));
-      setShownRows(liveRows.slice(0, MAX_FEED_ROWS));
+      setShownRows(liveRows);
       return;
     }
 

@@ -22,8 +22,8 @@ export const MARKET_TYPE_OPTIONS = [
   { slug: "bookings",     label: "Bookings" },
 ];
 
-// "All Sports" option intentionally removed — users must select a specific sport
 export const SPORT_OPTIONS = [
+  { slug: "all",               label: "🌍 All Sports" },
   { slug: "soccer",            label: "⚽ Football" },
   { slug: "basketball",        label: "🏀 Basketball" },
   { slug: "tennis",            label: "🎾 Tennis" },
@@ -33,6 +33,7 @@ export const SPORT_OPTIONS = [
 ];
 
 export const SPORT_MARKETS: Record<string, string[]> = {
+  all:               ["moneyline", "spread", "total", "team_total", "draw_no_bet", "btts", "corners", "bookings"],
   soccer:            ["moneyline", "spread", "total", "team_total", "draw_no_bet", "btts", "corners", "bookings"],
   basketball:        ["moneyline", "spread", "total"],
   tennis:            ["moneyline", "spread", "total"],
@@ -49,6 +50,7 @@ export interface SportDefaults {
 }
 
 export const SPORT_DEFAULTS: Record<string, SportDefaults> = {
+  all:               { minDropPercent: 2, maxHoursUntilMatch: 24, minOdds: 1.2, maxOdds: 20 },
   soccer:            { minDropPercent: 2, maxHoursUntilMatch: 48, minOdds: 1.3, maxOdds: 20 },
   basketball:        { minDropPercent: 2, maxHoursUntilMatch: 12, minOdds: 1.3, maxOdds: 10 },
   tennis:            { minDropPercent: 3, maxHoursUntilMatch: 6,  minOdds: 1.1, maxOdds: 15 },
