@@ -119,7 +119,7 @@ function BetTimingTooltip({ active, payload, sym }: TooltipProps<number, string>
         <div className="flex items-center justify-between gap-6">
           <span className="text-muted-foreground">P/L</span>
           <span className="font-mono font-semibold text-white">
-            {pl >= 0 ? "+" : ""}{sym}{Math.abs(pl).toFixed(2)}
+            {pl >= 0 ? "+" : "-"}{sym}{Math.abs(pl).toFixed(2)}
           </span>
         </div>
       </div>
