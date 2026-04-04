@@ -1,6 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { TrendingDown, TrendingUp, Minus, Loader2, X } from "lucide-react";
+import { TrendingDown, TrendingUp, Loader2 } from "lucide-react";
 import { formatOdds } from "@/lib/format";
 
 interface Price {
@@ -49,12 +49,12 @@ const DESIGNATION_LABELS: Record<string, string> = {
 };
 
 function ChangeArrow({ direction, pct }: { direction: string | null; pct: number | null }) {
-  if (pct == null || direction == null || direction === "none" || Math.abs(pct) < 0.01) {
-    return <span className="text-muted-foreground text-[10px]">—</span>;
+  if (pct == null || direction == null || direction === "stable" || Math.abs(pct) < 0.01) {
+    return <span className="text-muted-foreground/50 text-[10px]">—</span>;
   }
-  const isDown = direction === "down";
-  const color = isDown ? "text-green-400" : "text-red-400";
-  const Icon = isDown ? TrendingDown : TrendingUp;
+  const isDrop = direction === "drop";
+  const color = isDrop ? "text-green-400" : "text-red-400";
+  const Icon = isDrop ? TrendingDown : TrendingUp;
   return (
     <span className={`inline-flex items-center gap-0.5 text-[10px] font-mono ${color}`}>
       <Icon className="w-2.5 h-2.5" />
@@ -65,10 +65,18 @@ function ChangeArrow({ direction, pct }: { direction: string | null; pct: number
 
 function PriceCell({ price, label }: { price: Price; label?: string }) {
   const display = label ?? DESIGNATION_LABELS[price.designation] ?? price.designation;
-  const changed = price.changePercent != null && Math.abs(price.changePercent) > 0.01;
-  const isDown = price.direction === "down";
+  const isDrop = price.direction === "drop";
+  const isRise = price.direction === "rise";
+  const changed = isDrop || isRise;
+
   const pointsLabel =
     price.points != null ? (price.points > 0 ? `+${price.points}` : `${price.points}`) : null;
+
+  const currentColor = isDrop
+    ? "text-green-400"
+    : isRise
+    ? "text-red-400"
+    : "text-white";
 
   return (
     <div className="bg-black/30 border border-white/5 rounded-md p-2 flex flex-col gap-0.5 min-w-0">
@@ -81,12 +89,23 @@ function PriceCell({ price, label }: { price: Price; label?: string }) {
         </span>
         <ChangeArrow direction={price.direction} pct={price.changePercent} />
       </div>
-      <div className={`text-sm font-bold font-mono ${changed ? (isDown ? "text-green-400" : "text-red-400") : "text-white"}`}>
-        {formatOdds(price.decimalPrice)}
+
+      <div className="flex items-baseline gap-1.5 flex-wrap">
+        {changed && (
+          <span className="text-[11px] font-mono text-muted-foreground/50 line-through">
+            {formatOdds(price.openingDecimalPrice)}
+          </span>
+        )}
+        <span className={`text-sm font-bold font-mono ${currentColor}`}>
+          {formatOdds(price.decimalPrice)}
+        </span>
       </div>
-      <div className="text-[10px] text-muted-foreground/60 font-mono">
-        Open: {formatOdds(price.openingDecimalPrice)}
-      </div>
+
+      {!changed && (
+        <div className="text-[10px] text-muted-foreground/50 font-mono">
+          Open: {formatOdds(price.openingDecimalPrice)}
+        </div>
+      )}
     </div>
   );
 }
@@ -148,24 +167,18 @@ function MarketSection({ label, markets, homeTeam, awayTeam }: {
 }) {
   if (markets.length === 0) return null;
 
-  const allPrices = markets.flatMap(m =>
-    m.prices.map(p => ({
-      ...p,
-      _marketSide: m.side,
-      _points: p.points,
+  const allPricePairs: Array<{ price: Price; label?: string }> = markets.flatMap(market =>
+    market.prices.map(price => ({
+      price,
+      label: resolveLabel(price.designation, homeTeam, awayTeam),
     }))
   );
 
-  if (allPrices.length === 0) return null;
+  if (allPricePairs.length === 0) return null;
 
-  const priceCount = allPrices.length;
-  const cols = priceCount <= 2 ? "grid-cols-2" : priceCount === 3 ? "grid-cols-3" : "grid-cols-2";
-
-  function designationLabel(designation: string, side: string | null): string {
-    if (designation === "home") return homeTeam;
-    if (designation === "away") return awayTeam;
-    return DESIGNATION_LABELS[designation] ?? designation;
-  }
+  const count = allPricePairs.length;
+  const cols =
+    count <= 2 ? "grid-cols-2" : count === 3 ? "grid-cols-3" : "grid-cols-2";
 
   return (
     <div>
@@ -173,18 +186,18 @@ function MarketSection({ label, markets, homeTeam, awayTeam }: {
         {label}
       </div>
       <div className={`grid ${cols} gap-1.5`}>
-        {markets.map(market =>
-          market.prices.map(price => (
-            <PriceCell
-              key={`${market.id}-${price.designation}`}
-              price={price}
-              label={designationLabel(price.designation, market.side)}
-            />
-          ))
-        )}
+        {allPricePairs.map(({ price, label: lbl }, i) => (
+          <PriceCell key={i} price={price} label={lbl} />
+        ))}
       </div>
     </div>
   );
+}
+
+function resolveLabel(designation: string, homeTeam: string, awayTeam: string): string {
+  if (designation === "home") return homeTeam;
+  if (designation === "away") return awayTeam;
+  return DESIGNATION_LABELS[designation] ?? designation;
 }
 
 export function PinnacleOddsModal({ matchupId, onClose }: Props) {
@@ -242,7 +255,7 @@ export function PinnacleOddsModal({ matchupId, onClose }: Props) {
 
           {!isLoading && !isError && sections.length === 0 && (
             <div className="text-center py-12 text-muted-foreground text-sm">
-              No markets available.
+              No data available.
             </div>
           )}
 

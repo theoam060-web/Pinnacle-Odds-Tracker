@@ -12,7 +12,7 @@ import { Button } from "@/components/ui/button";
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { ArrowRight, TrendingDown, BookmarkPlus, Pause, Play, ArrowUpDown, Check } from "lucide-react";
+import { ArrowRight, TrendingDown, BookmarkPlus, Pause, Play, ArrowUpDown, Check, BarChart2 } from "lucide-react";
 import { formatOdds, formatTime, formatDate } from "@/lib/format";
 import { computeNovig } from "@/lib/novig";
 import { useAlertStore, AlertConfig } from "@/lib/alert-context";
@@ -503,6 +503,7 @@ export default function FeedPage() {
                             if (!isNaN(matchupId)) setOddsMatchupId(matchupId);
                           }}
                         >
+                          <BarChart2 className="w-3 h-3" />
                           Odds
                         </Button>
                         <Button
