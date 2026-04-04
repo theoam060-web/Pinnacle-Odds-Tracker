@@ -1,4 +1,4 @@
-import { useRef, useState, useEffect, useMemo } from "react";
+import { useRef, useState, useEffect, useMemo, useCallback } from "react";
 import { Link } from "wouter";
 import { useGetOddsDrops, useGetOddsSummary, getGetOddsDropsQueryKey } from "@workspace/api-client-react";
 import { Layout } from "@/components/layout";
@@ -16,7 +16,7 @@ import { ArrowRight, TrendingDown, BookmarkPlus, Pause, Play, ArrowUpDown, Check
 import { formatOdds, formatTime, formatDate } from "@/lib/format";
 import { computeNovig } from "@/lib/novig";
 import { useAlertStore, AlertConfig } from "@/lib/alert-context";
-import { playChime } from "@/lib/chime";
+import { useWsFeed, type WsOddsEventUpdate } from "@/hooks/use-ws-feed";
 
 const SPORT_LABELS: Record<string, string> = {
   soccer: "⚽ Football",
@@ -137,12 +137,10 @@ function buildRows(
   sort: SortOption,
 ): FeedRow[] {
   if (!events) return [];
-  // Show events whose drop was detected within the last 6 hours
   const sixHoursAgo = Date.now() - 6 * 60 * 60 * 1000;
   const rows: FeedRow[] = [];
 
   for (const event of events) {
-    // Keep events with drops detected in the last 6 hours
     const updatedAt = new Date(event.lastUpdated as Date).getTime();
     if (updatedAt < sixHoursAgo) continue;
 
@@ -180,6 +178,59 @@ function rowKey(r: FeedRow) {
   return `${r.eventId}:${r.selection}`;
 }
 
+function wsEventToRows(
+  event: WsOddsEventUpdate,
+  configs: AlertConfig[],
+  lastShownRef: React.MutableRefObject<Map<string, { odds: number; dropAt: number }>>,
+): FeedRow[] {
+  const allCurrentOdds = event.lines.map(l => l.currentOdds);
+  const now = Date.now();
+  const entries: FeedRow[] = [];
+
+  event.lines.forEach((line, lineIndex) => {
+    const matchesAny = configs.some(c =>
+      lineMatchesConfig(
+        { sport: event.sport, marketType: event.marketType },
+        { changePercent: line.changePercent, currentOdds: line.currentOdds },
+        event.commenceTime,
+        c,
+      )
+    );
+    if (!matchesAny) return;
+
+    const key = `${event.id}:${line.selection}`;
+    const last = lastShownRef.current.get(key);
+    const dropAtMs = event.newDropAt ? new Date(event.newDropAt).getTime() : 0;
+    const oddsChanged = !last || last.odds !== line.currentOdds;
+    const reAlerted = last && dropAtMs > 0 && dropAtMs > last.dropAt;
+
+    if (!oddsChanged && !reAlerted) return;
+
+    lastShownRef.current.set(key, { odds: line.currentOdds, dropAt: dropAtMs });
+
+    entries.push({
+      eventId: event.id,
+      homeTeam: event.homeTeam,
+      awayTeam: event.awayTeam,
+      leagueName: event.leagueName,
+      sport: event.sport,
+      commenceTime: event.commenceTime,
+      marketType: event.marketType,
+      selection: line.selection,
+      openingOdds: line.openingOdds,
+      currentOdds: line.currentOdds,
+      changePercent: line.changePercent,
+      allCurrentOdds,
+      lineIndex,
+      lastUpdated: event.lastUpdated,
+      newDropAt: event.newDropAt,
+      alertedAt: now,
+    });
+  });
+
+  return entries;
+}
+
 function dropIntensityBg(abs: number): string {
   if (abs >= 15) return "bg-green-950/30";
   if (abs >= 8) return "bg-green-950/15";
@@ -187,30 +238,43 @@ function dropIntensityBg(abs: number): string {
 }
 
 export default function FeedPage() {
-  const { configs, novigMethod, soundEnabled } = useAlertStore();
+  const { configs, novigMethod } = useAlertStore();
   const [logBetRow, setLogBetRow] = useState<(FeedRow & { novigOdds: number }) | null>(null);
   const [oddsMatchupId, setOddsMatchupId] = useState<number | null>(null);
   const [sortBy, setSortBy] = useState<SortOption>("newest");
 
-  // Accumulated log of alert rows shown this session.
-  // On first load: all current drops are added.
-  // On each subsequent poll: rows are prepended when EITHER odds changed OR
-  // newDropAt became more recent (covers 20-min cooldown re-alerts).
-  // Rows never disappear — they stay visible, pushed down by newer ones.
+  // Accumulated feed rows. Initial load: all current drops.
+  // Subsequent updates: prepended in real-time via WebSocket or HTTP fallback.
   const [shownRows, setShownRows] = useState<FeedRow[]>([]);
-  // Tracks rowKey → { odds, dropAt } last seen — both changes trigger a new feed entry
+
+  // Tracks rowKey → { odds, dropAt } last shown — deduplicates WS + HTTP poll updates
   const lastShownRef = useRef<Map<string, { odds: number; dropAt: number }>>(new Map());
   const initializedRef = useRef(false);
 
   // Pause state
   const [paused, setPaused] = useState(false);
+  const pausedRef = useRef(false);
   const frozenRowsRef = useRef<FeedRow[] | null>(null);
+  const pendingWsRowsRef = useRef<FeedRow[]>([]);
   const [pendingCount, setPendingCount] = useState(0);
 
+  // Keep pausedRef in sync so WS callbacks always see the current value
+  useEffect(() => {
+    pausedRef.current = paused;
+  }, [paused]);
+
+  // Configs ref for WS callback (avoids stale closure, no re-subscribe needed)
+  const configsRef = useRef(configs);
+  useEffect(() => { configsRef.current = configs; }, [configs]);
+
+
+  // ---------------------------------------------------------------------------
+  // HTTP fallback poll — 60s interval (backup if WS misses something)
+  // ---------------------------------------------------------------------------
   const { data: events, isLoading } = useGetOddsDrops(undefined, {
     query: {
       queryKey: getGetOddsDropsQueryKey(),
-      refetchInterval: 15000,
+      refetchInterval: 60_000,
     },
   });
 
@@ -218,16 +282,14 @@ export default function FeedPage() {
     query: { refetchInterval: 30000 },
   });
 
-  // Build candidate rows from latest API data (unsorted — sort applied to shownRows for display)
+  // Build candidate rows from latest HTTP data (for initial load + fallback sync)
   const liveRows = useMemo(() => buildRows(events, configs, "newest"), [events, configs]);
 
   useEffect(() => {
     if (!liveRows.length && !initializedRef.current) return;
 
     if (!initializedRef.current) {
-      // First data: show ALL current drops immediately — no cap on initial load.
-      // Seed lastShownRef for every row so subsequent polls only add entries
-      // when odds or newDropAt actually change (not re-show everything again).
+      // First load: show all current drops and seed the dedup map
       initializedRef.current = true;
       liveRows.forEach(r => lastShownRef.current.set(rowKey(r), {
         odds: r.currentOdds,
@@ -237,8 +299,8 @@ export default function FeedPage() {
       return;
     }
 
-    // Subsequent polls: find rows whose odds OR newDropAt changed since last shown.
-    // This catches both genuine odds movements AND 20-min cooldown re-alerts.
+    // Subsequent HTTP polls: only add rows whose odds or newDropAt changed since last shown.
+    // WS events have already updated lastShownRef so no duplicate entries are created.
     const newEntries: FeedRow[] = [];
     for (const row of liveRows) {
       const key = rowKey(row);
@@ -252,16 +314,36 @@ export default function FeedPage() {
       }
     }
     if (newEntries.length > 0) {
-      // Prepend new entries; cap total to MAX_FEED_ROWS (drop oldest)
       setShownRows(prev => [...newEntries, ...prev].slice(0, MAX_FEED_ROWS));
-      // Play chime from HTTP polling so alerts work even when SSE is disconnected
-      if (soundEnabled) playChime();
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [liveRows]);
 
-  // Display: filter accumulated rows by current configs (so config changes take effect immediately),
-  // then sort. This ensures rows that no longer match a tightened config disappear instantly.
+  // ---------------------------------------------------------------------------
+  // WebSocket real-time stream
+  // ---------------------------------------------------------------------------
+  const handleOddsUpdate = useCallback((event: WsOddsEventUpdate) => {
+    // Build new rows using always-current refs (no stale closure)
+    const newEntries = wsEventToRows(event, configsRef.current, lastShownRef);
+    if (newEntries.length === 0) return;
+
+    if (pausedRef.current) {
+      // Queue while paused — flush on resume
+      pendingWsRowsRef.current = [...newEntries, ...pendingWsRowsRef.current];
+      setPendingCount(prev => prev + newEntries.length);
+    } else {
+      setShownRows(prev => [...newEntries, ...prev].slice(0, MAX_FEED_ROWS));
+    }
+  }, []);
+
+
+  // WebSocket drives real-time feed updates; layout handles chimes via SSE separately
+  useWsFeed({ onOddsUpdate: handleOddsUpdate });
+
+
+  // ---------------------------------------------------------------------------
+  // Display filtering + sorting
+  // ---------------------------------------------------------------------------
   const sortedShownRows = useMemo(() => {
     const filtered = shownRows.filter(row =>
       configs.some(c =>
@@ -276,21 +358,22 @@ export default function FeedPage() {
     return applySort(filtered, sortBy);
   }, [shownRows, sortBy, configs]);
 
-  // When paused: count new entries that arrived after the freeze
-  useEffect(() => {
-    if (!paused || frozenRowsRef.current === null) return;
-    const frozenSet = new Set(frozenRowsRef.current.map(r => `${rowKey(r)}:${r.currentOdds}`));
-    const newCount = sortedShownRows.filter(r => !frozenSet.has(`${rowKey(r)}:${r.currentOdds}`)).length;
-    setPendingCount(newCount);
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [shownRows, paused]);
-
+  // ---------------------------------------------------------------------------
+  // Pause / resume
+  // ---------------------------------------------------------------------------
   function handlePause() {
     if (!paused) {
       frozenRowsRef.current = [...sortedShownRows];
+      pendingWsRowsRef.current = [];
       setPendingCount(0);
       setPaused(true);
     } else {
+      // Flush queued WS rows
+      const queued = pendingWsRowsRef.current;
+      pendingWsRowsRef.current = [];
+      if (queued.length > 0) {
+        setShownRows(prev => [...queued, ...prev].slice(0, MAX_FEED_ROWS));
+      }
       frozenRowsRef.current = null;
       setPendingCount(0);
       setPaused(false);
@@ -298,6 +381,11 @@ export default function FeedPage() {
   }
 
   function handleReveal() {
+    const queued = pendingWsRowsRef.current;
+    pendingWsRowsRef.current = [];
+    if (queued.length > 0) {
+      setShownRows(prev => [...queued, ...prev].slice(0, MAX_FEED_ROWS));
+    }
     frozenRowsRef.current = null;
     setPendingCount(0);
     setPaused(false);
@@ -337,6 +425,7 @@ export default function FeedPage() {
             Monitoring <span className="font-semibold text-muted-foreground">{summary.totalEvents.toLocaleString()}</span> live markets
           </span>
         )}
+
         {/* Pending events badge */}
         {paused && pendingCount > 0 && (
           <button
@@ -348,6 +437,15 @@ export default function FeedPage() {
         )}
 
         <div className="ml-auto flex items-center gap-2">
+          {/* Live stream indicator */}
+          <span className="flex items-center gap-1 text-[10px] font-mono text-green-400 uppercase tracking-wide">
+            <span className="relative flex h-2 w-2">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
+              <span className="relative inline-flex rounded-full h-2 w-2 bg-green-500"></span>
+            </span>
+            Live
+          </span>
+
           {paused && (
             <span className="text-[10px] font-mono text-amber-400 uppercase tracking-wide">Paused</span>
           )}
@@ -423,7 +521,7 @@ export default function FeedPage() {
                     <span className="font-medium text-sm text-foreground">No drops detected yet</span>
                     {summary && summary.totalEvents > 0 ? (
                       <span className="text-xs text-muted-foreground">
-                        Monitoring <span className="font-semibold text-primary">{summary.totalEvents.toLocaleString()}</span> real Pinnacle football markets — drops appear as lines move.
+                        Monitoring <span className="font-semibold text-primary">{summary.totalEvents.toLocaleString()}</span> real Pinnacle markets — drops appear as lines move.
                       </span>
                     ) : (
                       <span className="text-xs">Waiting for Pinnacle data...</span>
