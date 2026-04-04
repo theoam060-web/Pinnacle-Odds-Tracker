@@ -68,6 +68,42 @@ function formatMinutes(mins: number): string {
   return `${Math.round(mins / 1440)}d`;
 }
 
+function BetTimingTooltip({ active, payload, sym }: { active?: boolean; payload?: any[]; sym: string }) {
+  if (!active || !payload?.length) return null;
+  const d = payload[0]?.payload;
+  if (!d) return null;
+  const pl: number = d.y;
+  return (
+    <div
+      className="rounded-md border border-white/10 bg-[#0d1117] px-3 py-2.5 shadow-xl space-y-1.5"
+      style={{ outline: "none", minWidth: 180 }}
+    >
+      <div className="text-[13px] font-semibold text-white leading-tight">{d.match}</div>
+      <div className="text-[11px] text-muted-foreground capitalize">{d.selection}</div>
+      <div className="border-t border-white/5 pt-1.5 space-y-1 text-xs">
+        <div className="flex items-center justify-between gap-6">
+          <span className="text-muted-foreground">Before kickoff</span>
+          <span className="font-mono text-white">{formatMinutes(d.x)}</span>
+        </div>
+        <div className="flex items-center justify-between gap-6">
+          <span className="text-muted-foreground">Odds</span>
+          <span className="font-mono text-white">{d.odds?.toFixed(3) ?? "—"}</span>
+        </div>
+        <div className="flex items-center justify-between gap-6">
+          <span className="text-muted-foreground">Stake</span>
+          <span className="font-mono text-white">{sym}{d.stake?.toFixed(2) ?? "—"}</span>
+        </div>
+        <div className="flex items-center justify-between gap-6">
+          <span className="text-muted-foreground">P/L</span>
+          <span className={`font-mono font-semibold ${pl >= 0 ? "text-green-400" : "text-red-400"}`}>
+            {pl >= 0 ? "+" : ""}{sym}{Math.abs(pl).toFixed(2)}
+          </span>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function SectionEmpty({ message }: { message: string }) {
   return (
     <p className="text-[11px] text-muted-foreground text-center py-6">{message}</p>
@@ -191,9 +227,10 @@ export default function BetStatsPage() {
 
   // ─── BET TIMING SCATTER ────────────────────────────────────────────────────
   const betTimingPoints = useMemo(() => {
-    const won: { x: number; y: number }[] = [];
-    const lost: { x: number; y: number }[] = [];
-    const pushed: { x: number; y: number }[] = [];
+    type TimingPt = { x: number; y: number; match: string; selection: string; odds: number; stake: number };
+    const won: TimingPt[] = [];
+    const lost: TimingPt[] = [];
+    const pushed: TimingPt[] = [];
 
     for (const b of filteredBets) {
       const minsBeforeKickoff = Math.max(0,
@@ -202,7 +239,14 @@ export default function BetStatsPage() {
       const pl = b.result === "win"  ? b.potentialProfit
                : b.result === "loss" ? -b.stake
                : 0;
-      const pt = { x: minsBeforeKickoff, y: parseFloat(pl.toFixed(2)) };
+      const pt: TimingPt = {
+        x: minsBeforeKickoff,
+        y: parseFloat(pl.toFixed(2)),
+        match: `${b.homeTeam} vs ${b.awayTeam}`,
+        selection: b.selection,
+        odds: b.bettingOdds,
+        stake: b.stake,
+      };
       if      (b.result === "win")  won.push(pt);
       else if (b.result === "loss") lost.push(pt);
       else                          pushed.push(pt);
@@ -634,12 +678,9 @@ export default function BetStatsPage() {
                       tickLine={false}
                     />
                     <Tooltip
-                      cursor={{ strokeDasharray: "3 3" }}
-                      contentStyle={{ background: "#1a1a1a", border: "1px solid #333", borderRadius: 6, fontSize: 11 }}
-                      formatter={(value: number, name: string) => [
-                        name === "x" ? formatMinutes(value) : `${value >= 0 ? "+" : ""}${sym}${value.toFixed(2)}`,
-                        name === "x" ? "Time before match" : "P/L",
-                      ]}
+                      cursor={{ strokeDasharray: "3 3", stroke: "rgba(255,255,255,0.08)" }}
+                      content={(props: any) => <BetTimingTooltip {...props} sym={sym} />}
+                      wrapperStyle={{ outline: "none" }}
                     />
                     <ReferenceLine y={0} stroke="#374151" strokeDasharray="4 2" />
                     <Scatter
