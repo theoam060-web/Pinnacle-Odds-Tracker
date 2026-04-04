@@ -1,9 +1,19 @@
+import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { TrendingDown, TrendingUp, Loader2 } from "lucide-react";
+import { TrendingDown, TrendingUp, Loader2, ChevronDown, ChevronUp } from "lucide-react";
 import { formatOdds } from "@/lib/format";
 import { computeNovig } from "@/lib/novig";
 import { useAlertStore } from "@/lib/alert-context";
+import {
+  ComposedChart, Line, XAxis, YAxis, CartesianGrid,
+  Tooltip, ResponsiveContainer,
+} from "recharts";
+import { format } from "date-fns";
+
+// ---------------------------------------------------------------------------
+// Interfaces
+// ---------------------------------------------------------------------------
 
 interface Price {
   designation: string;
@@ -42,13 +52,237 @@ interface Props {
   onClose: () => void;
 }
 
+// ---------------------------------------------------------------------------
+// Constants
+// ---------------------------------------------------------------------------
+
 const DESIGNATION_LABELS: Record<string, string> = {
   home: "Home",
   away: "Away",
   draw: "Draw",
   over: "Over",
   under: "Under",
+  unknown: "—",
 };
+
+const DESIGNATION_COLORS: Record<string, string> = {
+  home: "#60a5fa",
+  away: "#f87171",
+  draw: "#facc15",
+  over: "#4ade80",
+  under: "#fb923c",
+  unknown: "#94a3b8",
+};
+
+function desigColor(d: string): string {
+  return DESIGNATION_COLORS[d] ?? "#94a3b8";
+}
+
+// ---------------------------------------------------------------------------
+// Chart helpers
+// ---------------------------------------------------------------------------
+
+interface NormalizedMovement {
+  ms: number;
+  designation: string;
+  odds: number;
+  stake?: number | null;
+}
+
+type ChartPoint = Record<string, number | string | undefined>;
+
+function buildMultiSeriesData(
+  movements: NormalizedMovement[],
+  prices: Price[],
+): { points: ChartPoint[]; designations: string[] } {
+  if (!movements.length) return { points: [], designations: [] };
+
+  const designations = [...new Set(movements.map(m => m.designation))].filter(d => d !== "unknown");
+  const sorted = [...movements].sort((a, b) => a.ms - b.ms);
+
+  const lastKnown: Record<string, number> = {};
+  prices.forEach(p => { lastKnown[p.designation] = p.openingDecimalPrice; });
+
+  const firstMs = sorted[0].ms;
+  const openAnchor: ChartPoint = { ms: firstMs - 1000, time: "Open" };
+  prices.forEach(p => { openAnchor[p.designation] = p.openingDecimalPrice; });
+
+  const allMs = [...new Set(sorted.map(m => m.ms))].sort((a, b) => a - b);
+
+  const points: ChartPoint[] = [openAnchor];
+
+  for (const ms of allMs) {
+    for (const m of sorted.filter(x => x.ms === ms)) {
+      lastKnown[m.designation] = m.odds;
+    }
+    const point: ChartPoint = { ms, time: format(new Date(ms), "HH:mm") };
+    for (const d of designations) {
+      if (lastKnown[d] !== undefined) point[d] = lastKnown[d];
+    }
+    points.push(point);
+  }
+
+  const now = Date.now();
+  const last = points[points.length - 1];
+  if (last && now - (last.ms as number) > 60_000) {
+    const trailing: ChartPoint = { ms: now, time: format(new Date(now), "HH:mm") };
+    for (const d of designations) {
+      if (lastKnown[d] !== undefined) trailing[d] = lastKnown[d];
+    }
+    points.push(trailing);
+  }
+
+  return { points, designations };
+}
+
+// ---------------------------------------------------------------------------
+// MarketChart — fetches movements and renders multi-line chart
+// ---------------------------------------------------------------------------
+
+function MarketChart({ marketId, prices }: { marketId: string; prices: Price[] }) {
+  const { data, isLoading } = useQuery<NormalizedMovement[]>({
+    queryKey: ["market-chart", marketId],
+    queryFn: async () => {
+      // Try new-style pinnacle_market_movements first
+      const r = await fetch(`/api/markets/${encodeURIComponent(marketId)}`);
+      if (r.ok) {
+        const { movements } = await r.json();
+        if (movements?.length) {
+          return movements.map((m: any) => ({
+            ms: new Date(m.recordedAt).getTime(),
+            designation: m.designation,
+            odds: m.decimalPrice,
+            stake: m.maxRiskStake,
+          }));
+        }
+      }
+      // Fallback: legacy odds_movements via /api/odds/drops/:id
+      const r2 = await fetch(`/api/odds/drops/${encodeURIComponent(marketId)}`);
+      if (r2.ok) {
+        const ev = await r2.json();
+        return (ev.movements ?? []).map((m: any) => ({
+          ms: new Date(m.timestamp).getTime(),
+          designation: m.selection,
+          odds: m.odds,
+          stake: m.limit,
+        }));
+      }
+      return [];
+    },
+    staleTime: 30_000,
+    refetchInterval: 30_000,
+  });
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center py-5 gap-2 text-muted-foreground/60 text-xs">
+        <Loader2 className="w-3 h-3 animate-spin" />
+        Loading history…
+      </div>
+    );
+  }
+
+  if (!data || data.length === 0) {
+    return (
+      <div className="text-center py-5 text-muted-foreground/40 text-xs">
+        No historical data yet.
+      </div>
+    );
+  }
+
+  const { points, designations } = buildMultiSeriesData(data, prices);
+
+  if (points.length < 2 || designations.length === 0) {
+    return (
+      <div className="text-center py-5 text-muted-foreground/40 text-xs">
+        Not enough data for a chart.
+      </div>
+    );
+  }
+
+  const allOdds = points.flatMap(p =>
+    designations.map(d => p[d] as number).filter(v => v != null && isFinite(v))
+  );
+  const yMin = Math.max(1, parseFloat((Math.min(...allOdds) * 0.98).toFixed(2)));
+  const yMax = parseFloat((Math.max(...allOdds) * 1.02).toFixed(2));
+
+  const CustomTooltip = ({ active, payload, label }: any) => {
+    if (!active || !payload?.length) return null;
+    return (
+      <div
+        className="rounded-md border border-white/10 bg-[#0d1117] px-3 py-2 text-xs space-y-0.5 shadow-xl"
+        style={{ outline: "none" }}
+      >
+        <div className="text-muted-foreground font-mono mb-1">{label}</div>
+        {payload.map((entry: any) => (
+          <div key={entry.dataKey} className="flex items-center gap-2">
+            <span className="w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ background: entry.color }} />
+            <span className="text-muted-foreground capitalize">{DESIGNATION_LABELS[entry.dataKey] ?? entry.dataKey}:</span>
+            <span className="font-mono font-semibold text-white">{formatOdds(entry.value)}</span>
+          </div>
+        ))}
+      </div>
+    );
+  };
+
+  return (
+    <div className="pt-2 pb-3 px-1">
+      <ResponsiveContainer width="100%" height={160}>
+        <ComposedChart data={points} margin={{ top: 4, right: 8, bottom: 0, left: -10 }}>
+          <CartesianGrid strokeDasharray="3 3" stroke="#1f2937" vertical={false} />
+          <XAxis
+            dataKey="time"
+            tick={{ fill: "#6b7280", fontSize: 9 }}
+            axisLine={false}
+            tickLine={false}
+            interval="preserveStartEnd"
+          />
+          <YAxis
+            domain={[yMin, yMax]}
+            tick={{ fill: "#6b7280", fontSize: 9 }}
+            axisLine={false}
+            tickLine={false}
+            tickFormatter={v => formatOdds(v)}
+            width={38}
+          />
+          <Tooltip
+            content={<CustomTooltip />}
+            wrapperStyle={{ outline: "none", zIndex: 50 }}
+          />
+          {designations.map(d => (
+            <Line
+              key={d}
+              type="stepAfter"
+              dataKey={d}
+              stroke={desigColor(d)}
+              strokeWidth={1.5}
+              dot={false}
+              activeDot={{ r: 3, fill: desigColor(d) }}
+              connectNulls
+              isAnimationActive={false}
+            />
+          ))}
+        </ComposedChart>
+      </ResponsiveContainer>
+
+      {/* Legend */}
+      <div className="flex items-center gap-3 justify-center mt-1 flex-wrap">
+        {designations.map(d => (
+          <div key={d} className="flex items-center gap-1">
+            <span className="w-2.5 h-0.5 rounded-full flex-shrink-0" style={{ background: desigColor(d) }} />
+            <span className="text-[10px] text-muted-foreground/70 capitalize">
+              {DESIGNATION_LABELS[d] ?? d}
+            </span>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// ChangeArrow
+// ---------------------------------------------------------------------------
 
 function ChangeArrow({ direction, pct }: { direction: string | null; pct: number | null }) {
   if (pct == null || direction == null || direction === "stable" || Math.abs(pct) < 0.01) {
@@ -65,6 +299,10 @@ function ChangeArrow({ direction, pct }: { direction: string | null; pct: number
   );
 }
 
+// ---------------------------------------------------------------------------
+// PriceCell
+// ---------------------------------------------------------------------------
+
 interface PriceCellProps {
   price: Price;
   label?: string;
@@ -80,15 +318,10 @@ function PriceCell({ price, label, novigOdds }: PriceCellProps) {
   const pointsLabel =
     price.points != null ? (price.points > 0 ? `+${price.points}` : `${price.points}`) : null;
 
-  const currentColor = isDrop
-    ? "text-green-400"
-    : isRise
-    ? "text-red-400"
-    : "text-white";
+  const currentColor = isDrop ? "text-green-400" : isRise ? "text-red-400" : "text-white";
 
   return (
     <div className="bg-black/30 border border-white/5 rounded-md p-2 flex flex-col gap-0.5 min-w-0">
-      {/* Header: label + change arrow */}
       <div className="flex items-center justify-between gap-1">
         <span className="text-[11px] text-muted-foreground font-medium truncate">
           {display}
@@ -99,7 +332,6 @@ function PriceCell({ price, label, novigOdds }: PriceCellProps) {
         <ChangeArrow direction={price.direction} pct={price.changePercent} />
       </div>
 
-      {/* Opening (strikethrough) → current odds */}
       <div className="flex items-baseline gap-1.5 flex-wrap">
         {changed && (
           <span className="text-[11px] font-mono text-muted-foreground/50 line-through">
@@ -111,14 +343,12 @@ function PriceCell({ price, label, novigOdds }: PriceCellProps) {
         </span>
       </div>
 
-      {/* No-vig odds — always shown, same visual weight as change% */}
       {novigOdds != null && isFinite(novigOdds) && (
         <div className="text-[11px] font-mono text-emerald-400 font-semibold">
           NV {formatOdds(novigOdds)}
         </div>
       )}
 
-      {/* Opening label only when price hasn't moved */}
       {!changed && (
         <div className="text-[10px] text-muted-foreground/50 font-mono">
           Open: {formatOdds(price.openingDecimalPrice)}
@@ -127,6 +357,78 @@ function PriceCell({ price, label, novigOdds }: PriceCellProps) {
     </div>
   );
 }
+
+// ---------------------------------------------------------------------------
+// MarketGroup — one set of prices + expandable chart
+// ---------------------------------------------------------------------------
+
+function resolveLabel(designation: string, homeTeam: string, awayTeam: string): string {
+  if (designation === "home") return homeTeam;
+  if (designation === "away") return awayTeam;
+  return DESIGNATION_LABELS[designation] ?? designation;
+}
+
+function MarketGroup({
+  market,
+  homeTeam,
+  awayTeam,
+  novigMethod,
+  isExpanded,
+  onToggle,
+}: {
+  market: Market;
+  homeTeam: string;
+  awayTeam: string;
+  novigMethod: string;
+  isExpanded: boolean;
+  onToggle: () => void;
+}) {
+  const allOdds = market.prices.map(p => p.decimalPrice);
+  const cells = market.prices.map((price, idx) => ({
+    price,
+    displayLabel: resolveLabel(price.designation, homeTeam, awayTeam),
+    novigOdds: ((computeNovig(allOdds, idx) as any)[novigMethod] ?? computeNovig(allOdds, idx).proportional) as number,
+  }));
+
+  const count = cells.length;
+  const cols = count <= 2 ? "grid-cols-2" : count === 3 ? "grid-cols-3" : "grid-cols-2";
+
+  return (
+    <div className="rounded-md border border-white/5 overflow-hidden">
+      {/* Price cells — click to toggle chart */}
+      <div
+        className={`grid ${cols} gap-px bg-white/5 cursor-pointer group`}
+        onClick={onToggle}
+        title="Klicka för att visa kursgraf"
+      >
+        {cells.map(({ price, displayLabel, novigOdds }, i) => (
+          <div key={i} className="relative">
+            <PriceCell price={price} label={displayLabel} novigOdds={novigOdds} />
+            {/* Expand indicator on last cell */}
+            {i === cells.length - 1 && (
+              <div className="absolute top-1.5 right-1.5 opacity-30 group-hover:opacity-70 transition-opacity">
+                {isExpanded
+                  ? <ChevronUp className="w-2.5 h-2.5 text-muted-foreground" />
+                  : <ChevronDown className="w-2.5 h-2.5 text-muted-foreground" />}
+              </div>
+            )}
+          </div>
+        ))}
+      </div>
+
+      {/* Expanded chart */}
+      {isExpanded && (
+        <div className="bg-black/20 border-t border-white/5">
+          <MarketChart marketId={market.id} prices={market.prices} />
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Section definitions
+// ---------------------------------------------------------------------------
 
 type SectionDef = {
   key: string;
@@ -167,21 +469,19 @@ const SECTIONS: SectionDef[] = [
   },
   {
     key: "team_total_home",
-    label: "Home Team Goals",
+    label: "Home Team Totals",
     filter: m => m.type === "team_total" && m.period === 0 && m.side === "home" && !m.isAlternate,
   },
   {
     key: "team_total_away",
-    label: "Away Team Goals",
+    label: "Away Team Totals",
     filter: m => m.type === "team_total" && m.period === 0 && m.side === "away" && !m.isAlternate,
   },
 ];
 
-function resolveLabel(designation: string, homeTeam: string, awayTeam: string): string {
-  if (designation === "home") return homeTeam;
-  if (designation === "away") return awayTeam;
-  return DESIGNATION_LABELS[designation] ?? designation;
-}
+// ---------------------------------------------------------------------------
+// MarketSection
+// ---------------------------------------------------------------------------
 
 function MarketSection({
   label,
@@ -189,49 +489,36 @@ function MarketSection({
   homeTeam,
   awayTeam,
   novigMethod,
+  expandedMarketId,
+  onExpandMarket,
 }: {
   label: string;
   markets: Market[];
   homeTeam: string;
   awayTeam: string;
   novigMethod: string;
+  expandedMarketId: string | null;
+  onExpandMarket: (id: string | null) => void;
 }) {
   if (markets.length === 0) return null;
-
-  // Build flat list of { price, label, novigOdds }
-  // No-vig is computed per-market (using all prices in that market as the universe)
-  const cells: Array<{ price: Price; displayLabel: string; novigOdds: number }> =
-    markets.flatMap(market => {
-      const allOdds = market.prices.map(p => p.decimalPrice);
-      return market.prices.map((price, idx) => {
-        const novigResult = computeNovig(allOdds, idx);
-        const novigOdds = (novigResult as any)[novigMethod] ?? novigResult.proportional;
-        return {
-          price,
-          displayLabel: resolveLabel(price.designation, homeTeam, awayTeam),
-          novigOdds,
-        };
-      });
-    });
-
-  if (cells.length === 0) return null;
-
-  const count = cells.length;
-  const cols =
-    count <= 2 ? "grid-cols-2" : count === 3 ? "grid-cols-3" : "grid-cols-2";
 
   return (
     <div>
       <div className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wide mb-1.5 px-0.5">
         {label}
       </div>
-      <div className={`grid ${cols} gap-1.5`}>
-        {cells.map(({ price, displayLabel, novigOdds }, i) => (
-          <PriceCell
-            key={i}
-            price={price}
-            label={displayLabel}
-            novigOdds={novigOdds}
+      <div className="space-y-1.5">
+        {markets.map(market => (
+          <MarketGroup
+            key={market.id}
+            market={market}
+            homeTeam={homeTeam}
+            awayTeam={awayTeam}
+            novigMethod={novigMethod}
+            isExpanded={expandedMarketId === market.id}
+            onToggle={() =>
+              onExpandMarket(expandedMarketId === market.id ? null : market.id)
+            }
           />
         ))}
       </div>
@@ -239,8 +526,13 @@ function MarketSection({
   );
 }
 
+// ---------------------------------------------------------------------------
+// PinnacleOddsModal
+// ---------------------------------------------------------------------------
+
 export function PinnacleOddsModal({ matchupId, onClose }: Props) {
   const { novigMethod } = useAlertStore();
+  const [expandedMarketId, setExpandedMarketId] = useState<string | null>(null);
 
   const { data, isLoading, isError } = useQuery<MatchupResponse>({
     queryKey: ["matchup", matchupId],
@@ -308,12 +600,14 @@ export function PinnacleOddsModal({ matchupId, onClose }: Props) {
               homeTeam={data?.matchup.homeTeam ?? "Home"}
               awayTeam={data?.matchup.awayTeam ?? "Away"}
               novigMethod={novigMethod}
+              expandedMarketId={expandedMarketId}
+              onExpandMarket={setExpandedMarketId}
             />
           ))}
         </div>
 
         <div className="shrink-0 px-4 py-2.5 border-t border-white/5 text-[10px] text-muted-foreground/50 text-right">
-          Odds via Pinnacle · Refreshes every 15s
+          Klicka på en rad för att se kursgraf · Pinnacle · Uppdateras var 15s
         </div>
       </DialogContent>
     </Dialog>
