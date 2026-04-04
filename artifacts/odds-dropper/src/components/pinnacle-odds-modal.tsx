@@ -157,7 +157,7 @@ const SECTIONS: SectionDef[] = [
   },
   {
     key: "ou",
-    label: "Over / Under Goals",
+    label: "Over / Under",
     filter: m => m.type === "total" && m.period === 0 && !m.isAlternate,
   },
   {
