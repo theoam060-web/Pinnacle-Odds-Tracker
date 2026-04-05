@@ -27,24 +27,24 @@ const LIVE_ODDS = [
 
 const STEPS = [
   {
-    icon: <Zap className="w-6 h-6 text-primary" />,
-    title: "Connect to Pinnacle",
-    description: "A direct WebSocket pipeline ingests every odds change from Pinnacle in real time — no polling, no delay, no stale data."
+    icon: <Radar className="w-6 h-6 text-primary" />,
+    title: "Choose Your Markets",
+    description: "Select exactly which sports, leagues, and bet types you care about. Filter out everything else — only what's relevant reaches you."
   },
   {
-    icon: <Radar className="w-6 h-6 text-primary" />,
-    title: "Detect Sharp Action",
-    description: "Our algorithm distinguishes syndicate steam from public noise, flagging only the moves that signal genuine market intelligence."
+    icon: <Target className="w-6 h-6 text-primary" />,
+    title: "Define Your Thresholds",
+    description: "Set a minimum drop percentage per market. Only moves that clear your bar trigger a notification — no noise, no false positives."
+  },
+  {
+    icon: <Zap className="w-6 h-6 text-primary" />,
+    title: "We Watch 24/7",
+    description: "SharpTracker continuously monitors Pinnacle around the clock. The instant a qualifying line shifts, we catch it — regardless of the hour."
   },
   {
     icon: <Bell className="w-6 h-6 text-primary" />,
-    title: "Trigger Your Alert",
-    description: "The moment a drop crosses your custom EV threshold, you get an instant push notification — before the line settles at other books."
-  },
-  {
-    icon: <BarChart3 className="w-6 h-6 text-primary" />,
-    title: "Track Your Edge",
-    description: "Every bet is auto-graded against the Pinnacle closing line so you can measure true CLV and prove your long-term edge."
+    title: "You're First to Know",
+    description: "A real-time alert lands before the broader market has had a chance to react. Your edge is the time between the move and everyone else noticing."
   }
 ];
 
@@ -311,8 +311,8 @@ function FeaturesGrid() {
           transition={{ duration: 0.5 }}
           className="text-center mb-16 max-w-2xl mx-auto"
         >
-          <h2 className="text-3xl md:text-4xl font-bold font-sans mb-4">Precision Instruments.</h2>
-          <p className="text-muted-foreground">Everything you need to beat the closing line, nothing you don't. Built for speed, accuracy, and execution.</p>
+          <h2 className="text-3xl md:text-4xl font-bold font-sans mb-4">Your filters. Your rules.</h2>
+          <p className="text-muted-foreground">Build precise alert configurations by market and line type. SharpTracker watches Pinnacle non-stop — the moment a qualifying line moves, you're the first to act on it.</p>
         </motion.div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 max-w-3xl mx-auto">
