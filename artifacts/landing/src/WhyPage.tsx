@@ -4,7 +4,6 @@ import { Activity, ArrowLeft, ArrowRight } from "lucide-react";
 import {
   LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer,
   ReferenceLine, ReferenceArea, CartesianGrid,
-  AreaChart, Area,
 } from "recharts";
 
 // ── Nav ───────────────────────────────────────────────────────────────────────
@@ -43,10 +42,31 @@ const ODDS_DATA = [
   { t: "14:00", odds: 1.82 },
 ];
 
-const EV_GROWTH = Array.from({ length: 11 }, (_, i) => ({
-  bets: i * 20,
-  profit: parseFloat((i * 20 * 0.03).toFixed(1)),
-}));
+// Simulated 1000-bet outcome. Sharp bettor: ~3% edge. Average bettor: paying the margin.
+// Both paths include realistic variance — winning streaks, drawdowns, no smooth lines.
+const GROWTH_DATA = [
+  { bets: 0,    sharp: 0.0,  avg: 0.0  },
+  { bets: 50,   sharp: 1.2,  avg: 2.8  },
+  { bets: 100,  sharp: -0.8, avg: 1.1  },
+  { bets: 150,  sharp: 2.9,  avg: -3.2 },
+  { bets: 200,  sharp: 1.4,  avg: -6.8 },
+  { bets: 250,  sharp: 6.1,  avg: -4.1 },
+  { bets: 300,  sharp: 5.3,  avg: -9.7 },
+  { bets: 350,  sharp: 9.8,  avg: -13.4 },
+  { bets: 400,  sharp: 8.2,  avg: -16.9 },
+  { bets: 450,  sharp: 13.7, avg: -21.3 },
+  { bets: 500,  sharp: 11.9, avg: -18.4 },
+  { bets: 550,  sharp: 17.2, avg: -24.6 },
+  { bets: 600,  sharp: 21.8, avg: -28.9 },
+  { bets: 650,  sharp: 18.6, avg: -32.1 },
+  { bets: 700,  sharp: 24.3, avg: -35.8 },
+  { bets: 750,  sharp: 27.9, avg: -33.2 },
+  { bets: 800,  sharp: 23.5, avg: -39.4 },
+  { bets: 850,  sharp: 29.7, avg: -43.1 },
+  { bets: 900,  sharp: 33.2, avg: -46.8 },
+  { bets: 950,  sharp: 30.1, avg: -44.2 },
+  { bets: 1000, sharp: 36.4, avg: -51.7 },
+];
 
 function ChartTip({ active, payload, label }: any) {
   if (!active || !payload?.length) return null;
@@ -282,7 +302,7 @@ export default function WhyPage() {
             </P>
             <div className="my-4" />
             <P>
-              A 3% edge on every bet sounds small. But repeat that 200 times and you're up 6 units. Do it 1,000 times — 30 units. Most bettors never reach this because they have no process, no tracking, and no idea if they have a real edge. SharpTracker fixes all three.
+              A 3% edge sounds small. But over 1,000 bets, that edge separates you from everyone else by nearly 90 units. The average bettor never reaches this because they have no process, no tracking, and no idea if their edge is real. SharpTracker fixes all three.
             </P>
           </motion.div>
 
@@ -293,27 +313,48 @@ export default function WhyPage() {
             transition={{ duration: 0.5, delay: 0.1 }}
             className="rounded-2xl border border-border/40 bg-background/60 p-6"
           >
-            <p className="text-xs font-mono text-muted-foreground uppercase tracking-widest mb-1">
-              Profit over time
-            </p>
-            <p className="text-foreground/55 text-xs mb-5 leading-relaxed">
-              Simulated result of a 3% edge, bet consistently 200 times.
-            </p>
-            <ResponsiveContainer width="100%" height={200}>
-              <AreaChart data={EV_GROWTH} margin={{ top: 4, right: 12, bottom: 0, left: -24 }}>
-                <defs>
-                  <linearGradient id="growthGrad" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0%" stopColor="#00ffff" stopOpacity={0.2} />
-                    <stop offset="100%" stopColor="#00ffff" stopOpacity={0} />
-                  </linearGradient>
-                </defs>
-                <CartesianGrid stroke="#ffffff07" strokeDasharray="3 3" />
-                <XAxis dataKey="bets" tick={{ fill: "#6b7280", fontSize: 10 }} axisLine={false} tickLine={false} label={{ value: "Bets", fill: "#6b7280", fontSize: 9, position: "insideBottomRight", offset: -4 }} />
-                <YAxis tick={{ fill: "#6b7280", fontSize: 10 }} axisLine={false} tickLine={false} label={{ value: "Units", fill: "#6b7280", fontSize: 9, angle: -90, position: "insideLeft" }} />
-                <Tooltip content={<ChartTip />} />
-                <Area type="monotone" dataKey="profit" stroke="#00ffff" strokeWidth={2.5} fill="url(#growthGrad)" dot={false} />
-              </AreaChart>
+            <div className="flex items-center gap-4 mb-5">
+              <span className="flex items-center gap-1.5 text-[10px] font-mono text-primary uppercase tracking-widest">
+                <span className="w-6 h-[2px] bg-primary inline-block rounded" />
+                SharpTracker
+              </span>
+              <span className="flex items-center gap-1.5 text-[10px] font-mono text-foreground/40 uppercase tracking-widest">
+                <span className="w-6 h-[2px] bg-red-500/60 inline-block rounded" />
+                Average bettor
+              </span>
+            </div>
+            <ResponsiveContainer width="100%" height={220}>
+              <LineChart data={GROWTH_DATA} margin={{ top: 8, right: 8, bottom: 8, left: 8 }}>
+                <XAxis hide={true} />
+                <YAxis hide={true} />
+                <ReferenceLine y={0} stroke="#ffffff12" strokeDasharray="4 4" />
+                <Line
+                  type="monotone"
+                  dataKey="sharp"
+                  stroke="#00ffff"
+                  strokeWidth={2}
+                  dot={false}
+                  activeDot={{ r: 3, fill: "#00ffff" }}
+                />
+                <Line
+                  type="monotone"
+                  dataKey="avg"
+                  stroke="#ef4444"
+                  strokeWidth={2}
+                  strokeOpacity={0.55}
+                  dot={false}
+                  activeDot={{ r: 3, fill: "#ef4444" }}
+                />
+              </LineChart>
             </ResponsiveContainer>
+            <div className="flex justify-end mt-2">
+              <p className="text-[11px] font-mono text-foreground/45">
+                <span className="text-primary font-semibold">+36 units</span>
+                {" vs "}
+                <span className="text-red-500/70">−52 units</span>
+                {" — after 1,000 bets"}
+              </p>
+            </div>
           </motion.div>
         </div>
       </Section>
