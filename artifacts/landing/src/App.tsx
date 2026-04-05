@@ -290,24 +290,25 @@ function TerminalSection() {
 type BookLogo = {
   name: string;
   img?: string;
+  large?: boolean;
 };
 
 const BASE = import.meta.env.BASE_URL;
 
 const BOOKS: BookLogo[] = [
   { name: "bet365" },
-  { name: "Unibet" },
+  { name: "Unibet",       large: true },
   { name: "DraftKings" },
-  { name: "William Hill", img: `${BASE}logos/williamhill.png` },
+  { name: "William Hill", img: `${BASE}logos/williamhill.png`, large: true },
   { name: "bwin",         img: `${BASE}logos/bwin.png` },
   { name: "Betclic",      img: `${BASE}logos/betclic.png` },
-  { name: "FanDuel",      img: `${BASE}logos/fanduel.png` },
+  { name: "FanDuel",      img: `${BASE}logos/fanduel.png`,    large: true },
   { name: "Betsson",      img: `${BASE}logos/betsson.png` },
-  { name: "BetMGM" },
+  { name: "BetMGM",       large: true },
   { name: "Tipico",       img: `${BASE}logos/tipico.png` },
-  { name: "888sport",     img: `${BASE}logos/888sport2.png` },
-  { name: "Betway",       img: `${BASE}logos/betway.png` },
-  { name: "Ladbrokes" },
+  { name: "888sport",     img: `${BASE}logos/888sport2.png`,  large: true },
+  { name: "Betway",       img: `${BASE}logos/betway.png`,     large: true },
+  { name: "Ladbrokes",    large: true },
   { name: "Pinnacle" },
   { name: "Marathonbet" },
   { name: "Interwetten" },
@@ -334,7 +335,11 @@ function MarqueeBand() {
       {/* Scrolling track */}
       <div className="flex animate-marquee items-center gap-0">
         {tripled.map((book, i) => (
-          <div key={i} className="shrink-0 px-6 flex items-center justify-center" style={{ width: "120px" }}>
+          <div
+            key={i}
+            className="shrink-0 px-5 flex items-center justify-center"
+            style={{ width: book.large ? "150px" : "120px" }}
+          >
             {book.img ? (
               <img
                 src={book.img}
@@ -342,19 +347,21 @@ function MarqueeBand() {
                 className="select-none"
                 style={{
                   width: "100%",
-                  height: "32px",
+                  height: book.large ? "46px" : "30px",
                   objectFit: "contain",
                   objectPosition: "center",
                   filter: "brightness(0) invert(1)",
                   opacity: 0.35,
-                  imageRendering: "auto",
                 }}
                 draggable={false}
               />
             ) : (
               <span
-                className="text-sm font-sans font-bold tracking-wide select-none whitespace-nowrap"
-                style={{ color: "rgba(255,255,255,0.30)" }}
+                className="select-none whitespace-nowrap font-sans font-bold tracking-wide"
+                style={{
+                  fontSize: book.large ? "16px" : "13px",
+                  color: "rgba(255,255,255,0.30)",
+                }}
               >
                 {book.name}
               </span>
