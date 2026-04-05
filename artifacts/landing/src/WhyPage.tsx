@@ -3,25 +3,26 @@ import { Link } from "wouter";
 import { Activity, ArrowLeft, ArrowRight } from "lucide-react";
 import {
   LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer,
-  ReferenceLine, AreaChart, Area, CartesianGrid, BarChart, Bar,
+  ReferenceLine, ReferenceArea, BarChart, Bar, CartesianGrid,
+  AreaChart, Area,
 } from "recharts";
 
-// ── Shared nav ────────────────────────────────────────────────────────────────
+// ── Nav ───────────────────────────────────────────────────────────────────────
 function WhyNav() {
   return (
     <nav className="fixed top-0 w-full z-50 bg-background/90 backdrop-blur-md border-b border-border/40">
       <div className="container mx-auto px-6 h-16 flex items-center justify-between">
         <Link href="/" className="flex items-center gap-2 text-muted-foreground hover:text-primary transition-colors">
           <ArrowLeft className="w-4 h-4" />
-          <span className="font-mono text-sm">Back</span>
+          <span className="text-sm">Back</span>
         </Link>
         <Link href="/" className="flex items-center gap-2">
           <Activity className="w-5 h-5 text-primary" />
-          <span className="font-sans font-bold text-lg tracking-tight">
+          <span className="font-bold text-lg tracking-tight">
             Sharp<span className="text-primary">Tracker</span>
           </span>
         </Link>
-        <button className="bg-primary/10 text-primary border border-primary/30 hover:bg-primary hover:text-primary-foreground px-4 py-1.5 rounded-md font-mono text-sm transition-all">
+        <button className="bg-primary/10 text-primary border border-primary/30 hover:bg-primary hover:text-primary-foreground px-4 py-1.5 rounded-md text-sm transition-all">
           Get Access
         </button>
       </div>
@@ -29,100 +30,64 @@ function WhyNav() {
   );
 }
 
-// ── Mock data for charts ──────────────────────────────────────────────────────
-
-// Odds movement: shows odds being stable, then a sharp bettor places money,
-// and the line drops (gets shorter / less favourable).
-const ODDS_MOVEMENT = [
-  { time: "08:00", odds: 2.10 },
-  { time: "09:00", odds: 2.08 },
-  { time: "10:00", odds: 2.09 },
-  { time: "10:45", odds: 2.10 },
-  { time: "11:00", odds: 1.90 },   // ← sharp money hits here
-  { time: "11:15", odds: 1.85 },
-  { time: "12:00", odds: 1.84 },
-  { time: "13:00", odds: 1.82 },
-  { time: "Kick-off", odds: 1.80 }, // closing line
+// ── Chart data ────────────────────────────────────────────────────────────────
+// Simple 8-point line: stable, then a clean drop, then stable again.
+const ODDS_DATA = [
+  { t: "08:00", odds: 2.10 },
+  { t: "09:00", odds: 2.10 },
+  { t: "10:00", odds: 2.09 },
+  { t: "11:00", odds: 2.10 },
+  { t: "11:30", odds: 1.84 },  // ← drop happens here
+  { t: "12:00", odds: 1.83 },
+  { t: "13:00", odds: 1.82 },
+  { t: "14:00", odds: 1.82 },
 ];
 
-// CLV example: you bet at 2.10, the line closed at 1.80 — you beat it.
 const CLV_DATA = [
-  { label: "Your entry", odds: 2.10 },
-  { label: "Closing line", odds: 1.80 },
+  { label: "Your price", odds: 2.10 },
+  { label: "Final price", odds: 1.82 },
 ];
 
-// Long-run EV simulation: a +3% edge bet 200 times
-const EV_SIMULATION = Array.from({ length: 21 }, (_, i) => ({
-  bets: i * 10,
-  units: parseFloat((i * 10 * 0.03).toFixed(1)),
+const EV_GROWTH = Array.from({ length: 11 }, (_, i) => ({
+  bets: i * 20,
+  profit: parseFloat((i * 20 * 0.03).toFixed(1)),
 }));
 
-// ── Custom tooltip ────────────────────────────────────────────────────────────
 function ChartTip({ active, payload, label }: any) {
   if (!active || !payload?.length) return null;
   return (
-    <div className="bg-card border border-border/60 rounded-lg px-3 py-2 font-mono text-xs shadow-lg">
-      <p className="text-muted-foreground mb-1">{label}</p>
+    <div className="bg-card border border-border rounded-lg px-3 py-2 text-xs shadow-lg">
+      <p className="text-muted-foreground mb-0.5">{label}</p>
       <p className="text-primary font-bold">{payload[0].value}</p>
     </div>
   );
 }
 
-// ── Section wrapper ───────────────────────────────────────────────────────────
-function Section({
-  children,
-  dark = false,
-  id,
-}: {
-  children: React.ReactNode;
-  dark?: boolean;
-  id?: string;
-}) {
+// ── Layout helpers ─────────────────────────────────────────────────────────────
+function Section({ children, dark = false, id }: { children: React.ReactNode; dark?: boolean; id?: string }) {
   return (
-    <section
-      id={id}
-      className={`py-20 ${dark ? "bg-card/50 border-y border-border/20" : "bg-background"}`}
-    >
+    <section id={id} className={`py-20 ${dark ? "bg-card/50 border-y border-border/20" : "bg-background"}`}>
       <div className="container mx-auto px-6 max-w-5xl">{children}</div>
     </section>
   );
 }
 
 function Tag({ text }: { text: string }) {
-  return (
-    <span className="text-[10px] font-mono text-primary uppercase tracking-widest block mb-3">
-      {text}
-    </span>
-  );
+  return <span className="text-[10px] font-mono text-primary uppercase tracking-widest block mb-3">{text}</span>;
 }
 
-function Heading({ children }: { children: React.ReactNode }) {
-  return (
-    <h2 className="text-2xl md:text-3xl font-bold font-sans tracking-tight text-foreground mb-4">
-      {children}
-    </h2>
-  );
+function H2({ children }: { children: React.ReactNode }) {
+  return <h2 className="text-2xl md:text-3xl font-bold tracking-tight text-foreground mb-5">{children}</h2>;
 }
 
-function Body({ children }: { children: React.ReactNode }) {
-  return (
-    <p className="text-muted-foreground font-mono leading-relaxed text-sm md:text-base">
-      {children}
-    </p>
-  );
+// Body text in readable sans-serif with good contrast
+function P({ children }: { children: React.ReactNode }) {
+  return <p className="text-foreground/70 leading-relaxed text-base">{children}</p>;
 }
 
 // ── Formula card ──────────────────────────────────────────────────────────────
-function FormulaCard({
-  name,
-  formula,
-  plain,
-  example,
-}: {
-  name: string;
-  formula: string;
-  plain: string;
-  example: string;
+function FormulaCard({ name, formula, plain, example }: {
+  name: string; formula: string; plain: string; example: string;
 }) {
   return (
     <motion.div
@@ -133,76 +98,61 @@ function FormulaCard({
       className="rounded-xl border border-border/40 bg-card/60 p-6 flex flex-col gap-3"
     >
       <span className="text-[10px] font-mono text-primary uppercase tracking-widest">{name}</span>
-      <div className="bg-background/60 rounded-lg px-4 py-3 font-mono text-primary text-sm md:text-base font-bold">
+      <div className="bg-background/60 rounded-lg px-4 py-3 font-mono text-primary text-sm font-bold">
         {formula}
       </div>
-      <p className="text-muted-foreground font-mono text-xs leading-relaxed">{plain}</p>
-      <p className="text-foreground/70 font-mono text-xs border-t border-border/30 pt-3">
-        <span className="text-primary">Example: </span>{example}
+      <p className="text-foreground/65 text-sm leading-relaxed">{plain}</p>
+      <p className="text-foreground/55 text-xs border-t border-border/30 pt-3 leading-relaxed">
+        <span className="text-primary font-medium">Example: </span>{example}
       </p>
     </motion.div>
   );
 }
 
-// ── Step card ─────────────────────────────────────────────────────────────────
-function StepCard({
-  num,
-  title,
-  desc,
-}: {
-  num: number;
-  title: string;
-  desc: string;
-}) {
+function StepCard({ num, title, desc }: { num: number; title: string; desc: string }) {
   return (
     <motion.div
       initial={{ opacity: 0, y: 16 }}
       whileInView={{ opacity: 1, y: 0 }}
       viewport={{ once: true }}
-      transition={{ duration: 0.4, delay: num * 0.08 }}
-      className="flex gap-4"
+      transition={{ duration: 0.4, delay: num * 0.07 }}
+      className="flex gap-5"
     >
       <div className="shrink-0 w-10 h-10 rounded-full border border-primary/40 bg-primary/10 text-primary font-mono font-bold text-sm flex items-center justify-center">
         {num}
       </div>
       <div>
-        <h3 className="font-sans font-semibold text-foreground mb-1">{title}</h3>
-        <p className="text-muted-foreground font-mono text-sm leading-relaxed">{desc}</p>
+        <h3 className="font-semibold text-foreground mb-1.5">{title}</h3>
+        <p className="text-foreground/65 text-sm leading-relaxed">{desc}</p>
       </div>
     </motion.div>
   );
 }
 
-// ── Main page ─────────────────────────────────────────────────────────────────
+// ── Page ──────────────────────────────────────────────────────────────────────
 export default function WhyPage() {
   return (
-    <div className="min-h-screen bg-background text-foreground font-sans">
+    <div className="min-h-screen bg-background text-foreground">
       <WhyNav />
 
-      {/* ── Hero ── */}
+      {/* Hero */}
       <section className="pt-32 pb-20 bg-background relative overflow-hidden">
         <div className="absolute inset-0 bg-[linear-gradient(to_right,#80808010_1px,transparent_1px),linear-gradient(to_bottom,#80808010_1px,transparent_1px)] bg-[size:32px_32px]" />
         <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[700px] h-[400px] bg-primary/5 rounded-full blur-[120px]" />
         <div className="container mx-auto px-6 relative text-center max-w-3xl">
-          <motion.div
-            initial={{ opacity: 0, y: 24 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.55 }}
-          >
+          <motion.div initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}>
             <div className="inline-flex items-center gap-2 mb-6 px-3 py-1.5 rounded-full border border-primary/30 bg-primary/5">
               <span className="text-[10px] font-mono text-primary uppercase tracking-widest">The Strategy</span>
             </div>
-            <h1 className="text-4xl md:text-6xl font-bold tracking-tight mb-6">
-              Why SharpTracker?
-            </h1>
-            <p className="text-lg md:text-xl text-muted-foreground font-mono leading-relaxed">
-              Most bettors lose because they bet at bad prices. SharpTracker shows you when the price is good — before the rest of the market figures it out.
+            <h1 className="text-4xl md:text-6xl font-bold tracking-tight mb-6">Why SharpTracker?</h1>
+            <p className="text-lg md:text-xl text-foreground/65 leading-relaxed">
+              Most bettors don't lose because they pick the wrong teams. They lose because they bet at bad prices. SharpTracker shows you when a price is good — before everyone else sees it.
             </p>
           </motion.div>
         </div>
       </section>
 
-      {/* ── What is an odds drop ── */}
+      {/* Odds drop explained */}
       <Section>
         <div className="grid md:grid-cols-2 gap-12 items-center">
           <motion.div
@@ -212,14 +162,18 @@ export default function WhyPage() {
             transition={{ duration: 0.5 }}
           >
             <Tag text="The Basics" />
-            <Heading>What is an odds drop?</Heading>
-            <Body>
-              A sportsbook sets its opening odds based on its best estimate of the true probability. But those odds can be wrong — and when large money spots the mistake and bets heavily, the book shortens the odds to limit its exposure. That drop is called a line movement.
-            </Body>
-            <br />
-            <Body>
-              Most big line movements come from syndicates — organised groups that pool capital, run statistical models, and bet at scale. When a syndicate hits a number, it usually means something has changed: a key player is injured, the lineup has shifted, the weather has changed, or their model found a price that is genuinely off. The line movement is the first public evidence that something is different. SharpTracker catches it within one second.
-            </Body>
+            <H2>What is an odds drop?</H2>
+            <P>
+              A bookmaker sets a price for each team. Think of it like any other price — it reflects how likely they think each outcome is.
+            </P>
+            <div className="my-4" />
+            <P>
+              When a large group of professional bettors — called a syndicate — puts a lot of money on one team, the bookmaker gets nervous and quickly lowers the price. That sudden price drop is called an odds drop.
+            </P>
+            <div className="my-4" />
+            <P>
+              It usually means something has changed: a player is injured, the lineup has shifted, the weather is different, or their models spotted a price that was simply wrong. Whatever the reason — the drop is a signal. SharpTracker catches it within one second.
+            </P>
           </motion.div>
 
           <motion.div
@@ -228,46 +182,75 @@ export default function WhyPage() {
             viewport={{ once: true }}
             transition={{ duration: 0.5, delay: 0.1 }}
           >
-            <div className="rounded-xl border border-border/40 bg-card/60 p-6">
-              <p className="text-xs font-mono text-muted-foreground mb-4 uppercase tracking-widest">
-                Example — odds moving after sharp action
+            <div className="rounded-2xl border border-border/40 bg-card/60 p-6">
+              <p className="text-xs font-mono text-muted-foreground uppercase tracking-widest mb-1">How an odds drop looks</p>
+              <p className="text-foreground/55 text-xs mb-5">
+                The price is stable — then syndicates bet — and it drops fast. The shaded area is your window to act.
               </p>
-              <ResponsiveContainer width="100%" height={220}>
-                <AreaChart data={ODDS_MOVEMENT} margin={{ top: 4, right: 8, bottom: 0, left: -20 }}>
-                  <defs>
-                    <linearGradient id="gradOdds" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="0%" stopColor="#00ffff" stopOpacity={0.2} />
-                      <stop offset="100%" stopColor="#00ffff" stopOpacity={0} />
-                    </linearGradient>
-                  </defs>
-                  <CartesianGrid stroke="#ffffff08" strokeDasharray="4 4" />
-                  <XAxis dataKey="time" tick={{ fill: "#6b7280", fontSize: 10, fontFamily: "monospace" }} />
+              <ResponsiveContainer width="100%" height={200}>
+                <LineChart data={ODDS_DATA} margin={{ top: 8, right: 12, bottom: 0, left: -24 }}>
+                  <CartesianGrid stroke="#ffffff07" strokeDasharray="3 3" />
+                  <XAxis
+                    dataKey="t"
+                    tick={{ fill: "#6b7280", fontSize: 10 }}
+                    axisLine={false}
+                    tickLine={false}
+                  />
                   <YAxis
-                    domain={[1.75, 2.15]}
-                    tickCount={5}
-                    tick={{ fill: "#6b7280", fontSize: 10, fontFamily: "monospace" }}
+                    domain={[1.70, 2.20]}
+                    tickCount={4}
+                    tick={{ fill: "#6b7280", fontSize: 10 }}
+                    axisLine={false}
+                    tickLine={false}
                   />
                   <Tooltip content={<ChartTip />} />
-                  <ReferenceLine x="11:00" stroke="#ff5555" strokeDasharray="4 2" label={{ value: "Sharp bet ↓", fill: "#ff5555", fontSize: 9, fontFamily: "monospace" }} />
-                  <Area
-                    type="monotone"
+                  {/* shade the "window" between drop and close */}
+                  <ReferenceArea
+                    x1="11:30"
+                    x2="12:00"
+                    fill="#00ffff"
+                    fillOpacity={0.07}
+                    stroke="#00ffff"
+                    strokeOpacity={0.2}
+                    label={{ value: "Your window", fill: "#00ffff", fontSize: 9, position: "insideTop" }}
+                  />
+                  <ReferenceLine
+                    x="11:30"
+                    stroke="#ff6b6b"
+                    strokeDasharray="4 2"
+                    strokeWidth={1.5}
+                    label={{ value: "Drop", fill: "#ff6b6b", fontSize: 9, position: "insideTopRight" }}
+                  />
+                  <Line
+                    type="stepAfter"
                     dataKey="odds"
                     stroke="#00ffff"
-                    strokeWidth={2}
-                    fill="url(#gradOdds)"
+                    strokeWidth={2.5}
                     dot={false}
+                    activeDot={{ r: 4, fill: "#00ffff" }}
                   />
-                </AreaChart>
+                </LineChart>
               </ResponsiveContainer>
-              <p className="text-[10px] font-mono text-muted-foreground mt-3 text-center">
-                Odds drop from 2.10 → 1.80 after sharp money. That opening window is your edge.
-              </p>
+              <div className="flex gap-4 mt-3 pt-3 border-t border-border/20">
+                <div className="text-center flex-1">
+                  <p className="text-primary font-bold text-lg font-mono">2.10</p>
+                  <p className="text-foreground/50 text-xs">Before</p>
+                </div>
+                <div className="text-center flex-1">
+                  <p className="text-red-400 font-bold text-lg font-mono">↓</p>
+                  <p className="text-foreground/50 text-xs">Drop</p>
+                </div>
+                <div className="text-center flex-1">
+                  <p className="text-foreground/70 font-bold text-lg font-mono">1.82</p>
+                  <p className="text-foreground/50 text-xs">After</p>
+                </div>
+              </div>
             </div>
           </motion.div>
         </div>
       </Section>
 
-      {/* ── Why Pinnacle ── */}
+      {/* Why Pinnacle */}
       <Section dark>
         <div className="grid md:grid-cols-2 gap-12 items-center">
           <motion.div
@@ -279,14 +262,14 @@ export default function WhyPage() {
           >
             <div className="grid grid-cols-2 gap-4">
               {[
-                { label: "Highest limits", desc: "Pinnacle accepts bigger bets than any other book — so sharp bettors use it." },
-                { label: "Never limits winners", desc: "Unlike most books, Pinnacle does not ban bettors who win consistently." },
-                { label: "Tightest margins", desc: "Their vig (house edge) is the lowest — which means their prices are closest to the truth." },
-                { label: "Market leader", desc: "When Pinnacle moves a line, every other book in the world follows within minutes." },
+                { label: "Accepts big bets", desc: "Professional bettors and syndicates can place much larger bets at Pinnacle than anywhere else." },
+                { label: "Never bans winners", desc: "Most bookmakers ban or limit customers who win. Pinnacle doesn't — which is why sharp money goes there first." },
+                { label: "Most accurate prices", desc: "Because they take all the smart money, their prices are the most accurate in the world." },
+                { label: "Everyone follows them", desc: "When Pinnacle changes a price, every other bookmaker copies them within minutes." },
               ].map((c) => (
                 <div key={c.label} className="rounded-lg border border-border/40 bg-background/60 p-4">
-                  <p className="text-primary font-mono text-xs font-bold mb-1">{c.label}</p>
-                  <p className="text-muted-foreground text-xs font-mono leading-relaxed">{c.desc}</p>
+                  <p className="text-primary text-xs font-semibold mb-2">{c.label}</p>
+                  <p className="text-foreground/60 text-xs leading-relaxed">{c.desc}</p>
                 </div>
               ))}
             </div>
@@ -300,82 +283,84 @@ export default function WhyPage() {
             className="order-1 md:order-2"
           >
             <Tag text="Why Pinnacle?" />
-            <Heading>The world's sharpest sportsbook.</Heading>
-            <Body>
-              Not all sportsbooks are equal. Most books ban or limit anyone who wins consistently. They want recreational bettors only.
-            </Body>
-            <br />
-            <Body>
-              Pinnacle is different. They welcome professional bettors, accept the largest bets, and charge the smallest margin. This makes their odds the most accurate reflection of true probability in the world. When Pinnacle moves a line, it means something. SharpTracker is wired directly into their live feed.
-            </Body>
+            <H2>The bookmaker that sets the price for the whole market.</H2>
+            <P>
+              Not all bookmakers are the same. Most will ban you if you win too often. Pinnacle does the opposite — they welcome professional money and offer the lowest margins in the industry.
+            </P>
+            <div className="my-4" />
+            <P>
+              This makes Pinnacle the most accurate bookmaker on earth. When their price moves, it's the most reliable signal in sports betting. SharpTracker is connected to their live prices around the clock.
+            </P>
           </motion.div>
         </div>
       </Section>
 
-      {/* ── The Math ── */}
+      {/* The Math */}
       <Section>
         <div className="text-center mb-12">
           <Tag text="The Math" />
-          <Heading>How do you know a bet has value?</Heading>
-          <p className="text-muted-foreground font-mono text-sm max-w-2xl mx-auto">
-            You don't need to be a mathematician. But understanding four simple ideas separates profitable bettors from everyone else.
+          <H2>Four ideas that separate winning bettors from everyone else.</H2>
+          <p className="text-foreground/60 text-base max-w-2xl mx-auto leading-relaxed">
+            You don't need to be a mathematician. You just need to understand these four ideas.
           </p>
         </div>
 
         <div className="grid md:grid-cols-2 gap-5">
           <FormulaCard
             name="1 — Implied Probability"
-            formula="Prob = 1 ÷ Decimal Odds"
-            plain="Every set of odds has a hidden probability baked in. If odds are 2.00, the book thinks the chance is 50%. If odds are 1.67, the book thinks it's 60%."
-            example='Odds 2.10 → 1 ÷ 2.10 = 47.6% implied chance of winning.'
+            formula="Chance = 1 ÷ Odds"
+            plain="Every set of odds has a hidden probability in it. Odds of 2.00 mean the bookmaker thinks there's a 50% chance. Odds of 1.67 mean they think there's a 60% chance."
+            example="Odds 2.10 → 1 ÷ 2.10 = 47.6% chance of winning (according to the bookmaker)."
           />
           <FormulaCard
-            name="2 — No-Vig Fair Odds"
-            formula="Fair Odds = 1 ÷ True Probability"
-            plain="Sportsbooks add a margin (vig) to guarantee profit. Strip the vig out and you get the true fair odds — what the bet is actually worth."
-            example="If the book implies 52% with vig, fair probability might be 50%. Fair odds: 1 ÷ 0.50 = 2.00."
+            name="2 — Fair Price (No Vig)"
+            formula="Fair Odds = 1 ÷ True Chance"
+            plain="Bookmakers add a small cut for themselves — called the vig or margin. Strip that out and you get the fair price: what the bet is actually worth without the house taking a cut."
+            example="If the true chance is 50%, the fair price is 1 ÷ 0.50 = 2.00. If the bookmaker offers 2.10, you're getting a better deal."
           />
           <FormulaCard
             name="3 — Expected Value (EV)"
             formula="EV = (Win chance × Profit) − (Lose chance × Stake)"
-            plain="EV tells you how much you expect to win or lose per bet on average. A positive EV bet will make money over time. A negative EV bet will lose money over time."
-            example="Bet €10 at 2.10. True chance is 55%. EV = (0.55 × €11) − (0.45 × €10) = €6.05 − €4.50 = +€1.55 per bet."
+            plain="EV tells you how much you expect to make — or lose — on average per bet. A positive EV bet will make money over time. A negative EV bet will lose money over time, no matter how lucky you get short-term."
+            example="Bet €10 at odds 2.10. True chance is 55%. EV = (0.55 × €11) − (0.45 × €10) = €6.05 − €4.50 = +€1.55 average profit per bet."
           />
           <FormulaCard
             name="4 — Closing Line Value (CLV)"
-            formula="CLV = Your Odds − Closing Odds"
-            plain="The closing line is the final odds before the game starts — usually the most accurate. If your odds were better than the closing line, you got value. Consistently beating the closing line is proof that your process works."
-            example="You bet at 2.10. Game closed at 1.80. You beat the line by 0.30 — strong positive CLV."
+            formula="CLV = Your odds − Final odds"
+            plain="The final price before a game starts is the most accurate price — the whole market has had time to react. If you got better odds than the final price, you got good value. Doing this consistently is proof you have a real edge."
+            example="You bet at 2.10. Final price was 1.82. You beat it by 0.28 — that's strong CLV and a sign your timing was right."
           />
         </div>
 
-        {/* CLV chart */}
+        {/* CLV visual */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
           transition={{ duration: 0.5 }}
-          className="mt-10 rounded-xl border border-border/40 bg-card/60 p-6"
+          className="mt-10 rounded-2xl border border-border/40 bg-card/60 p-6"
         >
-          <p className="text-xs font-mono text-muted-foreground mb-2 uppercase tracking-widest">
-            CLV example — you beat the closing line
+          <p className="text-xs font-mono text-muted-foreground uppercase tracking-widest mb-1">CLV in practice</p>
+          <p className="text-foreground/60 text-sm mb-6 leading-relaxed">
+            You got 2.10. The game closed at 1.82. The taller bar is your entry — you got paid more than the market thought was fair. That difference is your edge.
           </p>
-          <p className="text-xs font-mono text-muted-foreground mb-5">
-            Your bet was placed at 2.10. The market closed at 1.80. That gap is your edge — you got paid more than the market said was fair.
-          </p>
-          <ResponsiveContainer width="100%" height={180}>
-            <BarChart data={CLV_DATA} margin={{ top: 4, right: 8, bottom: 0, left: -20 }}>
-              <CartesianGrid stroke="#ffffff08" strokeDasharray="4 4" />
-              <XAxis dataKey="label" tick={{ fill: "#6b7280", fontSize: 11, fontFamily: "monospace" }} />
-              <YAxis domain={[1.6, 2.2]} tick={{ fill: "#6b7280", fontSize: 10, fontFamily: "monospace" }} />
+          <ResponsiveContainer width="100%" height={160}>
+            <BarChart data={CLV_DATA} margin={{ top: 4, right: 8, bottom: 0, left: -24 }}>
+              <CartesianGrid stroke="#ffffff07" strokeDasharray="3 3" />
+              <XAxis dataKey="label" tick={{ fill: "#9ca3af", fontSize: 12 }} axisLine={false} tickLine={false} />
+              <YAxis domain={[1.5, 2.3]} tick={{ fill: "#6b7280", fontSize: 10 }} axisLine={false} tickLine={false} />
               <Tooltip content={<ChartTip />} />
-              <Bar dataKey="odds" fill="#00ffff" opacity={0.8} radius={[4, 4, 0, 0]} />
+              <Bar dataKey="odds" radius={[5, 5, 0, 0]}>
+                {CLV_DATA.map((_, i) => (
+                  <rect key={i} fill={i === 0 ? "#00ffff" : "#374151"} />
+                ))}
+              </Bar>
             </BarChart>
           </ResponsiveContainer>
         </motion.div>
       </Section>
 
-      {/* ── Long-run EV chart ── */}
+      {/* Long-run growth */}
       <Section dark>
         <div className="grid md:grid-cols-2 gap-12 items-center">
           <motion.div
@@ -385,92 +370,93 @@ export default function WhyPage() {
             transition={{ duration: 0.5 }}
           >
             <Tag text="The Long Game" />
-            <Heading>Small edge. Big results.</Heading>
-            <Body>
-              You don't need to win every bet. You just need to be right slightly more often than the odds imply — and bet consistently. A 3% edge compounding over 200 bets adds up to 6 units. Over 1,000 bets, that's 30 units of pure profit.
-            </Body>
-            <br />
-            <Body>
-              Most bettors never reach this because they bet random amounts, skip tracking, and have no idea whether they have a real edge. SharpTracker fixes all three.
-            </Body>
+            <H2>A small edge adds up to a lot.</H2>
+            <P>
+              You don't need to win every bet. You just need to be right a little more often than the odds suggest — and bet consistently over time.
+            </P>
+            <div className="my-4" />
+            <P>
+              A 3% edge on every bet sounds small. But repeat that 200 times and you're up 6 units. Do it 1,000 times — 30 units. Most bettors never reach this because they have no process, no tracking, and no idea if they have a real edge. SharpTracker fixes all three.
+            </P>
           </motion.div>
+
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
             transition={{ duration: 0.5, delay: 0.1 }}
-            className="rounded-xl border border-border/40 bg-background/60 p-6"
+            className="rounded-2xl border border-border/40 bg-background/60 p-6"
           >
-            <p className="text-xs font-mono text-muted-foreground mb-4 uppercase tracking-widest">
-              Simulated profit — 3% edge, 200 bets
+            <p className="text-xs font-mono text-muted-foreground uppercase tracking-widest mb-1">
+              Profit over time
             </p>
-            <ResponsiveContainer width="100%" height={220}>
-              <AreaChart data={EV_SIMULATION} margin={{ top: 4, right: 8, bottom: 0, left: -20 }}>
+            <p className="text-foreground/55 text-xs mb-5 leading-relaxed">
+              Simulated result of a 3% edge, bet consistently 200 times.
+            </p>
+            <ResponsiveContainer width="100%" height={200}>
+              <AreaChart data={EV_GROWTH} margin={{ top: 4, right: 12, bottom: 0, left: -24 }}>
                 <defs>
-                  <linearGradient id="gradEV" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0%" stopColor="#00ffff" stopOpacity={0.25} />
+                  <linearGradient id="growthGrad" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stopColor="#00ffff" stopOpacity={0.2} />
                     <stop offset="100%" stopColor="#00ffff" stopOpacity={0} />
                   </linearGradient>
                 </defs>
-                <CartesianGrid stroke="#ffffff08" strokeDasharray="4 4" />
-                <XAxis dataKey="bets" tick={{ fill: "#6b7280", fontSize: 10, fontFamily: "monospace" }} label={{ value: "Bets placed", fill: "#6b7280", fontSize: 9, position: "insideBottom", offset: -2 }} />
-                <YAxis tick={{ fill: "#6b7280", fontSize: 10, fontFamily: "monospace" }} label={{ value: "Units", fill: "#6b7280", fontSize: 9, angle: -90, position: "insideLeft" }} />
+                <CartesianGrid stroke="#ffffff07" strokeDasharray="3 3" />
+                <XAxis dataKey="bets" tick={{ fill: "#6b7280", fontSize: 10 }} axisLine={false} tickLine={false} label={{ value: "Bets", fill: "#6b7280", fontSize: 9, position: "insideBottomRight", offset: -4 }} />
+                <YAxis tick={{ fill: "#6b7280", fontSize: 10 }} axisLine={false} tickLine={false} label={{ value: "Units", fill: "#6b7280", fontSize: 9, angle: -90, position: "insideLeft" }} />
                 <Tooltip content={<ChartTip />} />
-                <Area type="monotone" dataKey="units" stroke="#00ffff" strokeWidth={2} fill="url(#gradEV)" dot={false} />
+                <Area type="monotone" dataKey="profit" stroke="#00ffff" strokeWidth={2.5} fill="url(#growthGrad)" dot={false} />
               </AreaChart>
             </ResponsiveContainer>
           </motion.div>
         </div>
       </Section>
 
-      {/* ── Strategy steps ── */}
+      {/* How it works */}
       <Section>
         <div className="max-w-2xl mx-auto">
           <div className="text-center mb-12">
-            <Tag text="The Workflow" />
-            <Heading>How SharpTracker works, step by step.</Heading>
+            <Tag text="Step by Step" />
+            <H2>How SharpTracker works.</H2>
+            <p className="text-foreground/60 leading-relaxed">
+              Four steps. From price drop to your notification — in under a second.
+            </p>
           </div>
           <div className="flex flex-col gap-8">
             <StepCard
               num={1}
-              title="An odds drop is detected"
-              desc="SharpTracker watches Pinnacle's live feed every second. The moment a line moves more than your set threshold, it's flagged instantly."
+              title="A price drops"
+              desc="SharpTracker watches Pinnacle's live prices every second. The moment a price drops more than your threshold, it's flagged."
             />
-            <div className="flex justify-center">
-              <ArrowRight className="w-4 h-4 text-primary/40 rotate-90" />
-            </div>
+            <div className="flex justify-center"><ArrowRight className="w-4 h-4 text-primary/30 rotate-90" /></div>
             <StepCard
               num={2}
-              title="Fair value is calculated"
-              desc="The system strips out the vig and calculates the true no-vig probability — so you can see if the current price at your book is actually good."
+              title="The fair price is calculated"
+              desc="The system removes the bookmaker's margin and shows the true fair price — so you can see if a bet is actually good value right now."
             />
-            <div className="flex justify-center">
-              <ArrowRight className="w-4 h-4 text-primary/40 rotate-90" />
-            </div>
+            <div className="flex justify-center"><ArrowRight className="w-4 h-4 text-primary/30 rotate-90" /></div>
             <StepCard
               num={3}
               title="You get the alert"
-              desc="A push notification lands on your phone with the match, market, drop size, and the calculated fair value. All in under a second."
+              desc="A notification arrives on your phone with the match, market, drop size, and fair price. All of this happens in under one second."
             />
-            <div className="flex justify-center">
-              <ArrowRight className="w-4 h-4 text-primary/40 rotate-90" />
-            </div>
+            <div className="flex justify-center"><ArrowRight className="w-4 h-4 text-primary/30 rotate-90" /></div>
             <StepCard
               num={4}
-              title="You bet before the market moves"
-              desc="Slow books take 30 seconds to several minutes to follow Pinnacle. That window is where your edge lives. You bet the old number before it disappears."
+              title="You bet before others catch up"
+              desc="Slower bookmakers take 30 seconds to several minutes to copy Pinnacle's new price. That gap is your window — and SharpTracker puts you right at the front of it."
             />
           </div>
         </div>
       </Section>
 
-      {/* ── Why it works ── */}
+      {/* Why it works */}
       <Section dark>
         <div className="text-center mb-12">
-          <Tag text="The Reason" />
-          <Heading>Why does this actually work?</Heading>
-          <p className="text-muted-foreground font-mono text-sm max-w-2xl mx-auto">
-            Markets are not perfectly efficient. There is always a delay between when the right price is known and when everyone else catches up.
+          <Tag text="Why This Works" />
+          <H2>The market is never perfectly up to date.</H2>
+          <p className="text-foreground/60 text-base max-w-2xl mx-auto leading-relaxed">
+            There is always a gap between when the right price is known and when everyone else catches up. SharpTracker lives in that gap.
           </p>
         </div>
 
@@ -478,15 +464,15 @@ export default function WhyPage() {
           {[
             {
               title: "Speed gap",
-              body: "Pinnacle moves its line in milliseconds. Recreational books take up to several minutes. That delay is a genuine pricing gap — and you can bet into it.",
+              body: "Pinnacle updates prices in milliseconds. Slower bookmakers take up to several minutes. That time difference is a real pricing gap — and you can bet into it.",
             },
             {
               title: "Information gap",
-              body: "Syndicates and sharp groups run advanced statistical models and often pick up on new information — injuries, lineup changes, weather — before it becomes public knowledge. When their money moves a line, it reflects all of that. You don't need to know the reason. You just need to see the movement.",
+              body: "Syndicates and sharp groups often know about injuries, lineup changes, or weather before it's public. When their money moves a price, it reflects that. You don't need to know why — just follow the signal.",
             },
             {
-              title: "Discipline gap",
-              body: "Most bettors bet emotionally and never track results. Bettors who follow a data-driven process — even a simple one — outperform the average over the long run.",
+              title: "Process gap",
+              body: "Most bettors bet by gut feeling and never track their results. Bettors who follow a simple data-driven process — track, measure, repeat — consistently outperform the average over the long run.",
             },
           ].map((c) => (
             <motion.div
@@ -497,27 +483,27 @@ export default function WhyPage() {
               transition={{ duration: 0.4 }}
               className="rounded-xl border border-border/40 bg-background/60 p-6"
             >
-              <h3 className="font-sans font-semibold text-foreground mb-3">{c.title}</h3>
-              <p className="text-muted-foreground font-mono text-sm leading-relaxed">{c.body}</p>
+              <h3 className="font-semibold text-foreground mb-3">{c.title}</h3>
+              <p className="text-foreground/60 text-sm leading-relaxed">{c.body}</p>
             </motion.div>
           ))}
         </div>
       </Section>
 
-      {/* ── CTA ── */}
+      {/* CTA */}
       <section className="py-24 bg-background border-t border-border/20">
         <div className="container mx-auto px-6 text-center max-w-2xl">
-          <h2 className="text-3xl font-bold font-sans mb-4">Ready to bet smarter?</h2>
-          <p className="text-muted-foreground font-mono text-sm mb-8">
+          <h2 className="text-3xl font-bold mb-4">Ready to bet smarter?</h2>
+          <p className="text-foreground/60 mb-8 leading-relaxed">
             SharpTracker handles the data. You handle the bets. Free to start.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <button className="bg-primary text-primary-foreground px-8 py-3 rounded-md font-sans font-semibold hover:bg-primary/90 transition-all shadow-[0_0_30px_rgba(0,255,255,0.2)]">
+            <button className="bg-primary text-primary-foreground px-8 py-3 rounded-md font-semibold hover:bg-primary/90 transition-all shadow-[0_0_30px_rgba(0,255,255,0.2)]">
               Get Free Access
             </button>
             <Link
               href="/features/odds-drops"
-              className="border border-border/50 text-foreground px-8 py-3 rounded-md font-mono text-sm hover:border-primary/50 hover:text-primary transition-all flex items-center gap-2 justify-center"
+              className="border border-border/50 text-foreground px-8 py-3 rounded-md text-sm hover:border-primary/50 hover:text-primary transition-all flex items-center gap-2 justify-center"
             >
               See the features
             </Link>

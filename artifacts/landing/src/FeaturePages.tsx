@@ -172,7 +172,7 @@ function FeatureHero({
           <h1 className="text-4xl md:text-6xl font-bold font-sans tracking-tight mb-6 text-foreground">
             {title}
           </h1>
-          <p className="text-xl text-muted-foreground font-mono leading-relaxed">
+          <p className="text-lg md:text-xl text-foreground/65 leading-relaxed max-w-2xl mx-auto">
             {subtitle}
           </p>
         </motion.div>
@@ -211,7 +211,7 @@ function ContentBlock({
           >
             <span className="text-[10px] font-mono text-primary uppercase tracking-widest mb-3 block">{tag}</span>
             <h2 className="text-2xl md:text-3xl font-bold font-sans tracking-tight mb-5 text-foreground">{heading}</h2>
-            <p className="text-muted-foreground font-mono leading-relaxed">{body}</p>
+            <p className="text-foreground/70 leading-relaxed text-base">{body}</p>
           </motion.div>
           <motion.div
             className="flex-1 w-full"
@@ -257,14 +257,14 @@ function FeatureCTA({ next, nextLabel }: { next: string; nextLabel: string }) {
     <section className="py-24 bg-card border-t border-border/20">
       <div className="container mx-auto px-6 text-center max-w-2xl">
         <h2 className="text-3xl font-bold font-sans mb-4">Ready to get started?</h2>
-        <p className="text-muted-foreground font-mono mb-8">Join sharp bettors who track every edge with SharpTracker.</p>
+        <p className="text-foreground/60 mb-8">Join sharp bettors who track every edge with SharpTracker.</p>
         <div className="flex flex-col sm:flex-row gap-4 justify-center">
           <button className="bg-primary text-primary-foreground px-8 py-3 rounded-md font-sans font-semibold hover:bg-primary/90 transition-all shadow-[0_0_30px_rgba(0,255,255,0.2)]">
             Get Free Access
           </button>
           <Link
             href={`/features/${next}`}
-            className="border border-border/50 text-foreground px-8 py-3 rounded-md font-mono text-sm hover:border-primary/50 hover:text-primary transition-all flex items-center gap-2 justify-center"
+            className="border border-border/50 text-foreground/80 px-8 py-3 rounded-md text-sm hover:border-primary/50 hover:text-primary transition-all flex items-center gap-2 justify-center"
           >
             {nextLabel} <ChevronRight className="w-4 h-4" />
           </Link>
