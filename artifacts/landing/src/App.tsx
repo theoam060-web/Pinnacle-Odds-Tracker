@@ -142,7 +142,7 @@ function Hero() {
             transition={{ duration: 0.5, delay: 0.2 }}
             className="text-lg md:text-xl text-muted-foreground leading-relaxed mb-8 max-w-xl"
           >
-            Find mathematically profitable value bets by acting on real-time line movements from the world's foremost odds-making authority — before the rest of the market adjusts.
+            Get alerted the moment Pinnacle — the world's sharpest bookmaker — drops their odds. Place your bet before the rest of the market has a chance to react.
           </motion.p>
           
           <motion.div 
