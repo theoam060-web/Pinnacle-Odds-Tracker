@@ -21,6 +21,8 @@ import {
   DailyCalendarPage, MultiSportPage, BankrollPage,
 } from "./FeaturePages";
 import WhyPage from "./WhyPage";
+import PricingPage from "./PricingPage";
+import SignUpPage from "./SignUpPage";
 
 import NotFound from "@/pages/not-found";
 
@@ -176,8 +178,7 @@ function Navbar() {
           </button>
 
           <button onClick={() => { closePanel(); navigate("/why"); }} className="hover:text-primary transition-colors">Why SharpTracker?</button>
-          <a href="#terminal" onClick={closePanel} className="hover:text-primary transition-colors">Terminal</a>
-          <a href="#pricing" onClick={closePanel} className="hover:text-primary transition-colors">Pricing</a>
+          <button onClick={() => { closePanel(); navigate("/pricing"); }} className="hover:text-primary transition-colors">Pricing</button>
         </div>
 
         <div className="flex items-center gap-4">
@@ -231,6 +232,7 @@ function Navbar() {
 }
 
 function Hero() {
+  const [, navigate] = useLocation();
   return (
     <section className="relative min-h-[100dvh] flex items-center pt-20 overflow-hidden bg-background">
       {/* Grid Background */}
@@ -271,11 +273,11 @@ function Hero() {
             transition={{ duration: 0.5, delay: 0.3 }}
             className="flex flex-col sm:flex-row gap-4"
           >
-            <button className="bg-primary text-primary-foreground px-8 py-4 rounded-md font-mono font-bold tracking-wide flex items-center justify-center gap-2 hover:bg-primary/90 transition-colors shadow-[0_0_20px_hsl(var(--primary)/0.4)]" data-testid="btn-start-terminal">
-              Launch Terminal <ChevronRight className="w-5 h-5" />
+            <button onClick={() => navigate("/signup")} className="bg-primary text-primary-foreground px-8 py-4 rounded-md font-mono font-bold tracking-wide flex items-center justify-center gap-2 hover:bg-primary/90 transition-colors shadow-[0_0_20px_hsl(var(--primary)/0.4)]" data-testid="btn-sign-up">
+              Sign Up <ChevronRight className="w-5 h-5" />
             </button>
-            <button className="bg-secondary text-secondary-foreground border border-border px-8 py-4 rounded-md font-mono tracking-wide flex items-center justify-center gap-2 hover:bg-secondary/80 transition-colors" data-testid="btn-view-docs">
-              View Documentation
+            <button onClick={() => navigate("/pricing")} className="bg-secondary text-secondary-foreground border border-border px-8 py-4 rounded-md font-mono tracking-wide flex items-center justify-center gap-2 hover:bg-secondary/80 transition-colors" data-testid="btn-pricing">
+              Pricing
             </button>
           </motion.div>
 
@@ -689,10 +691,9 @@ function Footer() {
           <div>
             <h4 className="font-sans font-bold mb-4 text-foreground">Product</h4>
             <ul className="space-y-2 font-mono text-sm text-muted-foreground">
-              <li><a href="#" className="hover:text-primary">Terminal</a></li>
-              <li><a href="#" className="hover:text-primary">Analytics</a></li>
-              <li><a href="#" className="hover:text-primary">Pricing</a></li>
-              <li><a href="#" className="hover:text-primary">API Docs</a></li>
+              <li><Link href="/pricing" className="hover:text-primary">Pricing</Link></li>
+              <li><Link href="/why" className="hover:text-primary">Why SharpTracker?</Link></li>
+              <li><Link href="/signup" className="hover:text-primary">Sign Up</Link></li>
             </ul>
           </div>
           <div>
@@ -1396,6 +1397,8 @@ function Router() {
       <Route path="/features/daily-calendar" component={DailyCalendarPage} />
       <Route path="/features/multi-sport" component={MultiSportPage} />
       <Route path="/features/bankroll" component={BankrollPage} />
+      <Route path="/pricing" component={PricingPage} />
+      <Route path="/signup" component={SignUpPage} />
       <Route component={NotFound} />
     </Switch>
   );
