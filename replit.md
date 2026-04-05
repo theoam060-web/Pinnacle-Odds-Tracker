@@ -112,3 +112,23 @@ Generated React Query hooks and fetch client from the OpenAPI spec (e.g. `useHea
 ### `scripts` (`@workspace/scripts`)
 
 Utility scripts package. Each script is a `.ts` file in `src/` with a corresponding npm script in `package.json`. Run scripts via `pnpm --filter @workspace/scripts run <script>`. Scripts can import any workspace package (e.g., `@workspace/db`) by adding it as a dependency in `scripts/package.json`.
+
+---
+
+## Content & Writing Guidelines (Landing Page)
+
+These rules apply to ALL copy written for the landing page, WhyPage, FeaturePages, and any future pages.
+
+### Language
+- **Always write in simple, everyday English.** Assume the reader has never bet before. Avoid jargon wherever possible. When a technical term must be used, explain it immediately in plain words.
+- Keep sentences short. One idea per sentence.
+
+### Bookmaker References
+- **Never name a specific bookmaker** (e.g. do not write "Pinnacle"). Always refer to them generically as "sharp bookmakers" or "the sharpest bookmakers".
+- The logo marquee band in App.tsx may list individual brand names for recognition purposes — that is the only exception.
+- Reason: SharpTracker monitors multiple sharp bookmakers, not just one. Tying the brand to a single name is inaccurate and limits flexibility.
+
+### Tone
+- Confident but not aggressive. Factual, not hype-driven.
+- Odds drops are caused by syndicates and large organised money — not simply "a smart person placing a bet". Reflect this nuance when explaining line movements.
+- Use "price" and "bookmaker" instead of "odds" and "sportsbook" when writing for a general audience.

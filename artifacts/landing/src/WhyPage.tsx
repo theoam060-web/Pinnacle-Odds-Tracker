@@ -250,7 +250,7 @@ export default function WhyPage() {
         </div>
       </Section>
 
-      {/* Why Pinnacle */}
+      {/* Why sharp bookmakers */}
       <Section dark>
         <div className="grid md:grid-cols-2 gap-12 items-center">
           <motion.div
@@ -262,10 +262,10 @@ export default function WhyPage() {
           >
             <div className="grid grid-cols-2 gap-4">
               {[
-                { label: "Accepts big bets", desc: "Professional bettors and syndicates can place much larger bets at Pinnacle than anywhere else." },
-                { label: "Never bans winners", desc: "Most bookmakers ban or limit customers who win. Pinnacle doesn't — which is why sharp money goes there first." },
-                { label: "Most accurate prices", desc: "Because they take all the smart money, their prices are the most accurate in the world." },
-                { label: "Everyone follows them", desc: "When Pinnacle changes a price, every other bookmaker copies them within minutes." },
+                { label: "Accept big bets", desc: "Sharp bookmakers welcome large bets from professional bettors. That's why serious money flows through them." },
+                { label: "Never ban winners", desc: "Most bookmakers limit or ban customers who win too often. Sharp bookmakers don't — so winning bettors keep betting there." },
+                { label: "Most accurate prices", desc: "Because they take all the smart money, their prices end up being the most accurate reflection of the true probability." },
+                { label: "Everyone follows them", desc: "When a sharp bookmaker changes a price, the rest of the market copies it within minutes." },
               ].map((c) => (
                 <div key={c.label} className="rounded-lg border border-border/40 bg-background/60 p-4">
                   <p className="text-primary text-xs font-semibold mb-2">{c.label}</p>
@@ -282,14 +282,14 @@ export default function WhyPage() {
             transition={{ duration: 0.5 }}
             className="order-1 md:order-2"
           >
-            <Tag text="Why Pinnacle?" />
-            <H2>The bookmaker that sets the price for the whole market.</H2>
+            <Tag text="The Source" />
+            <H2>Sharp bookmakers set the price for everyone else.</H2>
             <P>
-              Not all bookmakers are the same. Most will ban you if you win too often. Pinnacle does the opposite — they welcome professional money and offer the lowest margins in the industry.
+              Not all bookmakers are equal. Most will limit or ban you if you win too often. Sharp bookmakers work differently — they accept professional money and charge very low margins.
             </P>
             <div className="my-4" />
             <P>
-              This makes Pinnacle the most accurate bookmaker on earth. When their price moves, it's the most reliable signal in sports betting. SharpTracker is connected to their live prices around the clock.
+              This makes their prices the most accurate in the market. When a sharp bookmaker moves a price, it's the strongest signal available in sports betting. SharpTracker monitors these prices around the clock.
             </P>
           </motion.div>
         </div>
@@ -426,7 +426,7 @@ export default function WhyPage() {
             <StepCard
               num={1}
               title="A price drops"
-              desc="SharpTracker watches Pinnacle's live prices every second. The moment a price drops more than your threshold, it's flagged."
+              desc="SharpTracker watches live prices from sharp bookmakers every second. The moment a price drops more than your set limit, it's flagged."
             />
             <div className="flex justify-center"><ArrowRight className="w-4 h-4 text-primary/30 rotate-90" /></div>
             <StepCard
@@ -444,7 +444,7 @@ export default function WhyPage() {
             <StepCard
               num={4}
               title="You bet before others catch up"
-              desc="Slower bookmakers take 30 seconds to several minutes to copy Pinnacle's new price. That gap is your window — and SharpTracker puts you right at the front of it."
+              desc="Slower bookmakers take 30 seconds to several minutes to copy the new price. That gap is your window — and SharpTracker puts you right at the front of it."
             />
           </div>
         </div>
@@ -464,7 +464,7 @@ export default function WhyPage() {
           {[
             {
               title: "Speed gap",
-              body: "Pinnacle updates prices in milliseconds. Slower bookmakers take up to several minutes. That time difference is a real pricing gap — and you can bet into it.",
+              body: "Sharp bookmakers update prices in milliseconds. Slower bookmakers take up to several minutes. That time difference is a real pricing gap — and you can bet into it.",
             },
             {
               title: "Information gap",

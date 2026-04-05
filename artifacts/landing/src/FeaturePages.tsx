@@ -305,7 +305,7 @@ export function OddsDropPage() {
       <ContentBlock
         tag="How It Works"
         heading="Line Movement is a Signal."
-        body="When Pinnacle — the world's sharpest sportsbook — moves a line more than your configured threshold within a short time window, it almost always indicates sharp action. SharpTracker monitors Pinnacle's live feed every second, compares each new line to its previous state, and fires an alert the instant a qualifying drop is detected. You get the information in under a second."
+        body="When a sharp bookmaker moves a line more than your set threshold, it almost always means serious money has come in. SharpTracker monitors live prices from sharp bookmakers every second, compares each new price to the previous one, and fires an alert the instant a qualifying drop is detected. You get the information in under a second."
         imageUrl="https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=1200&q=80"
         imageAlt="Live odds data dashboard"
         dark
@@ -313,7 +313,7 @@ export function OddsDropPage() {
       <ContentBlock
         tag="Your Edge"
         heading="Speed is Everything."
-        body="When a line moves on Pinnacle, recreational books take between 30 seconds and several minutes to catch up. That window — between the sharp move and the wider market adjusting — is where your edge lives. SharpTracker delivers the alert in time for you to bet the old number at a square book before it closes. That difference is often the entire edge."
+        body="When a sharp bookmaker moves its price, slower recreational books take 30 seconds to several minutes to catch up. That window — between the sharp move and the rest of the market adjusting — is where your edge lives. SharpTracker delivers the alert in time for you to bet the old price at a slower book before it disappears. That time difference is often the entire edge."
         imageUrl="https://images.unsplash.com/photo-1579621970563-ebec7560ff3e?w=1200&q=80"
         imageAlt="Chart showing timing advantage"
         imageRight
@@ -530,15 +530,15 @@ export function MultiSportPage() {
       <ContentBlock
         tag="Soccer Depth"
         heading="100+ Soccer Leagues Monitored."
-        body="Soccer has the deepest liquidity and the most efficient sharp markets in the world. We monitor over 100 leagues — from the Premier League to the Swedish Allsvenskan — and detect line movement across 1X2, Asian handicap, and goal total markets. Pinnacle, the benchmark book for sharp action, offers prices on virtually every professional soccer match globally, and we track all of it."
+        body="Soccer has the deepest liquidity and the most efficient sharp markets in the world. We monitor over 100 leagues — from the Premier League to the Swedish Allsvenskan — and detect line movement across 1X2, Asian handicap, and goal total markets. Sharp bookmakers cover virtually every professional soccer match globally, and we track all of it."
         imageUrl="https://images.unsplash.com/photo-1574629810360-7efbbe195018?w=1200&q=80"
         imageAlt="Soccer stadium"
         dark
       />
       <ContentBlock
         tag="Data Source"
-        heading="Powered by Pinnacle."
-        body="SharpTracker uses Pinnacle Sports as its primary data source. Pinnacle is universally regarded as the sharpest sportsbook in the world — they accept the highest limits, almost never limit winning bettors, and their lines reflect the true market consensus better than any other book. When Pinnacle moves a line, it's a meaningful signal. Every alert in SharpTracker is sourced from their live feed."
+        heading="Built on Sharp Data."
+        body="SharpTracker is built on data from sharp bookmakers — the ones that accept big bets, never limit winners, and have the most accurate prices. Their prices reflect what the market truly thinks. When a sharp bookmaker moves a line, it means something. Every alert in SharpTracker is sourced from that live feed."
         imageUrl="https://images.unsplash.com/photo-1611974789855-9c2a0a7236a3?w=1200&q=80"
         imageAlt="Live trading data"
         imageRight
