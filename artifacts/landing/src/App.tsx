@@ -297,7 +297,7 @@ type BookLogo = {
 const BASE = import.meta.env.BASE_URL;
 
 const BOOKS: BookLogo[] = [
-  { name: "bet365",       large: true },
+  { name: "bet365",       img: `${BASE}logos/bet365.png`, large: true },
   { name: "Unibet",       large: true },
   { name: "DraftKings" },
   { name: "William Hill", img: `${BASE}logos/williamhill.png`, large: true },
