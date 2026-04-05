@@ -3,7 +3,7 @@ import { Link } from "wouter";
 import { Activity, ArrowLeft, ArrowRight } from "lucide-react";
 import {
   LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer,
-  ReferenceLine, ReferenceArea, BarChart, Bar, CartesianGrid,
+  ReferenceLine, ReferenceArea, CartesianGrid,
   AreaChart, Area,
 } from "recharts";
 
@@ -43,11 +43,6 @@ const ODDS_DATA = [
   { t: "14:00", odds: 1.82 },
 ];
 
-const CLV_DATA = [
-  { label: "Your price", odds: 2.10 },
-  { label: "Final price", odds: 1.82 },
-];
-
 const EV_GROWTH = Array.from({ length: 11 }, (_, i) => ({
   bets: i * 20,
   profit: parseFloat((i * 20 * 0.03).toFixed(1)),
@@ -83,30 +78,6 @@ function H2({ children }: { children: React.ReactNode }) {
 // Body text in readable sans-serif with good contrast
 function P({ children }: { children: React.ReactNode }) {
   return <p className="text-foreground/70 leading-relaxed text-base">{children}</p>;
-}
-
-// ── Formula card ──────────────────────────────────────────────────────────────
-function FormulaCard({ name, formula, plain, example }: {
-  name: string; formula: string; plain: string; example: string;
-}) {
-  return (
-    <motion.div
-      initial={{ opacity: 0, y: 16 }}
-      whileInView={{ opacity: 1, y: 0 }}
-      viewport={{ once: true }}
-      transition={{ duration: 0.4 }}
-      className="rounded-xl border border-border/40 bg-card/60 p-6 flex flex-col gap-3"
-    >
-      <span className="text-[10px] font-mono text-primary uppercase tracking-widest">{name}</span>
-      <div className="bg-background/60 rounded-lg px-4 py-3 font-mono text-primary text-sm font-bold">
-        {formula}
-      </div>
-      <p className="text-foreground/65 text-sm leading-relaxed">{plain}</p>
-      <p className="text-foreground/55 text-xs border-t border-border/30 pt-3 leading-relaxed">
-        <span className="text-primary font-medium">Example: </span>{example}
-      </p>
-    </motion.div>
-  );
 }
 
 function StepCard({ num, title, desc }: { num: number; title: string; desc: string }) {
@@ -293,71 +264,6 @@ export default function WhyPage() {
             </P>
           </motion.div>
         </div>
-      </Section>
-
-      {/* The Math */}
-      <Section>
-        <div className="text-center mb-12">
-          <Tag text="The Math" />
-          <H2>Four ideas that separate winning bettors from everyone else.</H2>
-          <p className="text-foreground/60 text-base max-w-2xl mx-auto leading-relaxed">
-            You don't need to be a mathematician. You just need to understand these four ideas.
-          </p>
-        </div>
-
-        <div className="grid md:grid-cols-2 gap-5">
-          <FormulaCard
-            name="1 — Implied Probability"
-            formula="Chance = 1 ÷ Odds"
-            plain="Every set of odds has a hidden probability in it. Odds of 2.00 mean the bookmaker thinks there's a 50% chance. Odds of 1.67 mean they think there's a 60% chance."
-            example="Odds 2.10 → 1 ÷ 2.10 = 47.6% chance of winning (according to the bookmaker)."
-          />
-          <FormulaCard
-            name="2 — Fair Price (No Vig)"
-            formula="Fair Odds = 1 ÷ True Chance"
-            plain="Bookmakers add a small cut for themselves — called the vig or margin. Strip that out and you get the fair price: what the bet is actually worth without the house taking a cut."
-            example="If the true chance is 50%, the fair price is 1 ÷ 0.50 = 2.00. If the bookmaker offers 2.10, you're getting a better deal."
-          />
-          <FormulaCard
-            name="3 — Expected Value (EV)"
-            formula="EV = (Win chance × Profit) − (Lose chance × Stake)"
-            plain="EV tells you how much you expect to make — or lose — on average per bet. A positive EV bet will make money over time. A negative EV bet will lose money over time, no matter how lucky you get short-term."
-            example="Bet €10 at odds 2.10. True chance is 55%. EV = (0.55 × €11) − (0.45 × €10) = €6.05 − €4.50 = +€1.55 average profit per bet."
-          />
-          <FormulaCard
-            name="4 — Closing Line Value (CLV)"
-            formula="CLV = Your odds − Final odds"
-            plain="The final price before a game starts is the most accurate price — the whole market has had time to react. If you got better odds than the final price, you got good value. Doing this consistently is proof you have a real edge."
-            example="You bet at 2.10. Final price was 1.82. You beat it by 0.28 — that's strong CLV and a sign your timing was right."
-          />
-        </div>
-
-        {/* CLV visual */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          transition={{ duration: 0.5 }}
-          className="mt-10 rounded-2xl border border-border/40 bg-card/60 p-6"
-        >
-          <p className="text-xs font-mono text-muted-foreground uppercase tracking-widest mb-1">CLV in practice</p>
-          <p className="text-foreground/60 text-sm mb-6 leading-relaxed">
-            You got 2.10. The game closed at 1.82. The taller bar is your entry — you got paid more than the market thought was fair. That difference is your edge.
-          </p>
-          <ResponsiveContainer width="100%" height={160}>
-            <BarChart data={CLV_DATA} margin={{ top: 4, right: 8, bottom: 0, left: -24 }}>
-              <CartesianGrid stroke="#ffffff07" strokeDasharray="3 3" />
-              <XAxis dataKey="label" tick={{ fill: "#9ca3af", fontSize: 12 }} axisLine={false} tickLine={false} />
-              <YAxis domain={[1.5, 2.3]} tick={{ fill: "#6b7280", fontSize: 10 }} axisLine={false} tickLine={false} />
-              <Tooltip content={<ChartTip />} />
-              <Bar dataKey="odds" radius={[5, 5, 0, 0]}>
-                {CLV_DATA.map((_, i) => (
-                  <rect key={i} fill={i === 0 ? "#00ffff" : "#374151"} />
-                ))}
-              </Bar>
-            </BarChart>
-          </ResponsiveContainer>
-        </motion.div>
       </Section>
 
       {/* Long-run growth */}
