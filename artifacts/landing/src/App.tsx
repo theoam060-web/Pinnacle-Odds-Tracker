@@ -89,7 +89,7 @@ function Navbar() {
 
   return (
     <nav className={`fixed top-0 w-full z-50 transition-all duration-300 border-b border-transparent ${scrolled ? "bg-background/80 backdrop-blur-md border-border/50 shadow-sm" : "bg-transparent"}`}>
-      <div className="container mx-auto px-6 h-20 flex items-center justify-between">
+      <div className="container mx-auto pl-2 pr-6 h-20 flex items-center justify-between">
         <div className="flex items-center gap-2">
           <Activity className="w-6 h-6 text-primary" />
           <span className="font-sans font-bold text-xl tracking-tight text-foreground">Sharp<span className="text-primary">Tracker</span></span>
@@ -167,18 +167,6 @@ function Hero() {
             </button>
           </motion.div>
 
-          <motion.div 
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ duration: 1, delay: 0.8 }}
-            className="mt-12 flex items-center gap-6 text-sm font-mono text-muted-foreground"
-          >
-            <div className="flex items-center gap-2">
-              <Database className="w-5 h-5 text-[#FF6B00]" /> Powered by Pinnacle API
-            </div>
-            <div className="w-px h-4 bg-border"></div>
-            <div>Latency: &lt;120ms</div>
-          </motion.div>
         </div>
 
         {/* Hero Terminal Mockup */}
