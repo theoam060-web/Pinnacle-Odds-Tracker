@@ -114,7 +114,7 @@ const FEATURE_ITEMS = [
 function Navbar() {
   const [scrolled, setScrolled] = useState(false);
   const [featuresOpen, setFeaturesOpen] = useState(false);
-  const dropdownRef = useRef<HTMLDivElement>(null);
+  const navRef = useRef<HTMLElement>(null);
 
   useEffect(() => {
     const handleScroll = () => setScrolled(window.scrollY > 50);
@@ -124,7 +124,7 @@ function Navbar() {
 
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
+      if (navRef.current && !navRef.current.contains(e.target as Node)) {
         setFeaturesOpen(false);
       }
     };
@@ -134,12 +134,14 @@ function Navbar() {
 
   const scrollToSection = (id: string) => {
     setFeaturesOpen(false);
-    const el = document.getElementById(id);
-    if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
+    setTimeout(() => {
+      const el = document.getElementById(id);
+      if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
+    }, 120);
   };
 
   return (
-    <nav className={`fixed top-0 w-full z-50 transition-all duration-300 border-b border-transparent ${scrolled ? "bg-background/80 backdrop-blur-md border-border/50 shadow-sm" : "bg-transparent"}`}>
+    <nav ref={navRef} className={`fixed top-0 w-full z-50 transition-all duration-300 border-b border-transparent ${scrolled ? "bg-background/80 backdrop-blur-md border-border/50 shadow-sm" : "bg-transparent"}`}>
       <div className="container mx-auto pl-2 pr-6 h-20 flex items-center justify-between">
         <div className="flex items-center gap-2">
           <Activity className="w-6 h-6 text-primary" />
@@ -147,59 +149,19 @@ function Navbar() {
         </div>
 
         <div className="hidden md:flex items-center gap-8 text-sm font-mono tracking-wide text-muted-foreground">
-          {/* Features dropdown */}
-          <div className="relative" ref={dropdownRef}>
-            <button
-              onClick={() => setFeaturesOpen(v => !v)}
-              className={`flex items-center gap-1.5 hover:text-primary transition-colors ${featuresOpen ? "text-primary" : ""}`}
+          {/* Features mega-panel trigger */}
+          <button
+            onClick={() => setFeaturesOpen(v => !v)}
+            className={`flex items-center gap-1.5 hover:text-primary transition-colors ${featuresOpen ? "text-primary" : ""}`}
+          >
+            Features
+            <svg
+              className={`w-3 h-3 transition-transform duration-200 ${featuresOpen ? "rotate-180" : ""}`}
+              viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="2"
             >
-              Features
-              <svg
-                className={`w-3 h-3 transition-transform duration-200 ${featuresOpen ? "rotate-180" : ""}`}
-                viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="2"
-              >
-                <path d="M2 4l4 4 4-4" strokeLinecap="round" strokeLinejoin="round"/>
-              </svg>
-            </button>
-
-            <AnimatePresence>
-              {featuresOpen && (
-                <motion.div
-                  initial={{ opacity: 0, y: 8, scale: 0.97 }}
-                  animate={{ opacity: 1, y: 0, scale: 1 }}
-                  exit={{ opacity: 0, y: 8, scale: 0.97 }}
-                  transition={{ duration: 0.18, ease: "easeOut" }}
-                  className="absolute top-full left-1/2 -translate-x-1/2 mt-3 w-80 bg-card border border-border/60 rounded-2xl shadow-[0_8px_60px_-8px_rgba(0,0,0,0.8)] overflow-hidden"
-                >
-                  <div className="px-4 py-3 border-b border-border/40">
-                    <span className="text-[10px] font-mono text-muted-foreground uppercase tracking-widest">All Features</span>
-                  </div>
-                  <div className="p-2">
-                    {FEATURE_ITEMS.map((f) => (
-                      <button
-                        key={f.id}
-                        onClick={() => scrollToSection(f.id)}
-                        className="w-full flex items-start gap-3 px-3 py-2.5 rounded-xl hover:bg-primary/8 group transition-colors text-left"
-                      >
-                        <span className="text-lg leading-none mt-0.5 shrink-0">{f.icon}</span>
-                        <div className="min-w-0">
-                          <div className="text-sm font-sans font-semibold text-foreground group-hover:text-primary transition-colors">
-                            {f.name}
-                          </div>
-                          <div className="text-xs font-mono text-muted-foreground mt-0.5 leading-relaxed">
-                            {f.desc}
-                          </div>
-                        </div>
-                        <svg className="w-3.5 h-3.5 text-muted-foreground/40 group-hover:text-primary shrink-0 mt-1 ml-auto transition-colors" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2">
-                          <path d="M3 8h10M9 4l4 4-4 4" strokeLinecap="round" strokeLinejoin="round"/>
-                        </svg>
-                      </button>
-                    ))}
-                  </div>
-                </motion.div>
-              )}
-            </AnimatePresence>
-          </div>
+              <path d="M2 4l4 4 4-4" strokeLinecap="round" strokeLinejoin="round"/>
+            </svg>
+          </button>
 
           <a href="#terminal" className="hover:text-primary transition-colors">Terminal</a>
           <a href="#pricing" className="hover:text-primary transition-colors">Pricing</a>
@@ -212,6 +174,42 @@ function Navbar() {
           </button>
         </div>
       </div>
+
+      {/* Features mega-panel — full width, anchored below navbar */}
+      <AnimatePresence>
+        {featuresOpen && (
+          <motion.div
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -10 }}
+            transition={{ duration: 0.2, ease: "easeOut" }}
+            className="absolute top-full left-0 w-full bg-background/95 backdrop-blur-xl border-b border-border/60 shadow-[0_24px_80px_-8px_rgba(0,0,0,0.9)]"
+          >
+            <div className="container mx-auto px-6 py-8">
+              <p className="text-[10px] font-mono text-muted-foreground uppercase tracking-widest mb-6">All Features</p>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-3 pb-2">
+                {FEATURE_ITEMS.map((f) => (
+                  <button
+                    key={f.name}
+                    onClick={() => scrollToSection(f.id)}
+                    className="group flex flex-col items-center gap-3 p-5 rounded-xl border border-border/40 bg-card/60 hover:border-primary/50 hover:bg-primary/5 hover:shadow-[0_0_20px_rgba(0,255,255,0.08)] transition-all duration-200 text-center"
+                  >
+                    <span className="text-3xl leading-none">{f.icon}</span>
+                    <div>
+                      <div className="text-sm font-sans font-semibold text-foreground group-hover:text-primary transition-colors">
+                        {f.name}
+                      </div>
+                      <div className="text-xs font-mono text-muted-foreground mt-1 leading-relaxed">
+                        {f.desc}
+                      </div>
+                    </div>
+                  </button>
+                ))}
+              </div>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </nav>
   );
 }
