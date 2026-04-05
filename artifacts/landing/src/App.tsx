@@ -131,8 +131,8 @@ function Hero() {
             transition={{ duration: 0.5, delay: 0.1 }}
             className="text-5xl md:text-7xl font-bold font-sans tracking-tighter leading-[1.1] mb-6 text-foreground"
           >
-            The Terminal for <br />
-            <GlitchText text="Sharp Action." className="text-white" />
+            Track Sharp Odds Drops <br />
+            <GlitchText text="Before Anyone Else." className="text-white" />
           </motion.h1>
           
           <motion.p 
