@@ -641,31 +641,58 @@ function AlertConfigSection() {
 
 const EV_DATA = [
   { week: "Start", sharp: 0,    avg: 0    },
-  { week: "Wk 1",  sharp: -12,  avg: 28   },
-  { week: "Wk 2",  sharp: 18,   avg: 8    },
-  { week: "Wk 3",  sharp: 35,   avg: -18  },
-  { week: "Wk 4",  sharp: 22,   avg: -5   },
-  { week: "Wk 5",  sharp: 58,   avg: -38  },
-  { week: "Wk 6",  sharp: 72,   avg: -55  },
-  { week: "Wk 7",  sharp: 48,   avg: -32  },
-  { week: "Wk 8",  sharp: 85,   avg: -72  },
-  { week: "Wk 9",  sharp: 105,  avg: -88  },
-  { week: "Wk 10", sharp: 118,  avg: -68  },
-  { week: "Wk 11", sharp: 95,   avg: -105 },
-  { week: "Wk 12", sharp: 132,  avg: -122 },
-  { week: "Wk 13", sharp: 155,  avg: -108 },
-  { week: "Wk 14", sharp: 148,  avg: -145 },
-  { week: "Wk 15", sharp: 178,  avg: -165 },
-  { week: "Wk 16", sharp: 195,  avg: -148 },
-  { week: "Wk 17", sharp: 172,  avg: -182 },
-  { week: "Wk 18", sharp: 215,  avg: -205 },
-  { week: "Wk 19", sharp: 238,  avg: -190 },
-  { week: "Wk 20", sharp: 222,  avg: -222 },
-  { week: "Wk 21", sharp: 258,  avg: -242 },
-  { week: "Wk 22", sharp: 275,  avg: -225 },
-  { week: "Wk 23", sharp: 252,  avg: -258 },
-  { week: "Wk 24", sharp: 292,  avg: -268 },
-  { week: "Wk 25", sharp: 315,  avg: -285 },
+  { week: "W1",    sharp: 8,    avg: 28   },
+  { week: "W2",    sharp: -7,   avg: 20   },
+  { week: "W3",    sharp: 15,   avg: 52   },
+  { week: "W4",    sharp: -3,   avg: 32   },
+  { week: "W5",    sharp: 22,   avg: 7    },
+  { week: "W6",    sharp: 14,   avg: 25   },
+  { week: "W7",    sharp: 46,   avg: -5   },
+  { week: "W8",    sharp: 26,   avg: 17   },
+  { week: "W9",    sharp: 44,   avg: -18  },
+  { week: "W10",   sharp: 19,   avg: 10   },
+  { week: "W11",   sharp: 34,   avg: -12  },
+  { week: "W12",   sharp: 62,   avg: -30  },
+  { week: "W13",   sharp: 40,   avg: 5    },
+  { week: "W14",   sharp: 75,   avg: -23  },
+  { week: "W15",   sharp: 45,   avg: -3   },
+  { week: "W16",   sharp: 57,   avg: -35  },
+  { week: "W17",   sharp: 39,   avg: -10  },
+  { week: "W18",   sharp: 69,   avg: -48  },
+  { week: "W19",   sharp: 89,   avg: -30  },
+  { week: "W20",   sharp: 61,   avg: -55  },
+  { week: "W21",   sharp: 79,   avg: -25  },
+  { week: "W22",   sharp: 44,   avg: -45  },
+  { week: "W23",   sharp: 86,   avg: -10  },
+  { week: "W24",   sharp: 101,  avg: -40  },
+  { week: "W25",   sharp: 76,   avg: -62  },
+  { week: "W26",   sharp: 106,  avg: -34  },
+  { week: "W27",   sharp: 91,   avg: -69  },
+  { week: "W28",   sharp: 129,  avg: -49  },
+  { week: "W29",   sharp: 109,  avg: -77  },
+  { week: "W30",   sharp: 134,  avg: -45  },
+  { week: "W31",   sharp: 102,  avg: -75  },
+  { week: "W32",   sharp: 130,  avg: -53  },
+  { week: "W33",   sharp: 165,  avg: -91  },
+  { week: "W34",   sharp: 147,  avg: -66  },
+  { week: "W35",   sharp: 167,  avg: -94  },
+  { week: "W36",   sharp: 125,  avg: -59  },
+  { week: "W37",   sharp: 163,  avg: -101 },
+  { week: "W38",   sharp: 185,  avg: -83  },
+  { week: "W39",   sharp: 160,  avg: -115 },
+  { week: "W40",   sharp: 190,  avg: -87  },
+  { week: "W41",   sharp: 175,  avg: -122 },
+  { week: "W42",   sharp: 220,  avg: -102 },
+  { week: "W43",   sharp: 192,  avg: -132 },
+  { week: "W44",   sharp: 227,  avg: -97  },
+  { week: "W45",   sharp: 207,  avg: -125 },
+  { week: "W46",   sharp: 237,  avg: -110 },
+  { week: "W47",   sharp: 219,  avg: -148 },
+  { week: "W48",   sharp: 261,  avg: -126 },
+  { week: "W49",   sharp: 239,  avg: -158 },
+  { week: "W50",   sharp: 274,  avg: -130 },
+  { week: "W51",   sharp: 259,  avg: -165 },
+  { week: "W52",   sharp: 299,  avg: -150 },
 ];
 
 function CustomTooltip({ active, payload, label }: any) {
@@ -717,17 +744,17 @@ function EVComparisonSection() {
           className="flex flex-wrap justify-center gap-8 mb-10"
         >
           <div className="text-center">
-            <div className="text-3xl font-bold font-sans text-primary">+315 u</div>
-            <div className="text-xs font-mono text-muted-foreground mt-1">SharpTracker · 25 weeks</div>
+            <div className="text-3xl font-bold font-sans text-primary">+299 u</div>
+            <div className="text-xs font-mono text-muted-foreground mt-1">SharpTracker · 52 weeks</div>
           </div>
           <div className="w-px bg-border/50 hidden sm:block" />
           <div className="text-center">
-            <div className="text-3xl font-bold font-sans text-destructive">-285 u</div>
-            <div className="text-xs font-mono text-muted-foreground mt-1">Average bettor · 25 weeks</div>
+            <div className="text-3xl font-bold font-sans text-destructive">-150 u</div>
+            <div className="text-xs font-mono text-muted-foreground mt-1">Average bettor · 52 weeks</div>
           </div>
           <div className="w-px bg-border/50 hidden sm:block" />
           <div className="text-center">
-            <div className="text-3xl font-bold font-sans text-foreground">600 u</div>
+            <div className="text-3xl font-bold font-sans text-foreground">449 u</div>
             <div className="text-xs font-mono text-muted-foreground mt-1">Difference in outcome</div>
           </div>
         </motion.div>
@@ -752,25 +779,26 @@ function EVComparisonSection() {
             </div>
           </div>
 
-          <ResponsiveContainer width="100%" height={340}>
+          <ResponsiveContainer width="100%" height={380}>
             <AreaChart data={EV_DATA} margin={{ top: 10, right: 20, left: 0, bottom: 0 }}>
               <defs>
                 <linearGradient id="gradSharp" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%"  stopColor="#00FFFF" stopOpacity={0.18} />
+                  <stop offset="5%"  stopColor="#00FFFF" stopOpacity={0.15} />
                   <stop offset="95%" stopColor="#00FFFF" stopOpacity={0} />
                 </linearGradient>
                 <linearGradient id="gradAvg" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%"  stopColor="#FF4D4D" stopOpacity={0.12} />
+                  <stop offset="5%"  stopColor="#FF4D4D" stopOpacity={0.10} />
                   <stop offset="95%" stopColor="#FF4D4D" stopOpacity={0} />
                 </linearGradient>
               </defs>
               <CartesianGrid strokeDasharray="3 6" stroke="rgba(255,255,255,0.04)" vertical={false} />
               <XAxis
                 dataKey="week"
-                tick={{ fill: "hsl(240 8% 48%)", fontSize: 11, fontFamily: "Space Mono, monospace" }}
+                tick={{ fill: "hsl(240 8% 42%)", fontSize: 10, fontFamily: "Space Mono, monospace" }}
                 axisLine={false}
                 tickLine={false}
-                interval={4}
+                interval={12}
+                ticks={["Start", "W13", "W26", "W39", "W52"]}
               />
               <YAxis
                 tick={{ fill: "hsl(240 8% 48%)", fontSize: 11, fontFamily: "Space Mono, monospace" }}
@@ -808,8 +836,8 @@ function EVComparisonSection() {
           <div className="flex justify-between mt-4 px-14 text-xs font-mono">
             <span />
             <div className="flex gap-8">
-              <span className="text-[#00FFFF] font-bold">↑ +315u · SharpTracker</span>
-              <span className="text-[#FF4D4D] font-bold">↓ -285u · Average</span>
+              <span className="text-[#00FFFF] font-bold">↑ +299u · SharpTracker</span>
+              <span className="text-[#FF4D4D] font-bold">↓ -150u · Average</span>
             </div>
           </div>
         </motion.div>
