@@ -1,0 +1,142 @@
+BUILD A LANDING PAGE (PUBLIC HOMEPAGE) FOR THE PRODUCT (DO NOT REBUILD THE APP)
+
+---
+
+## GOAL
+
+Create a professional landing page that users see BEFORE entering the main app.
+
+This page should:
+
+* Explain the product
+* Show value
+* Convert visitors into paying users
+
+This is NOT the main app – it is the marketing homepage.
+
+---
+
+## STRUCTURE
+
+1. HERO SECTION (TOP)
+
+* Product name: SharpTracker
+
+* Short tagline (example):
+  "Real-time odds drops. Find value before the market moves."
+
+* CTA buttons:
+
+  * "Get Started"
+  * "View Plans"
+
+* Clean modern design
+
+---
+
+## HOW IT WORKS
+
+Explain simply in 3 steps:
+
+1. Track sharp odds from Pinnacle
+2. Get instant alerts when odds drop
+3. Bet before the market adjusts
+
+---
+
+## FEATURES SECTION
+
+Highlight key features:
+
+* Real-time odds tracking
+* Smart alerts (custom filters)
+* No-vig value detection
+* Bet Tracker & Bet Stats
+* CLV & EV analytics
+* Market-specific filtering
+
+---
+
+## LIVE PREVIEW (IMPORTANT)
+
+* Show a mock/demo version of the live feed
+* Use fake data to simulate odds drops
+* Make it look active and fast
+
+---
+
+## PRICING SECTION
+
+* Show 3 plans:
+
+  * Silver
+  * Gold
+  * Platinum (coming soon)
+
+* Show what each includes (simple overview)
+
+* Add CTA buttons:
+
+  * "Subscribe"
+  * "Upgrade"
+
+---
+
+## TUTORIAL / EDUCATION
+
+* Section explaining:
+
+  * What odds drops are
+  * Why Pinnacle matters
+  * How to find value bets
+
+Keep it simple and beginner-friendly
+
+---
+
+## TRUST / SOCIAL PROOF
+
+* Add placeholder:
+
+  * User testimonials (fake for now)
+  * Stats (e.g. "Users beating closing odds")
+
+---
+
+## FOOTER
+
+Include:
+
+* About Us
+* Terms of Service
+* Privacy Policy
+* Contact
+
+---
+
+## NAVIGATION
+
+Top navbar:
+
+* Home
+* Features
+* Pricing
+* Login
+
+---
+
+## DESIGN
+
+* Clean, modern, dark/light theme
+* Fast loading
+* Mobile-friendly
+
+---
+
+## IMPORTANT
+
+* Do NOT change the main app
+* This is a separate public landing page
+* Use mock data where needed
+* Focus on conversion and clarity
+* Keep code simple and efficient
