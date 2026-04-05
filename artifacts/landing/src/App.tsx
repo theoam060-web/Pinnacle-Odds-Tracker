@@ -300,6 +300,63 @@ function TerminalSection() {
   );
 }
 
+const BOOKS = [
+  { name: "Bet365",       country: "🇬🇧" },
+  { name: "Unibet",       country: "🇸🇪" },
+  { name: "DraftKings",   country: "🇺🇸" },
+  { name: "FanDuel",      country: "🇺🇸" },
+  { name: "Betsson",      country: "🇸🇪" },
+  { name: "William Hill", country: "🇬🇧" },
+  { name: "bwin",         country: "🇦🇹" },
+  { name: "BetMGM",       country: "🇺🇸" },
+  { name: "Betclic",      country: "🇫🇷" },
+  { name: "Tipico",       country: "🇩🇪" },
+  { name: "888sport",     country: "🇬🇮" },
+  { name: "Betway",       country: "🌍" },
+  { name: "Ladbrokes",    country: "🇬🇧" },
+  { name: "Codere",       country: "🇪🇸" },
+  { name: "Marathonbet",  country: "🌍" },
+  { name: "Interwetten",  country: "🇦🇹" },
+  { name: "Pinnacle",     country: "🌍" },
+  { name: "1xBet",        country: "🌍" },
+  { name: "Sportsbet",    country: "🇦🇺" },
+  { name: "SBObet",       country: "🇹🇭" },
+];
+
+function MarqueeBand() {
+  const doubled = [...BOOKS, ...BOOKS];
+  return (
+    <div className="border-y border-border/30 bg-background/60 backdrop-blur-sm py-5 overflow-hidden relative">
+      {/* Left fade + label */}
+      <div className="absolute left-0 top-0 bottom-0 z-10 flex items-center">
+        <div className="bg-gradient-to-r from-background via-background/95 to-transparent w-56 h-full flex items-center pl-6 pr-10 shrink-0">
+          <p className="text-sm font-mono text-muted-foreground leading-snug whitespace-nowrap">
+            This strategy<br />
+            <span className="text-foreground font-bold">works on →</span>
+          </p>
+        </div>
+      </div>
+      {/* Right fade */}
+      <div className="absolute right-0 top-0 bottom-0 z-10 bg-gradient-to-l from-background via-background/95 to-transparent w-24 pointer-events-none" />
+
+      {/* Scrolling track */}
+      <div className="flex animate-marquee gap-0 pl-56">
+        {doubled.map((book, i) => (
+          <div
+            key={i}
+            className="flex items-center gap-2 px-6 shrink-0 border-r border-border/20"
+          >
+            <span className="text-base">{book.country}</span>
+            <span className="text-sm font-mono font-bold text-foreground/60 hover:text-foreground transition-colors tracking-wide uppercase whitespace-nowrap">
+              {book.name}
+            </span>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 function FeaturesGrid() {
   return (
     <section id="features" className="py-24 bg-secondary/30 border-y border-border/20 overflow-hidden">
@@ -742,6 +799,7 @@ function AppContent() {
       <Navbar />
       <main>
         <Hero />
+        <MarqueeBand />
         <FeaturesGrid />
         <TerminalSection />
         <MultiSportSection />
