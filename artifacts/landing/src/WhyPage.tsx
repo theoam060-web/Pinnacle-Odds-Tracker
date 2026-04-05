@@ -344,7 +344,7 @@ export default function WhyPage() {
             <StepCard
               num={3}
               title="You get the alert"
-              desc="A notification arrives on your phone with the match, market, drop size, and fair price. All of this happens in under one second."
+              desc="An alert arrives on your phone or computer with the match, market, drop size, and fair price. All of this happens in under one second."
             />
             <div className="flex justify-center"><ArrowRight className="w-4 h-4 text-primary/30 rotate-90" /></div>
             <StepCard
