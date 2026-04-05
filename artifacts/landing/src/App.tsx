@@ -142,7 +142,7 @@ function Hero() {
             transition={{ duration: 0.5, delay: 0.2 }}
             className="text-lg md:text-xl text-muted-foreground leading-relaxed mb-8 max-w-xl"
           >
-            Real-time odds movement from Pinnacle. Sub-second latency. Precise CLV tracking. Stop betting on stale lines.
+            Find mathematically profitable value bets by acting on real-time line movements from the world's foremost odds-making authority — before the rest of the market adjusts.
           </motion.p>
           
           <motion.div 
