@@ -1,3 +1,7 @@
+import {
+  LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer,
+  ReferenceLine, Area, AreaChart, CartesianGrid
+} from "recharts";
 import { Switch, Route, Router as WouterRouter, Link } from "wouter";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
@@ -6,7 +10,7 @@ import { motion, useScroll, useTransform, AnimatePresence } from "framer-motion"
 import { useEffect, useState, useRef } from "react";
 import { 
   Activity, Bell,
-  LineChart, Radar,
+  LineChart as LineChartIcon, Radar,
   TrendingUp, ChevronRight, CheckCircle2,
   Database
 } from "lucide-react";
@@ -206,7 +210,7 @@ function TerminalSection() {
             
             <div className="space-y-4">
               <div className="inline-flex items-center gap-2 px-3 py-1 rounded bg-secondary text-secondary-foreground text-xs font-mono mb-2 border border-border">
-                <LineChart className="w-4 h-4 text-primary" /> Price History
+                <LineChartIcon className="w-4 h-4 text-primary" /> Price History
               </div>
               <h3 className="text-2xl font-bold font-sans">Chart the sentiment.</h3>
               <p className="text-muted-foreground font-mono text-sm leading-relaxed">
@@ -635,6 +639,185 @@ function AlertConfigSection() {
   );
 }
 
+const EV_DATA = [
+  { week: "Start", sharp: 0,    avg: 0    },
+  { week: "Wk 1",  sharp: -12,  avg: 28   },
+  { week: "Wk 2",  sharp: 18,   avg: 8    },
+  { week: "Wk 3",  sharp: 35,   avg: -18  },
+  { week: "Wk 4",  sharp: 22,   avg: -5   },
+  { week: "Wk 5",  sharp: 58,   avg: -38  },
+  { week: "Wk 6",  sharp: 72,   avg: -55  },
+  { week: "Wk 7",  sharp: 48,   avg: -32  },
+  { week: "Wk 8",  sharp: 85,   avg: -72  },
+  { week: "Wk 9",  sharp: 105,  avg: -88  },
+  { week: "Wk 10", sharp: 118,  avg: -68  },
+  { week: "Wk 11", sharp: 95,   avg: -105 },
+  { week: "Wk 12", sharp: 132,  avg: -122 },
+  { week: "Wk 13", sharp: 155,  avg: -108 },
+  { week: "Wk 14", sharp: 148,  avg: -145 },
+  { week: "Wk 15", sharp: 178,  avg: -165 },
+  { week: "Wk 16", sharp: 195,  avg: -148 },
+  { week: "Wk 17", sharp: 172,  avg: -182 },
+  { week: "Wk 18", sharp: 215,  avg: -205 },
+  { week: "Wk 19", sharp: 238,  avg: -190 },
+  { week: "Wk 20", sharp: 222,  avg: -222 },
+  { week: "Wk 21", sharp: 258,  avg: -242 },
+  { week: "Wk 22", sharp: 275,  avg: -225 },
+  { week: "Wk 23", sharp: 252,  avg: -258 },
+  { week: "Wk 24", sharp: 292,  avg: -268 },
+  { week: "Wk 25", sharp: 315,  avg: -285 },
+];
+
+function CustomTooltip({ active, payload, label }: any) {
+  if (!active || !payload?.length) return null;
+  return (
+    <div className="bg-card border border-border rounded-lg px-4 py-3 shadow-xl text-xs font-mono">
+      <div className="text-muted-foreground mb-2">{label}</div>
+      {payload.map((p: any) => (
+        <div key={p.dataKey} className="flex items-center gap-2">
+          <span className="w-2 h-2 rounded-full inline-block" style={{ backgroundColor: p.color }} />
+          <span className="text-foreground">{p.name}:</span>
+          <span style={{ color: p.color }} className="font-bold">
+            {p.value > 0 ? "+" : ""}{p.value} units
+          </span>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function EVComparisonSection() {
+  return (
+    <section className="py-24 bg-card border-y border-border/20 overflow-hidden">
+      <div className="container mx-auto px-6">
+        <motion.div
+          initial={{ opacity: 0, y: 24 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true, amount: 0.2 }}
+          transition={{ duration: 0.5 }}
+          className="text-center mb-14 max-w-2xl mx-auto"
+        >
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary/10 text-primary text-xs font-mono border border-primary/20 mb-5">
+            <TrendingUp className="w-3.5 h-3.5" /> +EV vs. Average Bettor
+          </div>
+          <h2 className="text-3xl md:text-5xl font-bold font-sans tracking-tight mb-4">
+            The edge compounds over time.
+          </h2>
+          <p className="text-muted-foreground text-lg">
+            Playing +EV doesn't mean winning every bet. It means the math works in your favour across hundreds of bets — while the average bettor bleeds slowly.
+          </p>
+        </motion.div>
+
+        {/* Stats row */}
+        <motion.div
+          initial={{ opacity: 0, y: 16 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true, amount: 0.2 }}
+          transition={{ duration: 0.5, delay: 0.1 }}
+          className="flex flex-wrap justify-center gap-8 mb-10"
+        >
+          <div className="text-center">
+            <div className="text-3xl font-bold font-sans text-primary">+315 u</div>
+            <div className="text-xs font-mono text-muted-foreground mt-1">SharpTracker · 25 weeks</div>
+          </div>
+          <div className="w-px bg-border/50 hidden sm:block" />
+          <div className="text-center">
+            <div className="text-3xl font-bold font-sans text-destructive">-285 u</div>
+            <div className="text-xs font-mono text-muted-foreground mt-1">Average bettor · 25 weeks</div>
+          </div>
+          <div className="w-px bg-border/50 hidden sm:block" />
+          <div className="text-center">
+            <div className="text-3xl font-bold font-sans text-foreground">600 u</div>
+            <div className="text-xs font-mono text-muted-foreground mt-1">Difference in outcome</div>
+          </div>
+        </motion.div>
+
+        {/* Chart */}
+        <motion.div
+          initial={{ opacity: 0, y: 24 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true, amount: 0.15 }}
+          transition={{ duration: 0.6, delay: 0.15 }}
+          className="bg-background border border-border/50 rounded-2xl p-6 md:p-8 relative"
+        >
+          {/* Legend */}
+          <div className="flex items-center gap-6 mb-6">
+            <div className="flex items-center gap-2 text-xs font-mono">
+              <span className="w-6 h-0.5 rounded bg-[#00FFFF] inline-block" />
+              <span className="text-foreground">SharpTracker user</span>
+            </div>
+            <div className="flex items-center gap-2 text-xs font-mono">
+              <span className="w-6 h-0.5 rounded bg-[#FF4D4D] inline-block" />
+              <span className="text-foreground">Average bettor</span>
+            </div>
+          </div>
+
+          <ResponsiveContainer width="100%" height={340}>
+            <AreaChart data={EV_DATA} margin={{ top: 10, right: 20, left: 0, bottom: 0 }}>
+              <defs>
+                <linearGradient id="gradSharp" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="5%"  stopColor="#00FFFF" stopOpacity={0.18} />
+                  <stop offset="95%" stopColor="#00FFFF" stopOpacity={0} />
+                </linearGradient>
+                <linearGradient id="gradAvg" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="5%"  stopColor="#FF4D4D" stopOpacity={0.12} />
+                  <stop offset="95%" stopColor="#FF4D4D" stopOpacity={0} />
+                </linearGradient>
+              </defs>
+              <CartesianGrid strokeDasharray="3 6" stroke="rgba(255,255,255,0.04)" vertical={false} />
+              <XAxis
+                dataKey="week"
+                tick={{ fill: "hsl(240 8% 48%)", fontSize: 11, fontFamily: "Space Mono, monospace" }}
+                axisLine={false}
+                tickLine={false}
+                interval={4}
+              />
+              <YAxis
+                tick={{ fill: "hsl(240 8% 48%)", fontSize: 11, fontFamily: "Space Mono, monospace" }}
+                axisLine={false}
+                tickLine={false}
+                tickFormatter={(v) => `${v > 0 ? "+" : ""}${v}u`}
+                width={58}
+              />
+              <Tooltip content={<CustomTooltip />} cursor={{ stroke: "rgba(255,255,255,0.08)", strokeWidth: 1 }} />
+              <ReferenceLine y={0} stroke="rgba(255,255,255,0.12)" strokeDasharray="4 4" />
+              <Area
+                type="monotone"
+                dataKey="avg"
+                name="Average bettor"
+                stroke="#FF4D4D"
+                strokeWidth={2.5}
+                fill="url(#gradAvg)"
+                dot={false}
+                activeDot={{ r: 4, fill: "#FF4D4D" }}
+              />
+              <Area
+                type="monotone"
+                dataKey="sharp"
+                name="SharpTracker"
+                stroke="#00FFFF"
+                strokeWidth={2.5}
+                fill="url(#gradSharp)"
+                dot={false}
+                activeDot={{ r: 4, fill: "#00FFFF" }}
+              />
+            </AreaChart>
+          </ResponsiveContainer>
+
+          {/* End labels */}
+          <div className="flex justify-between mt-4 px-14 text-xs font-mono">
+            <span />
+            <div className="flex gap-8">
+              <span className="text-[#00FFFF] font-bold">↑ +315u · SharpTracker</span>
+              <span className="text-[#FF4D4D] font-bold">↓ -285u · Average</span>
+            </div>
+          </div>
+        </motion.div>
+      </div>
+    </section>
+  );
+}
+
 function MultiSportSection() {
   const sports = [
     { name: "NFL Football", icon: "🏈", count: "32 Games/Wk", markets: "Moneyline, Spread, Total" },
@@ -754,6 +937,7 @@ function AppContent() {
         <MarqueeBand />
         <FeaturesGrid />
         <TerminalSection />
+        <EVComparisonSection />
         <MultiSportSection />
         <AlertConfigSection />
         <CLVSection />
