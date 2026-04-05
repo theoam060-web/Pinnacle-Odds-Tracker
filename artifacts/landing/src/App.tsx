@@ -20,6 +20,7 @@ import {
   OddsDropPage, BetTrackerPage, CLVPage, StakeCalculatorPage,
   DailyCalendarPage, MultiSportPage, BankrollPage,
 } from "./FeaturePages";
+import WhyPage from "./WhyPage";
 
 import NotFound from "@/pages/not-found";
 
@@ -174,6 +175,7 @@ function Navbar() {
             </svg>
           </button>
 
+          <button onClick={() => { closePanel(); navigate("/why"); }} className="hover:text-primary transition-colors">Why SharpTracker?</button>
           <a href="#terminal" onClick={closePanel} className="hover:text-primary transition-colors">Terminal</a>
           <a href="#pricing" onClick={closePanel} className="hover:text-primary transition-colors">Pricing</a>
         </div>
@@ -1386,6 +1388,7 @@ function Router() {
   return (
     <Switch>
       <Route path="/" component={AppContent} />
+      <Route path="/why" component={WhyPage} />
       <Route path="/features/odds-drops" component={OddsDropPage} />
       <Route path="/features/bet-tracker" component={BetTrackerPage} />
       <Route path="/features/clv" component={CLVPage} />
