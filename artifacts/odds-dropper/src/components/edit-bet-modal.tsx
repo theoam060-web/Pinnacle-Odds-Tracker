@@ -55,6 +55,7 @@ export function EditBetModal({ bet, onClose }: Props) {
 
   const [odds, setOdds] = useState(bet.bettingOdds.toString());
   const [stake, setStake] = useState(bet.stake.toString());
+  const [closingOdds, setClosingOdds] = useState(bet.closingOdds ? bet.closingOdds.toString() : "");
   const [result, setResult] = useState<BetResult>(bet.result);
   const [marketType, setMarketType] = useState<MarketType>(normalizeMarket(bet.marketType));
 
@@ -66,7 +67,7 @@ export function EditBetModal({ bet, onClose }: Props) {
   const parsedStake = parseFloat(stake);
   const oddsValid = !isNaN(parsedOdds) && parsedOdds > 1;
   const stakeValid = !isNaN(parsedStake) && parsedStake > 0;
-  const canSave = oddsValid && stakeValid && direction.length > 0;
+  const canSave = oddsValid && stakeValid && direction.length > 0 && closingOddsValid;
 
   // When market type changes, reset direction to the first valid option
   function handleMarketChange(m: MarketType) {
@@ -89,6 +90,9 @@ export function EditBetModal({ bet, onClose }: Props) {
       ? -parsedStake
       : null;
 
+  const parsedClosingOdds = closingOdds !== "" ? parseFloat(closingOdds) : undefined;
+  const closingOddsValid = parsedClosingOdds === undefined || (!isNaN(parsedClosingOdds) && parsedClosingOdds > 1);
+
   function handleSave() {
     if (!canSave) return;
     updateBet(bet.id, {
@@ -97,6 +101,7 @@ export function EditBetModal({ bet, onClose }: Props) {
       selection: finalSelection,
       marketType,
       result,
+      closingOdds: parsedClosingOdds && parsedClosingOdds > 1 ? parsedClosingOdds : undefined,
     });
     onClose();
   }
@@ -186,6 +191,28 @@ export function EditBetModal({ bet, onClose }: Props) {
               onChange={e => setStake(e.target.value)}
               className={`h-8 text-xs font-mono ${!stakeValid && stake !== "" ? "border-red-500" : ""}`}
             />
+          </div>
+
+          {/* Closing odds */}
+          <div>
+            <Label className="text-xs mb-1.5 block">
+              Closing odds <span className="text-muted-foreground font-normal">(valfritt — för CLV)</span>
+            </Label>
+            <Input
+              type="number"
+              step="0.001"
+              min="1.01"
+              value={closingOdds}
+              onChange={e => setClosingOdds(e.target.value)}
+              placeholder="t.ex. 1.750"
+              className={`h-8 text-xs font-mono ${!closingOddsValid && closingOdds !== "" ? "border-red-500" : ""}`}
+            />
+            {!closingOddsValid && closingOdds !== "" && (
+              <p className="text-[10px] text-red-400 mt-1">Måste vara större än 1.0</p>
+            )}
+            <p className="text-[10px] text-muted-foreground mt-1">
+              Pinnacles odds vid matchstart — aktiverar CLV-linjen i Bet Stats
+            </p>
           </div>
 
           {/* Result */}

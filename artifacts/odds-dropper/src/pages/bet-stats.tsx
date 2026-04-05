@@ -192,6 +192,17 @@ export default function BetStatsPage() {
     });
   }, [filteredBets]);
 
+  // Detect whether EV and CLV data are actually meaningful
+  const hasValidEV = useMemo(() =>
+    filteredBets.some(b =>
+      b.novigOdds && b.novigOdds > 1 && Math.abs(b.novigOdds - b.bettingOdds) > 0.005
+    ),
+  [filteredBets]);
+
+  const hasClosingOdds = useMemo(() =>
+    filteredBets.some(b => b.closingOdds && b.closingOdds > 1),
+  [filteredBets]);
+
   // ─── DAILY PERFORMANCE CALENDAR ────────────────────────────────────────────
   const dailyPL = useMemo(() => {
     const map: Record<string, number> = {};
@@ -382,7 +393,7 @@ export default function BetStatsPage() {
             />
           </div>
 
-          {/* ── NEW: Profit comparison chart (Actual / Expected / CLV Optimal) ── */}
+          {/* ── Profit comparison chart ── */}
           <div className="bg-card border rounded-md p-4 mb-4">
             <div className="flex items-center gap-2 mb-3">
               <TrendingUp className="w-4 h-4 text-indigo-400" />
@@ -393,7 +404,8 @@ export default function BetStatsPage() {
               <SectionEmpty message="Settle at least 2 bets to see the profit comparison chart." />
             ) : (
               <>
-                <div className="h-[200px]">
+                {/* ── Actual Profit chart ── */}
+                <div className="h-[180px]">
                   <ResponsiveContainer width="100%" height="100%">
                     <ComposedChart
                       data={profitComparisonData}
@@ -427,9 +439,7 @@ export default function BetStatsPage() {
                         labelFormatter={(v: number) => `Bet ${v}`}
                         formatter={(value: number, name: string) => [
                           `${value >= 0 ? "+" : ""}${sym}${value.toFixed(2)}`,
-                          name === "actual" ? "Actual Profit"
-                            : name === "expected" ? "Expected Profit"
-                            : "CLV Optimal Profit",
+                          "Actual Profit",
                         ]}
                       />
                       <ReferenceLine y={0} stroke="#374151" />
@@ -442,39 +452,114 @@ export default function BetStatsPage() {
                         dot={false}
                         isAnimationActive={false}
                       />
-                      <Line
-                        type="monotone"
-                        dataKey="expected"
-                        stroke="#06b6d4"
-                        strokeWidth={1.5}
-                        dot={false}
-                        isAnimationActive={false}
-                      />
-                      <Line
-                        type="monotone"
-                        dataKey="clv"
-                        stroke="#22c55e"
-                        strokeWidth={1.5}
-                        dot={false}
-                        isAnimationActive={false}
-                      />
                     </ComposedChart>
                   </ResponsiveContainer>
                 </div>
-                {/* Legend */}
-                <div className="flex items-center gap-4 mt-2 text-[11px]">
-                  <span className="flex items-center gap-1.5">
-                    <span className="w-2.5 h-2.5 rounded-full bg-indigo-500 inline-block" />
-                    <span className="text-indigo-400 font-medium">Actual Profit</span>
-                  </span>
-                  <span className="flex items-center gap-1.5">
-                    <span className="w-2.5 h-2.5 rounded-full bg-cyan-400 inline-block" />
-                    <span className="text-cyan-400 font-medium">Expected Profit</span>
-                  </span>
-                  <span className="flex items-center gap-1.5">
-                    <span className="w-2.5 h-2.5 rounded-full bg-green-500 inline-block" />
-                    <span className="text-green-400 font-medium">CLV Optimal Profit</span>
-                  </span>
+                <div className="flex items-center gap-1.5 mt-1 mb-3 text-[11px]">
+                  <span className="w-2.5 h-2.5 rounded-full bg-indigo-500 inline-block" />
+                  <span className="text-indigo-400 font-medium">Actual Profit</span>
+                </div>
+
+                {/* ── Expected Profit + CLV chart (separate scale) ── */}
+                <div className="border-t border-white/5 pt-3">
+                  <div className="text-[10px] text-muted-foreground mb-2 font-medium uppercase tracking-wider">
+                    Expected Value &amp; CLV
+                  </div>
+
+                  {/* EV notice when no-vig data is missing */}
+                  {!hasValidEV && (
+                    <div className="flex items-start gap-2 bg-cyan-950/30 border border-cyan-900/40 rounded px-3 py-2 mb-2 text-[11px] text-cyan-300/80">
+                      <span className="shrink-0 mt-0.5">ℹ</span>
+                      <span>
+                        <span className="font-semibold text-cyan-300">Expected Profit</span> kräver no-vig data. De sparade spelen saknar no-vig-odds (inträffar om marknaden bara visade en sida). Logga nya spel direkt från flödet för korrekt EV.
+                      </span>
+                    </div>
+                  )}
+
+                  {/* CLV notice when no closing odds */}
+                  {!hasClosingOdds && (
+                    <div className="flex items-start gap-2 bg-green-950/30 border border-green-900/40 rounded px-3 py-2 mb-2 text-[11px] text-green-300/80">
+                      <span className="shrink-0 mt-0.5">ℹ</span>
+                      <span>
+                        <span className="font-semibold text-green-300">CLV Optimal Profit</span> kräver stängningskurser. Öppna <span className="font-semibold text-foreground">Mina Spel</span>, klicka Redigera på ett spel och fyll i stängningskursen för att aktivera CLV-linjen.
+                      </span>
+                    </div>
+                  )}
+
+                  {/* Only render chart if at least one line has meaningful data */}
+                  {(hasValidEV || hasClosingOdds) ? (
+                    <>
+                      <div className="h-[120px]">
+                        <ResponsiveContainer width="100%" height="100%">
+                          <ComposedChart
+                            data={profitComparisonData}
+                            margin={{ top: 4, right: 8, left: -20, bottom: 4 }}
+                          >
+                            <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" vertical={false} />
+                            <XAxis
+                              dataKey="betNum"
+                              type="number"
+                              domain={[1, profitComparisonData.length]}
+                              tickFormatter={(v: number) => `Bet ${v}`}
+                              tick={{ fontSize: 10, fill: "#4b5563" }}
+                              tickLine={false}
+                              axisLine={false}
+                              tickCount={5}
+                            />
+                            <YAxis
+                              tick={{ fontSize: 10, fill: "#4b5563" }}
+                              tickFormatter={(v: number) => `${sym}${v}`}
+                              tickLine={false}
+                              axisLine={false}
+                            />
+                            <Tooltip
+                              contentStyle={{ background: "#1a1a1a", border: "1px solid #333", borderRadius: 6, fontSize: 11 }}
+                              labelFormatter={(v: number) => `Bet ${v}`}
+                              formatter={(value: number, name: string) => [
+                                `${value >= 0 ? "+" : ""}${sym}${value.toFixed(2)}`,
+                                name === "expected" ? "Expected Profit (EV)" : "CLV Optimal Profit",
+                              ]}
+                            />
+                            <ReferenceLine y={0} stroke="#374151" />
+                            {hasValidEV && (
+                              <Line
+                                type="monotone"
+                                dataKey="expected"
+                                stroke="#06b6d4"
+                                strokeWidth={1.5}
+                                dot={false}
+                                isAnimationActive={false}
+                              />
+                            )}
+                            {hasClosingOdds && (
+                              <Line
+                                type="monotone"
+                                dataKey="clv"
+                                stroke="#22c55e"
+                                strokeWidth={1.5}
+                                dot={false}
+                                isAnimationActive={false}
+                              />
+                            )}
+                          </ComposedChart>
+                        </ResponsiveContainer>
+                      </div>
+                      <div className="flex items-center gap-4 mt-1 text-[11px]">
+                        {hasValidEV && (
+                          <span className="flex items-center gap-1.5">
+                            <span className="w-2.5 h-2.5 rounded-full bg-cyan-400 inline-block" />
+                            <span className="text-cyan-400 font-medium">Expected Profit (EV)</span>
+                          </span>
+                        )}
+                        {hasClosingOdds && (
+                          <span className="flex items-center gap-1.5">
+                            <span className="w-2.5 h-2.5 rounded-full bg-green-500 inline-block" />
+                            <span className="text-green-400 font-medium">CLV Optimal Profit</span>
+                          </span>
+                        )}
+                      </div>
+                    </>
+                  ) : null}
                 </div>
               </>
             )}
