@@ -291,23 +291,23 @@ type BookLogo = {
   name: string;
   img?: string;
   large?: boolean;
+  xlarge?: boolean;
 };
 
 const BASE = import.meta.env.BASE_URL;
 
 const BOOKS: BookLogo[] = [
-  { name: "bet365" },
+  { name: "bet365",       large: true },
   { name: "Unibet",       large: true },
   { name: "DraftKings" },
   { name: "William Hill", img: `${BASE}logos/williamhill.png`, large: true },
-  { name: "bwin",         img: `${BASE}logos/bwin.png` },
   { name: "Betclic",      img: `${BASE}logos/betclic.png` },
   { name: "FanDuel",      img: `${BASE}logos/fanduel.png`,    large: true },
   { name: "Betsson",      img: `${BASE}logos/betsson.png` },
   { name: "BetMGM",       large: true },
   { name: "Tipico",       img: `${BASE}logos/tipico.png` },
   { name: "888sport",     img: `${BASE}logos/888sport2.png`,  large: true },
-  { name: "Betway",       img: `${BASE}logos/betway.png`,     large: true },
+  { name: "Betway",       img: `${BASE}logos/betway.png`,     xlarge: true },
   { name: "Ladbrokes",    large: true },
   { name: "Pinnacle" },
   { name: "Marathonbet" },
@@ -338,7 +338,7 @@ function MarqueeBand() {
           <div
             key={i}
             className="shrink-0 px-5 flex items-center justify-center"
-            style={{ width: book.large ? "150px" : "120px" }}
+            style={{ width: book.xlarge ? "190px" : book.large ? "150px" : "120px" }}
           >
             {book.img ? (
               <img
@@ -347,7 +347,7 @@ function MarqueeBand() {
                 className="select-none"
                 style={{
                   width: "100%",
-                  height: book.large ? "46px" : "30px",
+                  height: book.xlarge ? "64px" : book.large ? "46px" : "30px",
                   objectFit: "contain",
                   objectPosition: "center",
                   filter: "brightness(0) invert(1)",
@@ -359,7 +359,7 @@ function MarqueeBand() {
               <span
                 className="select-none whitespace-nowrap font-sans font-bold tracking-wide"
                 style={{
-                  fontSize: book.large ? "16px" : "13px",
+                  fontSize: book.xlarge ? "20px" : book.large ? "16px" : "13px",
                   color: "rgba(255,255,255,0.30)",
                 }}
               >
