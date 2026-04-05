@@ -286,7 +286,7 @@ export function OddsDropPage() {
         icon={IconOddsDrop}
         label="Feature — Odds Drop Alerts"
         title="Sharp Money Moves First."
-        subtitle="The moment a sportsbook moves a line, it's because someone with information placed a bet. SharpTracker catches it before anyone else does."
+        subtitle="When large money moves a line — from syndicates, sharp groups, or professional models — it signals that something has changed. An injury, a lineup update, a weather shift, or a mispricing that sophisticated bettors found first. SharpTracker catches that signal the moment it happens."
       />
       <StatRow stats={[
         { value: "< 1s", label: "Detection Speed" },
@@ -296,8 +296,8 @@ export function OddsDropPage() {
       ]} />
       <ContentBlock
         tag="The Strategy"
-        heading="What is a Sharp Bettor?"
-        body="Sharp bettors — professionals who bet for a living — have studied markets for years. When they place money on a line, sportsbooks react immediately by moving the odds to limit their exposure. These line movements, called 'odds drops', reveal where the smart money has landed. Following sharp action is one of the most proven edges in sports betting."
+        heading="What drives a line movement?"
+        body="Most significant line movements come from syndicates — organised groups that pool large amounts of capital and run sophisticated statistical models. When a syndicate places a large bet, the sportsbook shortens the odds to reduce its exposure. That movement can reflect many things: a key injury that hasn't been announced publicly, a lineup change, a weather update, or a genuine pricing error their models have identified. The movement itself is the signal — you don't need to know the reason. You just need to act before everyone else does."
         imageUrl="https://images.unsplash.com/photo-1611974789855-9c2a0a7236a3?w=1200&q=80"
         imageAlt="Trading screens showing odds movement"
         imageRight

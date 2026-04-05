@@ -214,11 +214,11 @@ export default function WhyPage() {
             <Tag text="The Basics" />
             <Heading>What is an odds drop?</Heading>
             <Body>
-              A sportsbook sets its odds based on its best guess of the true probability. But when a professional bettor — someone who bets for a living — places a large bet on one side, the sportsbook gets nervous and shortens the odds to reduce its risk.
+              A sportsbook sets its opening odds based on its best estimate of the true probability. But those odds can be wrong — and when large money spots the mistake and bets heavily, the book shortens the odds to limit its exposure. That drop is called a line movement.
             </Body>
             <br />
             <Body>
-              That drop in odds is a signal. It means someone with real information has put real money down. SharpTracker catches that signal the moment it happens — usually within one second.
+              Most big line movements come from syndicates — organised groups that pool capital, run statistical models, and bet at scale. When a syndicate hits a number, it usually means something has changed: a key player is injured, the lineup has shifted, the weather has changed, or their model found a price that is genuinely off. The line movement is the first public evidence that something is different. SharpTracker catches it within one second.
             </Body>
           </motion.div>
 
@@ -482,7 +482,7 @@ export default function WhyPage() {
             },
             {
               title: "Information gap",
-              body: "Sharp bettors have better information, better models, and faster execution than the average bettor. When they act, it's a signal. SharpTracker gives you that signal.",
+              body: "Syndicates and sharp groups run advanced statistical models and often pick up on new information — injuries, lineup changes, weather — before it becomes public knowledge. When their money moves a line, it reflects all of that. You don't need to know the reason. You just need to see the movement.",
             },
             {
               title: "Discipline gap",
