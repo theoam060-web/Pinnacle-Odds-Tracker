@@ -171,46 +171,14 @@ function Hero() {
           style={{ perspective: 1000 }}
           className="relative hidden lg:block"
         >
-          <div className="absolute inset-0 bg-gradient-to-tr from-primary/20 to-transparent rounded-lg blur-2xl -z-10"></div>
-          <div className="bg-card border border-border/50 rounded-xl overflow-hidden shadow-2xl transform-gpu">
-            <div className="bg-muted px-4 py-3 border-b border-border/50 flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <div className="w-3 h-3 rounded-full bg-destructive/80"></div>
-                <div className="w-3 h-3 rounded-full bg-yellow-500/80"></div>
-                <div className="w-3 h-3 rounded-full bg-green-500/80"></div>
-              </div>
-              <div className="font-mono text-xs text-muted-foreground tracking-widest">/dev/tty.live-feed</div>
-            </div>
-            <div className="p-1 font-mono text-sm">
-              <div className="grid grid-cols-12 gap-2 px-4 py-2 text-xs text-muted-foreground border-b border-border/30 uppercase tracking-wider">
-                <div className="col-span-2">Time</div>
-                <div className="col-span-3">Market</div>
-                <div className="col-span-4">Event</div>
-                <div className="col-span-3 text-right">Movement</div>
-              </div>
-              <div className="space-y-1 p-2">
-                {LIVE_ODDS.map((odd, i) => (
-                  <motion.div 
-                    key={odd.id}
-                    initial={{ opacity: 0, x: -10 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    transition={{ delay: 0.5 + (i * 0.1) }}
-                    className={`grid grid-cols-12 gap-2 px-2 py-3 rounded bg-background/50 border border-transparent hover:border-border/50 transition-colors items-center ${odd.sharp ? 'bg-primary/5 border-primary/20' : ''}`}
-                  >
-                    <div className="col-span-2 text-muted-foreground text-xs">{odd.time}</div>
-                    <div className="col-span-3 text-foreground font-medium">{odd.market}</div>
-                    <div className="col-span-4 text-muted-foreground truncate">{odd.match}</div>
-                    <div className="col-span-3 flex justify-end items-center gap-3">
-                      <div className="flex items-center gap-1 text-xs">
-                        <span className="line-through text-muted-foreground opacity-50">{odd.old}</span>
-                        <ChevronRight className="w-3 h-3 text-primary" />
-                        <span className="text-primary font-bold">{odd.new}</span>
-                      </div>
-                    </div>
-                  </motion.div>
-                ))}
-              </div>
-            </div>
+          <div className="absolute inset-0 bg-gradient-to-tr from-primary/20 to-transparent rounded-2xl blur-3xl -z-10 scale-105"></div>
+          <div className="rounded-2xl overflow-hidden border border-primary/20 shadow-[0_0_60px_rgba(0,255,255,0.08)] transform-gpu">
+            <img
+              src={`${import.meta.env.BASE_URL}feed-screenshot.jpg`}
+              alt="SharpTracker Live Market Feed"
+              className="w-full block"
+              style={{ maxWidth: 640 }}
+            />
           </div>
         </motion.div>
       </div>
