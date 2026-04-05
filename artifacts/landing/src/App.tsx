@@ -312,7 +312,7 @@ function FeaturesGrid() {
           className="text-center mb-20 max-w-2xl mx-auto"
         >
           <h2 className="text-3xl md:text-4xl font-bold font-sans mb-4">Your filters. Your rules.</h2>
-          <p className="text-muted-foreground">Build precise alert configurations by market and line type. SharpTracker watches sharp markets non-stop — the moment a qualifying line moves, you're the first to act on it.</p>
+          <p className="text-muted-foreground">Tell SharpTracker exactly what you care about. It watches the markets around the clock and alerts you the second something moves — so you can bet before everyone else.</p>
         </motion.div>
 
         <div className="space-y-28 max-w-5xl mx-auto">
