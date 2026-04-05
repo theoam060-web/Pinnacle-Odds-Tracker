@@ -25,36 +25,26 @@ const LIVE_ODDS = [
   { id: 5, match: "DAL @ SF", market: "Total U 42.5", old: "-115", new: "-135", drop: "17.4%", time: "4.5s ago", sharp: false },
 ];
 
-const FEATURES = [
+const STEPS = [
   {
     icon: <Zap className="w-6 h-6 text-primary" />,
-    title: "Sub-Second Latency",
-    description: "Direct WebSocket connection to Pinnacle's feed. See the line move before the public books even refresh their API."
+    title: "Connect to Pinnacle",
+    description: "A direct WebSocket pipeline ingests every odds change from Pinnacle in real time — no polling, no delay, no stale data."
   },
   {
-    icon: <Crosshair className="w-6 h-6 text-primary" />,
-    title: "CLV Tracking",
-    description: "Automatically log your bets and measure them against the closing line. Know your true edge, not just your PnL."
+    icon: <Radar className="w-6 h-6 text-primary" />,
+    title: "Detect Sharp Action",
+    description: "Our algorithm distinguishes syndicate steam from public noise, flagging only the moves that signal genuine market intelligence."
   },
   {
-    icon: <ShieldAlert className="w-6 h-6 text-primary" />,
-    title: "Custom Thresholds",
-    description: "Set alert triggers down to the decimal. Only get pinged when the move meets your specific EV requirements."
+    icon: <Bell className="w-6 h-6 text-primary" />,
+    title: "Trigger Your Alert",
+    description: "The moment a drop crosses your custom EV threshold, you get an instant push notification — before the line settles at other books."
   },
   {
-    icon: <Target className="w-6 h-6 text-primary" />,
-    title: "Sharp Action Detection",
-    description: "Algorithmic flagging of steam moves vs public money. Know who is moving the line, not just that it moved."
-  },
-  {
-    icon: <Database className="w-6 h-6 text-primary" />,
-    title: "Multi-Sport Coverage",
-    description: "Simultaneous tracking across NFL, NBA, MLB, NHL, Soccer, and Tennis. Never miss a cross-market opportunity."
-  },
-  {
-    icon: <Volume2 className="w-6 h-6 text-primary" />,
-    title: "Audio Alerts",
-    description: "Distinct chimes for different sports and thresholds. Trade with your ears while your eyes are on the charts."
+    icon: <BarChart3 className="w-6 h-6 text-primary" />,
+    title: "Track Your Edge",
+    description: "Every bet is auto-graded against the Pinnacle closing line so you can measure true CLV and prove your long-term edge."
   }
 ];
 
@@ -97,7 +87,6 @@ function Navbar() {
         <div className="hidden md:flex items-center gap-8 text-sm font-mono tracking-wide text-muted-foreground">
           <a href="#features" className="hover:text-primary transition-colors">Features</a>
           <a href="#terminal" className="hover:text-primary transition-colors">Terminal</a>
-          <a href="#clv" className="hover:text-primary transition-colors">Analytics</a>
           <a href="#pricing" className="hover:text-primary transition-colors">Pricing</a>
         </div>
         <div className="flex items-center gap-4">
@@ -124,8 +113,9 @@ function Hero() {
       <div className="container mx-auto px-6 relative z-10 grid lg:grid-cols-2 gap-12 items-center">
         <div className="max-w-2xl">
           <motion.div 
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
+            initial={{ opacity: 0, y: 24 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true, amount: 0.2 }}
             transition={{ duration: 0.5 }}
             className="flex items-center gap-2 mb-6"
           >
@@ -135,8 +125,9 @@ function Hero() {
           </motion.div>
           
           <motion.h1 
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
+            initial={{ opacity: 0, y: 24 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true, amount: 0.2 }}
             transition={{ duration: 0.5, delay: 0.1 }}
             className="text-5xl md:text-7xl font-bold font-sans tracking-tighter leading-[1.1] mb-6 text-foreground"
           >
@@ -145,8 +136,9 @@ function Hero() {
           </motion.h1>
           
           <motion.p 
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
+            initial={{ opacity: 0, y: 24 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true, amount: 0.2 }}
             transition={{ duration: 0.5, delay: 0.2 }}
             className="text-lg md:text-xl text-muted-foreground font-mono leading-relaxed mb-8 max-w-xl"
           >
@@ -154,8 +146,9 @@ function Hero() {
           </motion.p>
           
           <motion.div 
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
+            initial={{ opacity: 0, y: 24 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true, amount: 0.2 }}
             transition={{ duration: 0.5, delay: 0.3 }}
             className="flex flex-col sm:flex-row gap-4"
           >
@@ -172,7 +165,8 @@ function Hero() {
         {/* Hero Terminal Mockup */}
         <motion.div 
           initial={{ opacity: 0, x: 20, rotateY: -10 }}
-          animate={{ opacity: 1, x: 0, rotateY: 0 }}
+          whileInView={{ opacity: 1, x: 0, rotateY: 0 }}
+          viewport={{ once: true, amount: 0.2 }}
           transition={{ duration: 0.8, delay: 0.2, type: "spring" }}
           style={{ perspective: 1000 }}
           className="relative hidden lg:block"
@@ -228,14 +222,26 @@ function TerminalSection() {
   return (
     <section id="terminal" className="py-24 bg-background relative border-t border-border/20">
       <div className="container mx-auto px-6">
-        <div className="mb-16 md:mb-24 text-center max-w-3xl mx-auto">
+        <motion.div
+          initial={{ opacity: 0, y: 24 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true, amount: 0.2 }}
+          transition={{ duration: 0.5 }}
+          className="mb-16 md:mb-24 text-center max-w-3xl mx-auto"
+        >
           <h2 className="text-3xl md:text-5xl font-bold font-sans tracking-tight mb-6">Observe the Matrix.</h2>
           <p className="text-muted-foreground font-mono text-lg">
             Stop refreshing sportsbooks. Our terminal ingests thousands of WebSocket events per second, surfacing meaningful price discovery instantly.
           </p>
-        </div>
+        </motion.div>
 
-        <div className="grid lg:grid-cols-12 gap-8 items-center">
+        <motion.div
+          initial={{ opacity: 0, y: 24 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true, amount: 0.2 }}
+          transition={{ duration: 0.5, delay: 0.1 }}
+          className="grid lg:grid-cols-12 gap-8 items-center"
+        >
           <div className="lg:col-span-5 space-y-8">
             <div className="space-y-4">
               <div className="inline-flex items-center gap-2 px-3 py-1 rounded bg-secondary text-secondary-foreground text-xs font-mono mb-2 border border-border">
@@ -320,7 +326,7 @@ function TerminalSection() {
               </div>
             </div>
           </div>
-        </div>
+        </motion.div>
       </div>
     </section>
   );
@@ -330,27 +336,34 @@ function FeaturesGrid() {
   return (
     <section id="features" className="py-24 bg-secondary/30 border-y border-border/20">
       <div className="container mx-auto px-6">
-        <div className="text-center mb-16 max-w-2xl mx-auto">
+        <motion.div
+          initial={{ opacity: 0, y: 24 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true, amount: 0.2 }}
+          transition={{ duration: 0.5 }}
+          className="text-center mb-16 max-w-2xl mx-auto"
+        >
           <h2 className="text-3xl md:text-4xl font-bold font-sans mb-4">Precision Instruments.</h2>
           <p className="text-muted-foreground font-mono">Everything you need to beat the closing line, nothing you don't. Built for speed, accuracy, and execution.</p>
-        </div>
+        </motion.div>
 
-        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {FEATURES.map((feature, idx) => (
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 max-w-3xl mx-auto">
+          {STEPS.map((step, idx) => (
             <motion.div 
               key={idx}
-              initial={{ opacity: 0, y: 20 }}
+              initial={{ opacity: 0, y: 24 }}
               whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ delay: idx * 0.1 }}
-              className="bg-card border border-border p-6 rounded-xl hover:border-primary/50 transition-colors group"
+              viewport={{ once: true, amount: 0.2 }}
+              transition={{ delay: idx * 0.1, duration: 0.5 }}
+              className="bg-card border border-border p-6 rounded-xl hover:border-primary/50 hover:shadow-[0_0_20px_rgba(0,255,255,0.08)] hover:-translate-y-0.5 transition-all duration-200 group"
             >
               <div className="w-12 h-12 bg-primary/10 border border-primary/20 rounded-lg flex items-center justify-center mb-6 group-hover:bg-primary/20 transition-colors">
-                {feature.icon}
+                {step.icon}
               </div>
-              <h3 className="text-xl font-bold font-sans mb-3 text-foreground">{feature.title}</h3>
+              <div className="text-xs font-mono text-primary/60 mb-2 uppercase tracking-widest">Step {idx + 1}</div>
+              <h3 className="text-xl font-bold font-sans mb-3 text-foreground">{step.title}</h3>
               <p className="text-muted-foreground font-mono text-sm leading-relaxed">
-                {feature.description}
+                {step.description}
               </p>
             </motion.div>
           ))}
@@ -364,7 +377,13 @@ function CLVSection() {
   return (
     <section id="clv" className="py-24 bg-background">
       <div className="container mx-auto px-6">
-        <div className="grid lg:grid-cols-2 gap-16 items-center">
+        <motion.div
+          initial={{ opacity: 0, y: 24 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true, amount: 0.2 }}
+          transition={{ duration: 0.5 }}
+          className="grid lg:grid-cols-2 gap-16 items-center"
+        >
           <div className="order-2 lg:order-1">
              {/* Chart Mockup */}
              <div className="bg-card border border-border rounded-xl p-6 shadow-xl relative overflow-hidden">
@@ -414,7 +433,7 @@ function CLVSection() {
               </li>
             </ul>
           </div>
-        </div>
+        </motion.div>
       </div>
     </section>
   );
@@ -425,7 +444,13 @@ function CTASection() {
     <section className="py-32 relative overflow-hidden bg-card border-t border-border">
       <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,var(--tw-gradient-stops))] from-primary/10 via-background to-background"></div>
       
-      <div className="container mx-auto px-6 relative z-10 text-center max-w-3xl">
+      <motion.div
+        initial={{ opacity: 0, y: 24 }}
+        whileInView={{ opacity: 1, y: 0 }}
+        viewport={{ once: true, amount: 0.2 }}
+        transition={{ duration: 0.5 }}
+        className="container mx-auto px-6 relative z-10 text-center max-w-3xl"
+      >
         <h2 className="text-4xl md:text-6xl font-bold font-sans mb-6">Stop playing with a handicap.</h2>
         <p className="text-xl text-muted-foreground font-mono mb-10">
           Join the sharpest bettors leveraging real-time Pinnacle data to print CLV.
@@ -438,7 +463,7 @@ function CTASection() {
             $49/mo after. Cancel anytime.
           </div>
         </div>
-      </div>
+      </motion.div>
     </section>
   );
 }
@@ -447,6 +472,12 @@ function Footer() {
   return (
     <footer className="bg-background py-12 border-t border-border/50 text-center md:text-left">
       <div className="container mx-auto px-6">
+        <motion.div
+          initial={{ opacity: 0, y: 24 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true, amount: 0.2 }}
+          transition={{ duration: 0.5 }}
+        >
         <div className="grid md:grid-cols-4 gap-8 mb-8 border-b border-border/50 pb-8">
           <div className="col-span-1 md:col-span-2">
             <div className="flex items-center justify-center md:justify-start gap-2 mb-4">
@@ -478,6 +509,7 @@ function Footer() {
         <div className="font-mono text-xs text-muted-foreground text-center">
           &copy; {new Date().getFullYear()} SharpTracker. All rights reserved. Not a gambling site.
         </div>
+        </motion.div>
       </div>
     </footer>
   );
