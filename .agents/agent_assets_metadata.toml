@@ -18,3 +18,9 @@ id = "qdI9GTXUmRoPY8HRJ3b0X"
 uri = "file://artifacts/landing/public/card-monitor.png"
 type = "image"
 title = "24/7 live market monitoring"
+
+[[generated]]
+id = "IDOPsqzLDJYk48H65-AVt"
+uri = "file://artifacts/landing/public/screenshots/app-mobile.png"
+type = "image"
+title = "sharptracker mobile app mockup"

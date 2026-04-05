@@ -583,71 +583,107 @@ function Footer() {
 
 function AlertConfigSection() {
   return (
-    <section className="py-24 bg-card border-y border-border/20 overflow-hidden relative">
-      {/* Background glow */}
-      <div className="absolute top-1/2 right-0 -translate-y-1/2 w-1/3 h-2/3 bg-destructive/10 rounded-full blur-[100px] pointer-events-none"></div>
-      
+    <section className="py-28 bg-card border-y border-border/20 overflow-hidden relative">
+      <div className="absolute inset-0 pointer-events-none">
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-primary/5 rounded-full blur-[120px]" />
+      </div>
+
       <div className="container mx-auto px-6">
-        <div className="grid lg:grid-cols-12 gap-16 items-center">
-          <div className="lg:col-span-5 space-y-6">
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded bg-destructive/10 text-destructive text-xs font-mono mb-2 border border-destructive/20">
-              <Bell className="w-4 h-4" /> Custom Alerts
-            </div>
-            <h2 className="text-3xl md:text-5xl font-bold font-sans tracking-tight">Never miss a drop.</h2>
-            <p className="text-muted-foreground text-lg leading-relaxed">
-              Configure precise thresholds across different sports, leagues, and markets. When the line drops past your target EV%, your phone lights up.
-            </p>
-            <div className="space-y-4 pt-4">
-              {[
-                "Target specific leagues (e.g., NFL, Premier League)",
-                "Set custom EV% triggers per sport",
-                "Filter by market type (Moneyline, Spread, Total)",
-                "Distinct audio chimes for immediate recognition"
-              ].map((item, i) => (
-                <div key={i} className="flex items-center gap-3">
-                  <div className="w-1.5 h-1.5 rounded-full bg-primary" />
-                  <span className="font-mono text-sm text-foreground">{item}</span>
-                </div>
-              ))}
-            </div>
-          </div>
-          
-          <div className="lg:col-span-7 relative">
-            <div className="absolute -inset-4 bg-destructive/5 rounded-3xl blur-3xl" />
-            <div className="relative rounded-2xl overflow-hidden border border-destructive/20 shadow-[0_0_60px_rgba(255,80,80,0.08)] rotate-1 hover:rotate-0 transition-transform duration-500 z-10">
-              <div className="bg-[#0f1117] border-b border-white/5 px-4 py-2.5 flex items-center gap-2">
-                <span className="w-2.5 h-2.5 rounded-full bg-red-500/70" />
-                <span className="w-2.5 h-2.5 rounded-full bg-yellow-500/70" />
-                <span className="w-2.5 h-2.5 rounded-full bg-green-500/70" />
-                <span className="ml-3 text-[10px] font-mono text-white/25">SharpTracker — Alert Configurations</span>
-              </div>
-              <img
-                src={`${import.meta.env.BASE_URL}screenshots/alert-config.jpg`}
-                alt="SharpTracker Alert Configurations"
-                className="w-full block"
-              />
+        <div className="flex flex-col lg:flex-row items-center gap-16 lg:gap-24">
+
+          {/* Left — text + CTA */}
+          <motion.div
+            initial={{ opacity: 0, x: -32 }}
+            whileInView={{ opacity: 1, x: 0 }}
+            viewport={{ once: true, amount: 0.3 }}
+            transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
+            className="flex-1 text-center lg:text-left space-y-7"
+          >
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary/10 text-primary text-xs font-mono border border-primary/20">
+              <Bell className="w-3.5 h-3.5" /> Mobile App
             </div>
 
-            {/* Floating alert toast */}
-            <motion.div
-              initial={{ opacity: 0, y: 20, scale: 0.95 }}
-              whileInView={{ opacity: 1, y: 0, scale: 1 }}
-              viewport={{ margin: "-100px" }}
-              transition={{ delay: 0.4, duration: 0.4 }}
-              className="absolute -right-4 -bottom-6 bg-card border border-destructive/60 shadow-[0_0_30px_rgba(255,80,80,0.2)] rounded-xl p-4 w-60 z-20"
-            >
-              <div className="flex items-start gap-3">
-                <div className="w-8 h-8 rounded-full bg-destructive/20 flex items-center justify-center shrink-0 mt-0.5">
-                  <Bell className="w-4 h-4 text-destructive" />
-                </div>
-                <div>
-                  <div className="text-[10px] font-bold text-destructive font-mono mb-1 uppercase tracking-wide">Live Alert fired</div>
-                  <div className="text-sm text-foreground font-sans mb-1 leading-snug">Football · Home +5.6% drop</div>
-                  <div className="text-xs text-primary font-mono">+5.6% EV · 2s ago</div>
-                </div>
-              </div>
-            </motion.div>
-          </div>
+            <h2 className="text-4xl md:text-6xl font-bold font-sans tracking-tight leading-none">
+              Never miss<br />a drop.
+            </h2>
+
+            <p className="text-muted-foreground text-xl leading-relaxed max-w-md mx-auto lg:mx-0">
+              Download our app for free and get an instant push notification on your phone every single time a sharp odds drop occurs — so you can act before the line moves further.
+            </p>
+
+            {/* Notification preview pills */}
+            <div className="space-y-2 py-2">
+              {[
+                { sport: "Football", ev: "+5.6%", time: "just now" },
+                { sport: "Basketball", ev: "+4.1%", time: "2 min ago" },
+                { sport: "Soccer", ev: "+3.8%", time: "5 min ago" },
+              ].map((n, i) => (
+                <motion.div
+                  key={i}
+                  initial={{ opacity: 0, x: -16 }}
+                  whileInView={{ opacity: 1, x: 0 }}
+                  viewport={{ once: true }}
+                  transition={{ delay: 0.2 + i * 0.1, duration: 0.4 }}
+                  className="inline-flex items-center gap-3 bg-background border border-primary/20 rounded-xl px-4 py-2.5 w-full max-w-sm"
+                >
+                  <div className="w-2 h-2 rounded-full bg-primary shrink-0 animate-pulse" />
+                  <div className="flex-1 text-left">
+                    <span className="text-xs font-mono text-muted-foreground">{n.sport} · Sharp drop</span>
+                  </div>
+                  <span className="text-sm font-bold font-mono text-primary">{n.ev}</span>
+                  <span className="text-[10px] font-mono text-muted-foreground/60">{n.time}</span>
+                </motion.div>
+              ))}
+            </div>
+
+            {/* CTA button */}
+            <div className="flex flex-col sm:flex-row gap-3 justify-center lg:justify-start pt-2">
+              <motion.a
+                href="#"
+                whileHover={{ scale: 1.03 }}
+                whileTap={{ scale: 0.97 }}
+                className="inline-flex items-center justify-center gap-3 bg-primary text-primary-foreground font-bold font-sans text-base px-8 py-4 rounded-xl shadow-[0_0_40px_-8px_hsl(var(--primary)/0.6)] hover:shadow-[0_0_60px_-8px_hsl(var(--primary)/0.8)] transition-shadow"
+              >
+                <svg className="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.8-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M13 3.5c.73-.83 1.94-1.46 2.94-1.5.13 1.17-.34 2.35-1.04 3.19-.69.85-1.83 1.51-2.95 1.42-.15-1.15.41-2.35 1.05-3.11z"/>
+                </svg>
+                Download App
+              </motion.a>
+              <motion.a
+                href="#"
+                whileHover={{ scale: 1.03 }}
+                whileTap={{ scale: 0.97 }}
+                className="inline-flex items-center justify-center gap-3 bg-secondary border border-border text-foreground font-bold font-sans text-base px-8 py-4 rounded-xl hover:border-primary/30 transition-colors"
+              >
+                <svg className="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M3 18.5v-13c0-.83.94-1.3 1.6-.8l10 6.5c.6.39.6 1.21 0 1.6l-10 6.5c-.66.5-1.6.03-1.6-.8z"/>
+                </svg>
+                Google Play
+              </motion.a>
+            </div>
+
+            <p className="text-xs font-mono text-muted-foreground/50">Free download · No credit card required</p>
+          </motion.div>
+
+          {/* Right — phone mockup */}
+          <motion.div
+            initial={{ opacity: 0, x: 32, y: 16 }}
+            whileInView={{ opacity: 1, x: 0, y: 0 }}
+            viewport={{ once: true, amount: 0.2 }}
+            transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
+            className="flex-shrink-0 relative"
+          >
+            <div className="absolute inset-0 bg-primary/10 rounded-full blur-[80px] scale-75 translate-y-8" />
+            <div className="relative w-[260px] md:w-[300px]">
+              <img
+                src={`${import.meta.env.BASE_URL}screenshots/app-mobile.png`}
+                alt="SharpTracker mobile app"
+                className="w-full h-auto rounded-[2rem] shadow-[0_0_80px_-10px_hsl(var(--primary)/0.4)] border border-primary/10"
+                style={{ transform: "perspective(1000px) rotateY(-8deg) rotateX(2deg)" }}
+              />
+            </div>
+          </motion.div>
+
         </div>
       </div>
     </section>
