@@ -5,10 +5,10 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { motion, useScroll, useTransform, AnimatePresence } from "framer-motion";
 import { useEffect, useState, useRef } from "react";
 import { 
-  Activity, BarChart3, Bell, Crosshair, 
-  LineChart, Radar, ShieldAlert,
+  Activity, Bell,
+  LineChart, Radar,
   TrendingUp, ChevronRight, CheckCircle2,
-  Volume2, Globe, Database, Smartphone, Laptop
+  Database
 } from "lucide-react";
 
 import NotFound from "@/pages/not-found";
@@ -27,22 +27,22 @@ const LIVE_ODDS = [
 
 const STEPS = [
   {
-    image: `${import.meta.env.BASE_URL}card-markets.png`,
+    image: `${import.meta.env.BASE_URL}screenshots/alert-config.jpg`,
     title: "Choose Your Markets",
     description: "Select exactly which sports, leagues, and bet types you care about. Filter out everything else — only what's relevant reaches you."
   },
   {
-    image: `${import.meta.env.BASE_URL}card-threshold.png`,
+    image: `${import.meta.env.BASE_URL}screenshots/alert-config.jpg`,
     title: "Define Your Thresholds",
     description: "Set a minimum drop percentage per market. Only moves that clear your bar trigger a notification — no noise, no false positives."
   },
   {
-    image: `${import.meta.env.BASE_URL}card-monitor.png`,
+    image: `${import.meta.env.BASE_URL}screenshots/live-feed.jpg`,
     title: "We Watch 24/7",
     description: "SharpTracker continuously monitors sharp markets around the clock. The instant a qualifying line shifts, we catch it — regardless of the hour."
   },
   {
-    image: `${import.meta.env.BASE_URL}alert-feed.jpg`,
+    image: `${import.meta.env.BASE_URL}screenshots/live-feed.jpg`,
     title: "You're First to Know",
     description: "A real-time alert lands before the broader market has had a chance to react. Your edge is the time between the move and everyone else noticing."
   }
@@ -446,33 +446,21 @@ function CLVSection() {
           transition={{ duration: 0.5 }}
           className="grid lg:grid-cols-2 gap-16 items-center"
         >
-          <div className="order-2 lg:order-1">
-             {/* Chart Mockup */}
-             <div className="bg-card border border-border rounded-xl p-6 shadow-xl relative overflow-hidden">
-               <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-primary to-transparent"></div>
-               <div className="flex justify-between items-end mb-8 border-b border-border/50 pb-4">
-                 <div>
-                   <div className="text-sm font-mono text-muted-foreground mb-1">Closing Line Value (30 Days)</div>
-                   <div className="text-3xl font-bold font-sans text-primary">+8.4%</div>
-                 </div>
-                 <div className="text-right">
-                   <div className="text-sm font-mono text-muted-foreground mb-1">Beat CLV</div>
-                   <div className="text-xl font-bold font-sans text-foreground">72.4%</div>
-                 </div>
-               </div>
-               
-               {/* CSS Bar Chart Mockup */}
-               <div className="h-48 flex items-end justify-between gap-2">
-                 {[40, 30, 50, 45, 60, 75, 65, 80, 70, 85, 90, 80].map((height, i) => (
-                   <div key={i} className="w-full relative group">
-                     <div 
-                       className="bg-primary/20 hover:bg-primary/40 border-t border-primary transition-all rounded-t-sm w-full" 
-                       style={{ height: `${height}%` }}
-                     ></div>
-                   </div>
-                 ))}
-               </div>
-             </div>
+          <div className="order-2 lg:order-1 relative">
+            <div className="absolute -inset-4 bg-primary/6 rounded-3xl blur-3xl" />
+            <div className="relative rounded-2xl overflow-hidden border border-primary/25 shadow-[0_0_60px_rgba(0,255,255,0.1)] -rotate-1 hover:rotate-0 transition-transform duration-500">
+              <div className="bg-[#0f1117] border-b border-white/5 px-4 py-2.5 flex items-center gap-2">
+                <span className="w-2.5 h-2.5 rounded-full bg-red-500/70" />
+                <span className="w-2.5 h-2.5 rounded-full bg-yellow-500/70" />
+                <span className="w-2.5 h-2.5 rounded-full bg-green-500/70" />
+                <span className="ml-3 text-[10px] font-mono text-white/25">SharpTracker — Live Market Feed</span>
+              </div>
+              <img
+                src={`${import.meta.env.BASE_URL}screenshots/live-feed.jpg`}
+                alt="SharpTracker Live Market Feed"
+                className="w-full block"
+              />
+            </div>
           </div>
 
           <div className="order-1 lg:order-2 space-y-6">
@@ -609,70 +597,37 @@ function AlertConfigSection() {
           </div>
           
           <div className="lg:col-span-7 relative">
-            <div className="bg-background border border-border rounded-xl p-6 shadow-2xl relative z-10">
-              <div className="text-sm font-mono text-muted-foreground mb-6 uppercase tracking-wider">Alert Configuration</div>
-              
-              <div className="space-y-6">
-                <div className="space-y-3">
-                  <div className="flex justify-between text-sm font-mono">
-                    <span className="text-foreground">NBA Spread Drops</span>
-                    <span className="text-primary">+3.5% EV</span>
-                  </div>
-                  <div className="w-full bg-muted rounded-full h-2">
-                    <div className="bg-primary h-2 rounded-full" style={{ width: '65%' }}></div>
-                  </div>
-                  <div className="flex justify-between text-xs text-muted-foreground font-mono">
-                    <span>1.0%</span>
-                    <span>5.0%</span>
-                  </div>
-                </div>
-
-                <div className="space-y-3">
-                  <div className="flex justify-between text-sm font-mono">
-                    <span className="text-foreground">NFL Totals Steam</span>
-                    <span className="text-primary">+5.0% EV</span>
-                  </div>
-                  <div className="w-full bg-muted rounded-full h-2">
-                    <div className="bg-primary h-2 rounded-full" style={{ width: '85%' }}></div>
-                  </div>
-                  <div className="flex justify-between text-xs text-muted-foreground font-mono">
-                    <span>2.0%</span>
-                    <span>10.0%</span>
-                  </div>
-                </div>
-
-                <div className="pt-6 border-t border-border/50 grid grid-cols-2 gap-4">
-                  <div className="bg-muted/50 p-4 rounded border border-border/50">
-                    <div className="text-xs text-muted-foreground font-mono mb-1">Notification</div>
-                    <div className="text-sm text-foreground font-mono flex items-center gap-2">
-                      <Smartphone className="w-4 h-4 text-primary" /> Push + SMS
-                    </div>
-                  </div>
-                  <div className="bg-muted/50 p-4 rounded border border-border/50">
-                    <div className="text-xs text-muted-foreground font-mono mb-1">Sound</div>
-                    <div className="text-sm text-foreground font-mono flex items-center gap-2">
-                      <Volume2 className="w-4 h-4 text-primary" /> Radar Ping
-                    </div>
-                  </div>
-                </div>
+            <div className="absolute -inset-4 bg-destructive/5 rounded-3xl blur-3xl" />
+            <div className="relative rounded-2xl overflow-hidden border border-destructive/20 shadow-[0_0_60px_rgba(255,80,80,0.08)] rotate-1 hover:rotate-0 transition-transform duration-500 z-10">
+              <div className="bg-[#0f1117] border-b border-white/5 px-4 py-2.5 flex items-center gap-2">
+                <span className="w-2.5 h-2.5 rounded-full bg-red-500/70" />
+                <span className="w-2.5 h-2.5 rounded-full bg-yellow-500/70" />
+                <span className="w-2.5 h-2.5 rounded-full bg-green-500/70" />
+                <span className="ml-3 text-[10px] font-mono text-white/25">SharpTracker — Alert Configurations</span>
               </div>
+              <img
+                src={`${import.meta.env.BASE_URL}screenshots/alert-config.jpg`}
+                alt="SharpTracker Alert Configurations"
+                className="w-full block"
+              />
             </div>
-            
-            {/* Floating Alert Mockup */}
-            <motion.div 
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
+
+            {/* Floating alert toast */}
+            <motion.div
+              initial={{ opacity: 0, y: 20, scale: 0.95 }}
+              whileInView={{ opacity: 1, y: 0, scale: 1 }}
               viewport={{ margin: "-100px" }}
-              className="absolute -right-4 -bottom-8 bg-card border border-destructive shadow-2xl rounded-lg p-4 w-64 z-20"
+              transition={{ delay: 0.4, duration: 0.4 }}
+              className="absolute -right-4 -bottom-6 bg-card border border-destructive/60 shadow-[0_0_30px_rgba(255,80,80,0.2)] rounded-xl p-4 w-60 z-20"
             >
               <div className="flex items-start gap-3">
-                <div className="w-8 h-8 rounded-full bg-destructive/20 flex items-center justify-center shrink-0">
+                <div className="w-8 h-8 rounded-full bg-destructive/20 flex items-center justify-center shrink-0 mt-0.5">
                   <Bell className="w-4 h-4 text-destructive" />
                 </div>
                 <div>
-                  <div className="text-xs font-bold text-destructive font-mono mb-1">ALERT: NBA SPREAD</div>
-                  <div className="text-sm text-foreground mb-1">LAL @ DEN line moved from -4.5 to -6.0</div>
-                  <div className="text-xs text-muted-foreground font-mono">+4.2% EV Opportunity</div>
+                  <div className="text-[10px] font-bold text-destructive font-mono mb-1 uppercase tracking-wide">Live Alert fired</div>
+                  <div className="text-sm text-foreground font-sans mb-1 leading-snug">Football · Home +5.6% drop</div>
+                  <div className="text-xs text-primary font-mono">+5.6% EV · 2s ago</div>
                 </div>
               </div>
             </motion.div>
