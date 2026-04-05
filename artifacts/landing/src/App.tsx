@@ -283,56 +283,70 @@ function TerminalSection() {
   );
 }
 
-const BOOKS = [
-  { name: "Bet365",       country: "🇬🇧" },
-  { name: "Unibet",       country: "🇸🇪" },
-  { name: "DraftKings",   country: "🇺🇸" },
-  { name: "FanDuel",      country: "🇺🇸" },
-  { name: "Betsson",      country: "🇸🇪" },
-  { name: "William Hill", country: "🇬🇧" },
-  { name: "bwin",         country: "🇦🇹" },
-  { name: "BetMGM",       country: "🇺🇸" },
-  { name: "Betclic",      country: "🇫🇷" },
-  { name: "Tipico",       country: "🇩🇪" },
-  { name: "888sport",     country: "🇬🇮" },
-  { name: "Betway",       country: "🌍" },
-  { name: "Ladbrokes",    country: "🇬🇧" },
-  { name: "Codere",       country: "🇪🇸" },
-  { name: "Marathonbet",  country: "🌍" },
-  { name: "Interwetten",  country: "🇦🇹" },
-  { name: "Pinnacle",     country: "🌍" },
-  { name: "1xBet",        country: "🌍" },
-  { name: "Sportsbet",    country: "🇦🇺" },
-  { name: "SBObet",       country: "🇹🇭" },
+type BookLogo = {
+  name: string;
+  bg: string;
+  text: string;
+  style?: string;
+};
+
+const BOOKS: BookLogo[] = [
+  { name: "bet365",      bg: "#00873D", text: "#ffffff", style: "font-black tracking-tight" },
+  { name: "Unibet",      bg: "#417505", text: "#ffffff", style: "font-bold italic" },
+  { name: "DraftKings",  bg: "#1B1B2F", text: "#FFC72C", style: "font-black tracking-tighter" },
+  { name: "FanDuel",     bg: "#1493FF", text: "#ffffff", style: "font-black" },
+  { name: "Betsson",     bg: "#E6000A", text: "#ffffff", style: "font-bold tracking-wide" },
+  { name: "William Hill",bg: "#532D80", text: "#ffffff", style: "font-bold" },
+  { name: "bwin",        bg: "#E6000A", text: "#ffffff", style: "font-black tracking-widest uppercase" },
+  { name: "BetMGM",      bg: "#000000", text: "#C8AA6E", style: "font-bold tracking-wide" },
+  { name: "Betclic",     bg: "#E8000B", text: "#ffffff", style: "font-black italic" },
+  { name: "Tipico",      bg: "#007038", text: "#ffffff", style: "font-bold" },
+  { name: "888sport",    bg: "#FF6600", text: "#ffffff", style: "font-black" },
+  { name: "Betway",      bg: "#00A651", text: "#ffffff", style: "font-bold tracking-wide" },
+  { name: "Ladbrokes",   bg: "#DD1E2B", text: "#ffffff", style: "font-bold" },
+  { name: "Codere",      bg: "#00AEEF", text: "#ffffff", style: "font-black tracking-tight" },
+  { name: "Marathonbet", bg: "#EE0028", text: "#ffffff", style: "font-bold" },
+  { name: "Interwetten", bg: "#0B3D91", text: "#ffffff", style: "font-bold" },
+  { name: "Pinnacle",    bg: "#1a1a1a", text: "#FFC72C", style: "font-black tracking-widest uppercase" },
+  { name: "1xBet",       bg: "#003399", text: "#ffffff", style: "font-black" },
+  { name: "Sportsbet",   bg: "#0066CC", text: "#ffffff", style: "font-bold italic" },
+  { name: "SBObet",      bg: "#0055A5", text: "#ffffff", style: "font-black tracking-tight" },
 ];
 
 function MarqueeBand() {
-  const doubled = [...BOOKS, ...BOOKS];
+  const tripled = [...BOOKS, ...BOOKS, ...BOOKS];
   return (
-    <div className="border-y border-border/30 bg-background/60 backdrop-blur-sm py-5 overflow-hidden relative">
-      {/* Left fade + label */}
+    <div className="border-y border-border/30 bg-background py-6 overflow-hidden relative">
+      {/* Left label */}
       <div className="absolute left-0 top-0 bottom-0 z-10 flex items-center">
-        <div className="bg-gradient-to-r from-background via-background/95 to-transparent w-56 h-full flex items-center pl-6 pr-10 shrink-0">
+        <div className="bg-gradient-to-r from-background via-background to-transparent w-52 h-full flex items-center pl-6 pr-8 shrink-0">
           <p className="text-sm font-mono text-muted-foreground leading-snug whitespace-nowrap">
-            This strategy<br />
-            <span className="text-foreground font-bold">works on →</span>
+            Works on<br />
+            <span className="text-foreground font-bold">all major books →</span>
           </p>
         </div>
       </div>
       {/* Right fade */}
-      <div className="absolute right-0 top-0 bottom-0 z-10 bg-gradient-to-l from-background via-background/95 to-transparent w-24 pointer-events-none" />
+      <div className="absolute right-0 top-0 bottom-0 z-10 bg-gradient-to-l from-background to-transparent w-20 pointer-events-none" />
 
       {/* Scrolling track */}
-      <div className="flex animate-marquee gap-0 pl-56">
-        {doubled.map((book, i) => (
+      <div className="flex animate-marquee items-center gap-0">
+        {tripled.map((book, i) => (
           <div
             key={i}
-            className="flex items-center gap-2 px-6 shrink-0 border-r border-border/20"
+            className="shrink-0 px-5"
           >
-            <span className="text-base">{book.country}</span>
-            <span className="text-sm font-mono font-bold text-foreground/60 hover:text-foreground transition-colors tracking-wide uppercase whitespace-nowrap">
-              {book.name}
-            </span>
+            <div
+              className="px-5 py-2.5 rounded-lg whitespace-nowrap select-none"
+              style={{ backgroundColor: book.bg }}
+            >
+              <span
+                className={`text-sm font-sans ${book.style ?? "font-bold"}`}
+                style={{ color: book.text, letterSpacing: book.style?.includes("tracking-widest") ? "0.15em" : undefined }}
+              >
+                {book.name}
+              </span>
+            </div>
           </div>
         ))}
       </div>
