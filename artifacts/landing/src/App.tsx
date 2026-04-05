@@ -846,6 +846,228 @@ function EVComparisonSection() {
   );
 }
 
+function BankrollFeatureCards() {
+  const appBase = "https://84e61830-7611-4d35-8623-77d057b02e4e-00-30ovvqhxka0d5.kirk.replit.dev";
+
+  const BetLoggerArt = () => (
+    <div className="w-full bg-[#0a0a0f] rounded-xl border border-white/8 p-3 font-mono text-[10px] overflow-hidden">
+      <div className="flex items-center gap-2 mb-3 pb-2 border-b border-white/6">
+        <span className="text-primary font-bold tracking-widest uppercase text-[9px]">Bet Log</span>
+        <span className="ml-auto text-white/20">April 2026</span>
+      </div>
+      {[
+        { match: "Lakers vs Celtics", market: "ML", odds: "+155", stake: "2u", result: "+3.1u", win: true },
+        { match: "Man Utd vs Arsenal", market: "AH -0.5", odds: "-108", stake: "1u", result: "-1u", win: false },
+        { match: "Djokovic vs Alcaraz", market: "ML", odds: "+122", stake: "1.5u", result: "+1.8u", win: true },
+        { match: "Bruins vs Rangers", market: "Puck -1.5", odds: "+170", stake: "1u", result: "+1.7u", win: true },
+        { match: "Chiefs vs Ravens", market: "Spread -3", odds: "-110", stake: "2u", result: "-2u", win: false },
+      ].map((row, i) => (
+        <div key={i} className={`flex items-center gap-2 py-1.5 border-b border-white/4 last:border-0 ${i === 1 || i === 4 ? "opacity-60" : ""}`}>
+          <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${row.win ? "bg-emerald-400" : "bg-red-500"}`} />
+          <span className="text-white/60 truncate flex-1">{row.match}</span>
+          <span className="text-white/30 shrink-0">{row.market}</span>
+          <span className="text-white/40 shrink-0">{row.odds}</span>
+          <span className={`shrink-0 font-bold ${row.win ? "text-emerald-400" : "text-red-400"}`}>{row.result}</span>
+        </div>
+      ))}
+      <div className="flex justify-between mt-3 pt-2 border-t border-white/6 text-[9px]">
+        <span className="text-white/30">5 bets logged</span>
+        <span className="text-emerald-400 font-bold">Net: +3.6u</span>
+      </div>
+    </div>
+  );
+
+  const CalendarArt = () => {
+    const days = ["M","T","W","T","F","S","S"];
+    const cells = [
+      null, null, { v: +2.1, w: true }, { v: -1.0, w: false }, { v: +3.5, w: true }, { v: 0, w: null }, { v: 0, w: null },
+      { v: +1.8, w: true }, { v: +0.5, w: true }, { v: -2.3, w: false }, { v: 0, w: null }, { v: +4.1, w: true }, { v: -1.5, w: false }, { v: 0, w: null },
+      { v: +0.9, w: true }, { v: -0.5, w: false }, { v: +2.8, w: true }, { v: +1.2, w: true }, { v: -3.1, w: false }, { v: 0, w: null }, { v: 0, w: null },
+      { v: +3.3, w: true }, { v: +0.7, w: true }, { v: -1.8, w: false }, { v: +2.4, w: true }, { v: 0, w: null }, { v: 0, w: null }, { v: 0, w: null },
+    ];
+    return (
+      <div className="w-full bg-[#0a0a0f] rounded-xl border border-white/8 p-3 font-mono text-[10px]">
+        <div className="flex items-center gap-2 mb-3 pb-2 border-b border-white/6">
+          <span className="text-primary font-bold tracking-widest uppercase text-[9px]">Daily P&amp;L</span>
+          <span className="ml-auto text-white/20">April 2026</span>
+        </div>
+        <div className="grid grid-cols-7 gap-1 mb-1">
+          {days.map((d, i) => (
+            <div key={i} className="text-center text-white/20 text-[8px] pb-1">{d}</div>
+          ))}
+        </div>
+        <div className="grid grid-cols-7 gap-1">
+          {cells.map((c, i) => (
+            <div
+              key={i}
+              className={`h-6 rounded text-[8px] flex items-center justify-center font-bold
+                ${!c ? "bg-transparent" :
+                  c.w === null ? "bg-white/4 text-white/10" :
+                  c.w ? "bg-emerald-500/25 text-emerald-400" : "bg-red-500/20 text-red-400"}`}
+            >
+              {c && c.w !== null ? (c.w ? `+${c.v}` : c.v) : ""}
+            </div>
+          ))}
+        </div>
+        <div className="flex justify-between mt-3 pt-2 border-t border-white/6 text-[9px]">
+          <span className="flex items-center gap-1"><span className="w-1.5 h-1.5 rounded-full bg-emerald-400 inline-block"/> 15 profitable</span>
+          <span className="flex items-center gap-1"><span className="w-1.5 h-1.5 rounded-full bg-red-500 inline-block"/> 6 losing</span>
+        </div>
+      </div>
+    );
+  };
+
+  const CLVArt = () => (
+    <div className="w-full bg-[#0a0a0f] rounded-xl border border-white/8 p-3 font-mono text-[10px] overflow-hidden">
+      <div className="flex items-center gap-2 mb-3 pb-2 border-b border-white/6">
+        <span className="text-primary font-bold tracking-widest uppercase text-[9px]">CLV Tracker</span>
+        <span className="ml-auto text-emerald-400 text-[9px]">+EV ✓</span>
+      </div>
+      {[
+        { match: "Celtics ML", placed: "-108", close: "-116", clv: "+0.7%" },
+        { match: "Over 225.5", placed: "-112", close: "-122", clv: "+0.9%" },
+        { match: "Chiefs -3",  placed: "+102", close: "+108", clv: "+0.5%" },
+        { match: "Djokovic ML",placed: "-110", close: "-120", clv: "+0.8%" },
+      ].map((row, i) => (
+        <div key={i} className="grid grid-cols-[1fr_auto_auto_auto] gap-x-3 items-center py-1.5 border-b border-white/4 last:border-0">
+          <span className="text-white/60 truncate">{row.match}</span>
+          <span className="text-white/30">Placed {row.placed}</span>
+          <span className="text-white/30">Close {row.close}</span>
+          <span className="text-emerald-400 font-bold">{row.clv}</span>
+        </div>
+      ))}
+      <div className="flex justify-between mt-3 pt-2 border-t border-white/6 text-[9px]">
+        <span className="text-white/30">Avg CLV this month</span>
+        <span className="text-emerald-400 font-bold">+0.73% per bet</span>
+      </div>
+    </div>
+  );
+
+  const AutoSettleArt = () => (
+    <div className="w-full bg-[#0a0a0f] rounded-xl border border-white/8 p-3 font-mono text-[10px] overflow-hidden">
+      <div className="flex items-center gap-2 mb-3 pb-2 border-b border-white/6">
+        <span className="text-primary font-bold tracking-widest uppercase text-[9px]">Auto-settle</span>
+        <span className="ml-auto flex items-center gap-1">
+          <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse inline-block"/>
+          <span className="text-emerald-400 text-[9px]">LIVE</span>
+        </span>
+      </div>
+      {[
+        { match: "Lakers -5.5", time: "2h ago", result: "WON", outcome: "+1.9u", color: "emerald" },
+        { match: "Man City ML", time: "4h ago", result: "LOST", outcome: "-1u", color: "red" },
+        { match: "Djokovic ML", time: "6h ago", result: "WON", outcome: "+1.8u", color: "emerald" },
+        { match: "Hawks +7.5", time: "9h ago", result: "PUSH", outcome: "0u", color: "yellow" },
+        { match: "O/U 214.5",  time: "11h ago", result: "WON", outcome: "+2.2u", color: "emerald" },
+      ].map((row, i) => (
+        <div key={i} className="flex items-center gap-2 py-1.5 border-b border-white/4 last:border-0">
+          <div className="flex-1 min-w-0">
+            <div className="text-white/60 truncate">{row.match}</div>
+            <div className="text-white/20 text-[8px]">{row.time}</div>
+          </div>
+          <span className={`px-2 py-0.5 rounded text-[8px] font-bold shrink-0
+            ${row.color === "emerald" ? "bg-emerald-500/15 text-emerald-400" :
+              row.color === "red" ? "bg-red-500/15 text-red-400" :
+              "bg-yellow-500/15 text-yellow-400"}`}>
+            {row.result}
+          </span>
+          <span className={`font-bold shrink-0 w-10 text-right
+            ${row.color === "emerald" ? "text-emerald-400" :
+              row.color === "red" ? "text-red-400" : "text-yellow-400"}`}>
+            {row.outcome}
+          </span>
+        </div>
+      ))}
+    </div>
+  );
+
+  const cards = [
+    {
+      tag: "Bet Logger",
+      title: "Log every bet. Miss nothing.",
+      desc: "Record each wager with stake, odds, market and sport. Your full history in one place — filterable, sortable, exportable.",
+      art: <BetLoggerArt />,
+      href: `${appBase}/bet-tracker`,
+    },
+    {
+      tag: "Daily Calendar",
+      title: "Your P&L, day by day.",
+      desc: "A color-coded calendar shows winning and losing days at a glance. Spot patterns, streaks, and tilt cycles before they cost you.",
+      art: <CalendarArt />,
+      href: `${appBase}/bet-stats`,
+    },
+    {
+      tag: "CLV & +EV",
+      title: "Did you beat the closing line?",
+      desc: "Automatically compare your entry odds to where the market closed. Sustained positive CLV is the strongest predictor of long-term profit.",
+      art: <CLVArt />,
+      href: `${appBase}/bet-stats`,
+    },
+    {
+      tag: "Auto-settle",
+      title: "Results logged automatically.",
+      desc: "Bets are resolved and settled the moment results come in. No manual updates, no spreadsheet maintenance — your bankroll stays accurate in real time.",
+      art: <AutoSettleArt />,
+      href: `${appBase}/bet-tracker`,
+    },
+  ];
+
+  return (
+    <section className="py-24 bg-background">
+      <div className="container mx-auto px-6">
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true, amount: 0.2 }}
+          transition={{ duration: 0.5 }}
+          className="text-center mb-14 max-w-2xl mx-auto"
+        >
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary/10 text-primary text-xs font-mono border border-primary/20 mb-5">
+            <Activity className="w-3.5 h-3.5" /> Edge Tracking Suite
+          </div>
+          <h2 className="text-3xl md:text-5xl font-bold font-sans tracking-tight mb-4">
+            Follow your edge. Watch your bankroll grow.
+          </h2>
+          <p className="text-muted-foreground text-lg">
+            Every metric that matters — tracked automatically. No spreadsheets, no guesswork.
+          </p>
+        </motion.div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          {cards.map((card, i) => (
+            <motion.a
+              key={i}
+              href={card.href}
+              target="_blank"
+              rel="noopener noreferrer"
+              initial={{ opacity: 0, y: 24 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true, amount: 0.15 }}
+              transition={{ duration: 0.45, delay: i * 0.07 }}
+              whileHover={{ y: -4, transition: { duration: 0.2 } }}
+              className="group bg-card border border-border/50 rounded-2xl p-6 flex flex-col gap-5 cursor-pointer hover:border-primary/30 hover:shadow-[0_0_40px_-10px_hsl(var(--primary)/0.15)] transition-all duration-300"
+            >
+              <div className="pointer-events-none">
+                {card.art}
+              </div>
+              <div>
+                <div className="inline-flex items-center gap-1.5 text-[10px] font-mono font-bold text-primary tracking-widest uppercase mb-2">
+                  {card.tag}
+                </div>
+                <h3 className="text-lg font-bold font-sans text-foreground mb-2 group-hover:text-primary transition-colors">
+                  {card.title}
+                </h3>
+                <p className="text-sm text-muted-foreground leading-relaxed">
+                  {card.desc}
+                </p>
+              </div>
+            </motion.a>
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+}
+
 function MultiSportSection() {
   const sports = [
     { name: "NFL Football", icon: "🏈", count: "32 Games/Wk", markets: "Moneyline, Spread, Total" },
@@ -966,6 +1188,7 @@ function AppContent() {
         <FeaturesGrid />
         <TerminalSection />
         <EVComparisonSection />
+        <BankrollFeatureCards />
         <MultiSportSection />
         <AlertConfigSection />
         <CLVSection />
