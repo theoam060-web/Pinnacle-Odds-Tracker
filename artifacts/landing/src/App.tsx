@@ -6,8 +6,8 @@ import { motion, useScroll, useTransform, AnimatePresence } from "framer-motion"
 import { useEffect, useState, useRef } from "react";
 import { 
   Activity, BarChart3, Bell, Crosshair, 
-  LineChart, Radar, ShieldAlert, Target, 
-  TrendingUp, Zap, ChevronRight, CheckCircle2,
+  LineChart, Radar, ShieldAlert,
+  TrendingUp, ChevronRight, CheckCircle2,
   Volume2, Globe, Database, Smartphone, Laptop
 } from "lucide-react";
 
@@ -27,22 +27,22 @@ const LIVE_ODDS = [
 
 const STEPS = [
   {
-    icon: <Radar className="w-6 h-6 text-primary" />,
+    image: `${import.meta.env.BASE_URL}card-markets.png`,
     title: "Choose Your Markets",
     description: "Select exactly which sports, leagues, and bet types you care about. Filter out everything else — only what's relevant reaches you."
   },
   {
-    icon: <Target className="w-6 h-6 text-primary" />,
+    image: `${import.meta.env.BASE_URL}card-threshold.png`,
     title: "Define Your Thresholds",
     description: "Set a minimum drop percentage per market. Only moves that clear your bar trigger a notification — no noise, no false positives."
   },
   {
-    icon: <Zap className="w-6 h-6 text-primary" />,
+    image: `${import.meta.env.BASE_URL}card-monitor.png`,
     title: "We Watch 24/7",
-    description: "SharpTracker continuously monitors Pinnacle around the clock. The instant a qualifying line shifts, we catch it — regardless of the hour."
+    description: "SharpTracker continuously monitors sharp markets around the clock. The instant a qualifying line shifts, we catch it — regardless of the hour."
   },
   {
-    icon: <Bell className="w-6 h-6 text-primary" />,
+    image: `${import.meta.env.BASE_URL}alert-feed.jpg`,
     title: "You're First to Know",
     description: "A real-time alert lands before the broader market has had a chance to react. Your edge is the time between the move and everyone else noticing."
   }
@@ -142,7 +142,7 @@ function Hero() {
             transition={{ duration: 0.5, delay: 0.2 }}
             className="text-lg md:text-xl text-muted-foreground leading-relaxed mb-8 max-w-xl"
           >
-            Get alerted the moment Pinnacle — the world's sharpest bookmaker — drops their odds. Place your bet before the rest of the market has a chance to react.
+            Get alerted the moment sharp bookmakers move their lines. Place your bet before the rest of the market has a chance to react.
           </motion.p>
           
           <motion.div 
@@ -267,7 +267,7 @@ function TerminalSection() {
                     
                     <div className="relative z-10 space-y-3">
                        <div className="flex justify-between items-center pb-2 border-b border-border/30">
-                         <div className="text-xs font-mono text-muted-foreground">Latest Drops (Pinnacle)</div>
+                         <div className="text-xs font-mono text-muted-foreground">Latest Sharp Drops</div>
                          <div className="text-[10px] font-mono text-primary flex items-center gap-1"><BlinkingDot /> Connected</div>
                        </div>
                        
@@ -312,7 +312,7 @@ function FeaturesGrid() {
           className="text-center mb-16 max-w-2xl mx-auto"
         >
           <h2 className="text-3xl md:text-4xl font-bold font-sans mb-4">Your filters. Your rules.</h2>
-          <p className="text-muted-foreground">Build precise alert configurations by market and line type. SharpTracker watches Pinnacle non-stop — the moment a qualifying line moves, you're the first to act on it.</p>
+          <p className="text-muted-foreground">Build precise alert configurations by market and line type. SharpTracker watches sharp markets non-stop — the moment a qualifying line moves, you're the first to act on it.</p>
         </motion.div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 max-w-3xl mx-auto">
@@ -323,16 +323,22 @@ function FeaturesGrid() {
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true, amount: 0.2 }}
               transition={{ delay: idx * 0.1, duration: 0.5 }}
-              className="bg-card border border-border p-6 rounded-xl hover:border-primary/50 hover:shadow-[0_0_20px_rgba(0,255,255,0.08)] hover:-translate-y-0.5 transition-all duration-200 group"
+              className="bg-card border border-border rounded-xl overflow-hidden hover:border-primary/50 hover:shadow-[0_0_20px_rgba(0,255,255,0.08)] hover:-translate-y-0.5 transition-all duration-200 group"
             >
-              <div className="w-12 h-12 bg-primary/10 border border-primary/20 rounded-lg flex items-center justify-center mb-6 group-hover:bg-primary/20 transition-colors">
-                {step.icon}
+              <div className="h-44 overflow-hidden bg-muted">
+                <img
+                  src={step.image}
+                  alt={step.title}
+                  className="w-full h-full object-cover object-top group-hover:scale-[1.03] transition-transform duration-300"
+                />
               </div>
-              <div className="text-xs font-mono text-primary/60 mb-2 uppercase tracking-widest">Step {idx + 1}</div>
-              <h3 className="text-xl font-bold font-sans mb-3 text-foreground">{step.title}</h3>
-              <p className="text-muted-foreground text-sm leading-relaxed">
-                {step.description}
-              </p>
+              <div className="p-6">
+                <div className="text-xs font-mono text-primary/60 mb-2 uppercase tracking-widest">Step {idx + 1}</div>
+                <h3 className="text-xl font-bold font-sans mb-3 text-foreground">{step.title}</h3>
+                <p className="text-muted-foreground text-sm leading-relaxed">
+                  {step.description}
+                </p>
+              </div>
             </motion.div>
           ))}
         </div>
@@ -389,7 +395,7 @@ function CLVSection() {
             <ul className="space-y-4 font-mono text-sm">
               <li className="flex items-start gap-3">
                 <CheckCircle2 className="w-5 h-5 text-primary shrink-0 mt-0.5" />
-                <span className="text-foreground">Track every bet against the Pinnacle closing line automatically.</span>
+                <span className="text-foreground">Track every bet against the sharp closing line automatically.</span>
               </li>
               <li className="flex items-start gap-3">
                 <CheckCircle2 className="w-5 h-5 text-primary shrink-0 mt-0.5" />
@@ -421,7 +427,7 @@ function CTASection() {
       >
         <h2 className="text-4xl md:text-6xl font-bold font-sans mb-6">Stop playing with a handicap.</h2>
         <p className="text-xl text-muted-foreground mb-10">
-          Join the sharpest bettors leveraging real-time Pinnacle data to print CLV.
+          Join the sharpest bettors leveraging real-time sharp market data to print CLV.
         </p>
         <div className="flex flex-col sm:flex-row gap-4 justify-center">
           <button className="bg-primary text-primary-foreground px-8 py-4 rounded-md font-mono font-bold tracking-wide text-lg hover:bg-primary/90 transition-colors shadow-[0_0_30px_hsl(var(--primary)/0.3)]" data-testid="btn-footer-signup">
@@ -497,7 +503,7 @@ function AlertConfigSection() {
             </div>
             <h2 className="text-3xl md:text-5xl font-bold font-sans tracking-tight">Never miss a drop.</h2>
             <p className="text-muted-foreground text-lg leading-relaxed">
-              Configure precise thresholds across different sports, leagues, and markets. When Pinnacle drops the line past your target EV%, your phone lights up.
+              Configure precise thresholds across different sports, leagues, and markets. When the line drops past your target EV%, your phone lights up.
             </p>
             <div className="space-y-4 pt-4">
               {[
@@ -679,18 +685,18 @@ function BetTrackerSection() {
   );
 }
 
-function PinnacleSection() {
+function SharpDataSection() {
   return (
     <section className="py-24 bg-background">
       <div className="container mx-auto px-6">
-        <div className="bg-[#FF6B00]/5 border border-[#FF6B00]/20 rounded-2xl p-8 md:p-12 flex flex-col md:flex-row items-center gap-12 text-center md:text-left">
-          <div className="shrink-0 bg-[#FF6B00]/10 w-32 h-32 rounded-full flex items-center justify-center">
-            <Database className="w-16 h-16 text-[#FF6B00]" />
+        <div className="bg-primary/5 border border-primary/20 rounded-2xl p-8 md:p-12 flex flex-col md:flex-row items-center gap-12 text-center md:text-left">
+          <div className="shrink-0 bg-primary/10 w-32 h-32 rounded-full flex items-center justify-center">
+            <Database className="w-16 h-16 text-primary" />
           </div>
           <div>
-            <h2 className="text-2xl md:text-4xl font-bold font-sans mb-4 text-foreground">Powered by the Sharpest Book.</h2>
+            <h2 className="text-2xl md:text-4xl font-bold font-sans mb-4 text-foreground">Powered by Sharp Bookmaker Data.</h2>
             <p className="text-muted-foreground text-lg leading-relaxed max-w-3xl">
-              We exclusively track Pinnacle odds. While other services blend data from slow, recreational books, SharpTracker isolates the signal from the noise by focusing solely on the market maker. When Pinnacle moves, the market follows. We show you the move before the followers can react.
+              We track only the sharpest bookmakers — the true market makers where professional money flows. While other services blend data from slow recreational books, SharpTracker isolates the signal from the noise. When the sharp money moves, you see it first.
             </p>
           </div>
         </div>
@@ -711,7 +717,7 @@ function AppContent() {
         <AlertConfigSection />
         <CLVSection />
         <BetTrackerSection />
-        <PinnacleSection />
+        <SharpDataSection />
         <CTASection />
       </main>
       <Footer />

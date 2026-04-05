@@ -1,0 +1,20 @@
+uploads = []
+outputs = []
+
+[[generated]]
+id = "uHFionjlfJhuW6CPelhY_"
+uri = "file://artifacts/landing/public/card-markets.png"
+type = "image"
+title = "sport market filter panel"
+
+[[generated]]
+id = "EU1EhMthzEoLcqTpYDIuq"
+uri = "file://artifacts/landing/public/card-threshold.png"
+type = "image"
+title = "threshold settings panel"
+
+[[generated]]
+id = "qdI9GTXUmRoPY8HRJ3b0X"
+uri = "file://artifacts/landing/public/card-monitor.png"
+type = "image"
+title = "24/7 live market monitoring"
