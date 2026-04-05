@@ -7,8 +7,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { motion, useScroll, useTransform, AnimatePresence } from "framer-motion";
-import { useEffect, useState, useRef, type FC, type SVGProps } from "react";
-import { BOOK_LOGO_COMPONENTS } from "./BookLogos";
+import { useEffect, useState, useRef } from "react";
 import { 
   Activity, Bell,
   LineChart as LineChartIcon, Radar,
@@ -290,31 +289,31 @@ function TerminalSection() {
 
 type BookLogo = {
   name: string;
-  bg: string;
-  logo: FC<SVGProps<SVGSVGElement>>;
+  img?: string;
+  large?: boolean;
+  xlarge?: boolean;
 };
 
+const BASE = import.meta.env.BASE_URL;
+
 const BOOKS: BookLogo[] = [
-  { name: "bet365",       bg: "#00873D", logo: BOOK_LOGO_COMPONENTS["bet365"] },
-  { name: "Unibet",       bg: "#328200", logo: BOOK_LOGO_COMPONENTS["Unibet"] },
-  { name: "DraftKings",   bg: "#1B1B2F", logo: BOOK_LOGO_COMPONENTS["DraftKings"] },
-  { name: "FanDuel",      bg: "#1176AE", logo: BOOK_LOGO_COMPONENTS["FanDuel"] },
-  { name: "Betsson",      bg: "#E40000", logo: BOOK_LOGO_COMPONENTS["Betsson"] },
-  { name: "William Hill", bg: "#532D80", logo: BOOK_LOGO_COMPONENTS["William Hill"] },
-  { name: "bwin",         bg: "#CC0000", logo: BOOK_LOGO_COMPONENTS["bwin"] },
-  { name: "BetMGM",       bg: "#000000", logo: BOOK_LOGO_COMPONENTS["BetMGM"] },
-  { name: "Betclic",      bg: "#E8000B", logo: BOOK_LOGO_COMPONENTS["Betclic"] },
-  { name: "Tipico",       bg: "#006B35", logo: BOOK_LOGO_COMPONENTS["Tipico"] },
-  { name: "888sport",     bg: "#FF6600", logo: BOOK_LOGO_COMPONENTS["888sport"] },
-  { name: "Betway",       bg: "#00A651", logo: BOOK_LOGO_COMPONENTS["Betway"] },
-  { name: "Ladbrokes",    bg: "#CC1A1A", logo: BOOK_LOGO_COMPONENTS["Ladbrokes"] },
-  { name: "Codere",       bg: "#0099D6", logo: BOOK_LOGO_COMPONENTS["Codere"] },
-  { name: "Marathonbet",  bg: "#CC0022", logo: BOOK_LOGO_COMPONENTS["Marathonbet"] },
-  { name: "Interwetten",  bg: "#0B3D91", logo: BOOK_LOGO_COMPONENTS["Interwetten"] },
-  { name: "Pinnacle",     bg: "#111111", logo: BOOK_LOGO_COMPONENTS["Pinnacle"] },
-  { name: "1xBet",        bg: "#0033AA", logo: BOOK_LOGO_COMPONENTS["1xBet"] },
-  { name: "Sportsbet",    bg: "#0066CC", logo: BOOK_LOGO_COMPONENTS["Sportsbet"] },
-  { name: "SBObet",       bg: "#004FA3", logo: BOOK_LOGO_COMPONENTS["SBObet"] },
+  { name: "bet365",       img: `${BASE}logos/bet365.png`, large: true },
+  { name: "Unibet",       large: true },
+  { name: "DraftKings" },
+  { name: "William Hill", img: `${BASE}logos/williamhill.png`, large: true },
+  { name: "Betclic",      img: `${BASE}logos/betclic.png` },
+  { name: "FanDuel",      img: `${BASE}logos/fanduel.png`,    large: true },
+  { name: "Betsson",      img: `${BASE}logos/betsson.png` },
+  { name: "BetMGM",       large: true },
+  { name: "Tipico",       img: `${BASE}logos/tipico.png` },
+  { name: "888sport",     img: `${BASE}logos/888sport2.png`,  large: true },
+  { name: "Betway",       img: `${BASE}logos/betway.png`,     xlarge: true },
+  { name: "Ladbrokes",    large: true },
+  { name: "Pinnacle" },
+  { name: "Marathonbet" },
+  { name: "Interwetten" },
+  { name: "1xBet" },
+  { name: "SBObet" },
 ];
 
 function MarqueeBand() {
@@ -335,23 +334,40 @@ function MarqueeBand() {
 
       {/* Scrolling track */}
       <div className="flex animate-marquee items-center gap-0">
-        {tripled.map((book, i) => {
-          const Logo = book.logo;
-          return (
-            <div key={i} className="shrink-0 px-4">
-              <div
-                className="rounded-lg select-none overflow-hidden"
-                style={{ backgroundColor: book.bg, height: "32px" }}
+        {tripled.map((book, i) => (
+          <div
+            key={i}
+            className="shrink-0 px-5 flex items-center justify-center"
+            style={{ width: book.xlarge ? "190px" : book.large ? "150px" : "120px" }}
+          >
+            {book.img ? (
+              <img
+                src={book.img}
+                alt={book.name}
+                className="select-none"
+                style={{
+                  width: "100%",
+                  height: book.xlarge ? "64px" : book.large ? "46px" : "30px",
+                  objectFit: "contain",
+                  objectPosition: "center",
+                  filter: "brightness(0) invert(1)",
+                  opacity: 0.35,
+                }}
+                draggable={false}
+              />
+            ) : (
+              <span
+                className="select-none whitespace-nowrap font-sans font-bold tracking-wide"
+                style={{
+                  fontSize: book.xlarge ? "20px" : book.large ? "16px" : "13px",
+                  color: "rgba(255,255,255,0.30)",
+                }}
               >
-                <Logo
-                  style={{ height: "32px", width: "auto", display: "block" }}
-                  aria-label={book.name}
-                  role="img"
-                />
-              </div>
-            </div>
-          );
-        })}
+                {book.name}
+              </span>
+            )}
+          </div>
+        ))}
       </div>
     </div>
   );
