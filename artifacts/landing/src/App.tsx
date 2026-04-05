@@ -302,45 +302,76 @@ function TerminalSection() {
 
 function FeaturesGrid() {
   return (
-    <section id="features" className="py-24 bg-secondary/30 border-y border-border/20">
+    <section id="features" className="py-24 bg-secondary/30 border-y border-border/20 overflow-hidden">
       <div className="container mx-auto px-6">
         <motion.div
           initial={{ opacity: 0, y: 24 }}
           whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true, amount: 0.2 }}
+          viewport={{ once: true, amount: 0.3 }}
           transition={{ duration: 0.5 }}
-          className="text-center mb-16 max-w-2xl mx-auto"
+          className="text-center mb-20 max-w-2xl mx-auto"
         >
           <h2 className="text-3xl md:text-4xl font-bold font-sans mb-4">Your filters. Your rules.</h2>
           <p className="text-muted-foreground">Build precise alert configurations by market and line type. SharpTracker watches sharp markets non-stop — the moment a qualifying line moves, you're the first to act on it.</p>
         </motion.div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 max-w-3xl mx-auto">
-          {STEPS.map((step, idx) => (
-            <motion.div 
-              key={idx}
-              initial={{ opacity: 0, y: 24 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true, amount: 0.2 }}
-              transition={{ delay: idx * 0.1, duration: 0.5 }}
-              className="bg-card border border-border rounded-xl overflow-hidden hover:border-primary/50 hover:shadow-[0_0_20px_rgba(0,255,255,0.08)] hover:-translate-y-0.5 transition-all duration-200 group"
-            >
-              <div className="h-44 overflow-hidden bg-muted">
-                <img
-                  src={step.image}
-                  alt={step.title}
-                  className="w-full h-full object-cover object-top group-hover:scale-[1.03] transition-transform duration-300"
-                />
+        <div className="space-y-28 max-w-5xl mx-auto">
+          {STEPS.map((step, idx) => {
+            const isEven = idx % 2 === 0;
+            return (
+              <div
+                key={idx}
+                className={`flex flex-col ${isEven ? 'md:flex-row' : 'md:flex-row-reverse'} gap-10 md:gap-16 items-center`}
+              >
+                {/* Image side */}
+                <motion.div
+                  initial={{ opacity: 0, x: isEven ? 60 : -60 }}
+                  whileInView={{ opacity: 1, x: 0 }}
+                  viewport={{ once: true, amount: 0.25 }}
+                  transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
+                  className="flex-1 relative"
+                >
+                  {/* Ambient glow behind image */}
+                  <div className="absolute -inset-6 bg-primary/8 rounded-3xl blur-3xl" />
+                  {/* Browser-chrome frame */}
+                  <div className={`relative rounded-2xl overflow-hidden border border-primary/25 shadow-[0_0_60px_rgba(0,255,255,0.12)] ${isEven ? 'rotate-1 hover:rotate-0' : '-rotate-1 hover:rotate-0'} transition-transform duration-500`}>
+                    {/* Fake title bar */}
+                    <div className="bg-[#0f1117] border-b border-white/5 px-4 py-2.5 flex items-center gap-2">
+                      <span className="w-2.5 h-2.5 rounded-full bg-red-500/70" />
+                      <span className="w-2.5 h-2.5 rounded-full bg-yellow-500/70" />
+                      <span className="w-2.5 h-2.5 rounded-full bg-green-500/70" />
+                      <span className="ml-3 text-[10px] font-mono text-white/25 truncate">SharpTracker — {step.title}</span>
+                    </div>
+                    <img
+                      src={step.image}
+                      alt={step.title}
+                      className="w-full block"
+                    />
+                  </div>
+                </motion.div>
+
+                {/* Text side */}
+                <motion.div
+                  initial={{ opacity: 0, x: isEven ? -60 : 60 }}
+                  whileInView={{ opacity: 1, x: 0 }}
+                  viewport={{ once: true, amount: 0.25 }}
+                  transition={{ duration: 0.7, delay: 0.12, ease: [0.22, 1, 0.36, 1] }}
+                  className="flex-1 max-w-md"
+                >
+                  <div className="inline-flex items-center gap-2 text-xs font-mono text-primary/70 border border-primary/20 bg-primary/5 rounded-full px-3 py-1 mb-5">
+                    <span className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse" />
+                    STEP {String(idx + 1).padStart(2, '0')}
+                  </div>
+                  <h3 className="text-3xl md:text-4xl font-bold font-sans mb-5 text-foreground leading-tight">
+                    {step.title}
+                  </h3>
+                  <p className="text-muted-foreground text-lg leading-relaxed">
+                    {step.description}
+                  </p>
+                </motion.div>
               </div>
-              <div className="p-6">
-                <div className="text-xs font-mono text-primary/60 mb-2 uppercase tracking-widest">Step {idx + 1}</div>
-                <h3 className="text-xl font-bold font-sans mb-3 text-foreground">{step.title}</h3>
-                <p className="text-muted-foreground text-sm leading-relaxed">
-                  {step.description}
-                </p>
-              </div>
-            </motion.div>
-          ))}
+            );
+          })}
         </div>
       </div>
     </section>
