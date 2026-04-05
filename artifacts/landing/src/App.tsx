@@ -66,14 +66,77 @@ const GlitchText = ({ text, className = "" }: { text: string, className?: string
 
 
 
+const FEATURE_ITEMS = [
+  {
+    id: "alerts",
+    icon: "📉",
+    name: "Odds Drop Alerts",
+    desc: "Instant push notification when sharp money moves",
+  },
+  {
+    id: "bet-tracker",
+    icon: "📊",
+    name: "Bet Tracker",
+    desc: "Log every bet and track every unit you've ever placed",
+  },
+  {
+    id: "clv",
+    icon: "⚡",
+    name: "CLV & +EV",
+    desc: "See if your bets beat the closing line every time",
+  },
+  {
+    id: "bet-tracker",
+    icon: "🧮",
+    name: "Stake Calculator",
+    desc: "Size bets correctly with Kelly criterion built in",
+  },
+  {
+    id: "clv",
+    icon: "📅",
+    name: "Daily P&L Calendar",
+    desc: "Visual win/loss calendar — spot patterns instantly",
+  },
+  {
+    id: "sports",
+    icon: "🌍",
+    name: "Multi-Sport Coverage",
+    desc: "NFL, NBA, MLB, NHL, Soccer, Tennis and more",
+  },
+  {
+    id: "bankroll",
+    icon: "📈",
+    name: "Bankroll Growth",
+    desc: "Catch value before anyone else and watch your edge compound",
+  },
+];
+
 function Navbar() {
   const [scrolled, setScrolled] = useState(false);
+  const [featuresOpen, setFeaturesOpen] = useState(false);
+  const dropdownRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const handleScroll = () => setScrolled(window.scrollY > 50);
     window.addEventListener("scroll", handleScroll);
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
+
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
+        setFeaturesOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  const scrollToSection = (id: string) => {
+    setFeaturesOpen(false);
+    const el = document.getElementById(id);
+    if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
+  };
 
   return (
     <nav className={`fixed top-0 w-full z-50 transition-all duration-300 border-b border-transparent ${scrolled ? "bg-background/80 backdrop-blur-md border-border/50 shadow-sm" : "bg-transparent"}`}>
@@ -82,11 +145,66 @@ function Navbar() {
           <Activity className="w-6 h-6 text-primary" />
           <span className="font-sans font-bold text-xl tracking-tight text-foreground">Sharp<span className="text-primary">Tracker</span></span>
         </div>
+
         <div className="hidden md:flex items-center gap-8 text-sm font-mono tracking-wide text-muted-foreground">
-          <a href="#features" className="hover:text-primary transition-colors">Features</a>
+          {/* Features dropdown */}
+          <div className="relative" ref={dropdownRef}>
+            <button
+              onClick={() => setFeaturesOpen(v => !v)}
+              className={`flex items-center gap-1.5 hover:text-primary transition-colors ${featuresOpen ? "text-primary" : ""}`}
+            >
+              Features
+              <svg
+                className={`w-3 h-3 transition-transform duration-200 ${featuresOpen ? "rotate-180" : ""}`}
+                viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="2"
+              >
+                <path d="M2 4l4 4 4-4" strokeLinecap="round" strokeLinejoin="round"/>
+              </svg>
+            </button>
+
+            <AnimatePresence>
+              {featuresOpen && (
+                <motion.div
+                  initial={{ opacity: 0, y: 8, scale: 0.97 }}
+                  animate={{ opacity: 1, y: 0, scale: 1 }}
+                  exit={{ opacity: 0, y: 8, scale: 0.97 }}
+                  transition={{ duration: 0.18, ease: "easeOut" }}
+                  className="absolute top-full left-1/2 -translate-x-1/2 mt-3 w-80 bg-card border border-border/60 rounded-2xl shadow-[0_8px_60px_-8px_rgba(0,0,0,0.8)] overflow-hidden"
+                >
+                  <div className="px-4 py-3 border-b border-border/40">
+                    <span className="text-[10px] font-mono text-muted-foreground uppercase tracking-widest">All Features</span>
+                  </div>
+                  <div className="p-2">
+                    {FEATURE_ITEMS.map((f) => (
+                      <button
+                        key={f.id}
+                        onClick={() => scrollToSection(f.id)}
+                        className="w-full flex items-start gap-3 px-3 py-2.5 rounded-xl hover:bg-primary/8 group transition-colors text-left"
+                      >
+                        <span className="text-lg leading-none mt-0.5 shrink-0">{f.icon}</span>
+                        <div className="min-w-0">
+                          <div className="text-sm font-sans font-semibold text-foreground group-hover:text-primary transition-colors">
+                            {f.name}
+                          </div>
+                          <div className="text-xs font-mono text-muted-foreground mt-0.5 leading-relaxed">
+                            {f.desc}
+                          </div>
+                        </div>
+                        <svg className="w-3.5 h-3.5 text-muted-foreground/40 group-hover:text-primary shrink-0 mt-1 ml-auto transition-colors" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2">
+                          <path d="M3 8h10M9 4l4 4-4 4" strokeLinecap="round" strokeLinejoin="round"/>
+                        </svg>
+                      </button>
+                    ))}
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </div>
+
           <a href="#terminal" className="hover:text-primary transition-colors">Terminal</a>
           <a href="#pricing" className="hover:text-primary transition-colors">Pricing</a>
         </div>
+
         <div className="flex items-center gap-4">
           <button className="hidden md:block text-sm font-mono text-foreground hover:text-primary transition-colors" data-testid="btn-login">Log In</button>
           <button className="bg-primary/10 text-primary border border-primary/30 hover:bg-primary hover:text-primary-foreground px-5 py-2 rounded-md font-mono text-sm transition-all shadow-[0_0_15px_rgba(0,255,255,0.1)] hover:shadow-[0_0_20px_rgba(0,255,255,0.3)]" data-testid="btn-get-access">
@@ -583,7 +701,7 @@ function Footer() {
 
 function AlertConfigSection() {
   return (
-    <section className="py-28 bg-card border-y border-border/20 overflow-hidden relative">
+    <section id="alerts" className="py-28 bg-card border-y border-border/20 overflow-hidden relative">
       <div className="absolute inset-0 pointer-events-none">
         <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-primary/5 rounded-full blur-[120px]" />
       </div>
@@ -608,7 +726,7 @@ function AlertConfigSection() {
             </h2>
 
             <p className="text-muted-foreground text-xl leading-relaxed max-w-md mx-auto lg:mx-0">
-              Download our app for free and get an instant push notification on your phone every single time a sharp odds drop occurs — so you can act before the line moves further.
+              Download for free. Get a push notification the moment a sharp odds drop hits — act before the line moves.
             </p>
 
             {/* Notification preview pills */}
@@ -766,7 +884,7 @@ function CustomTooltip({ active, payload, label }: any) {
 
 function EVComparisonSection() {
   return (
-    <section className="py-24 bg-card border-y border-border/20 overflow-hidden">
+    <section id="bankroll" className="py-24 bg-card border-y border-border/20 overflow-hidden">
       <div className="container mx-auto px-6">
         <motion.div
           initial={{ opacity: 0, y: 24 }}
@@ -1130,7 +1248,7 @@ function MultiSportSection() {
   ];
 
   return (
-    <section className="py-24 bg-background">
+    <section id="sports" className="py-24 bg-background">
       <div className="container mx-auto px-6">
         <div className="text-center mb-16 max-w-3xl mx-auto">
           <h2 className="text-3xl md:text-5xl font-bold font-sans tracking-tight mb-6">Total Market Coverage.</h2>
@@ -1162,7 +1280,7 @@ function MultiSportSection() {
 
 function BetTrackerSection() {
   return (
-    <section className="py-24 bg-secondary/20 border-y border-border/20">
+    <section id="bet-tracker" className="py-24 bg-secondary/20 border-y border-border/20">
       <div className="container mx-auto px-6 text-center">
         <h2 className="text-3xl md:text-4xl font-bold font-sans mb-6">Integrated Bet Tracker.</h2>
         <p className="text-muted-foreground font-mono text-lg max-w-2xl mx-auto mb-16">
