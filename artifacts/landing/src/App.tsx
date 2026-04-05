@@ -60,13 +60,7 @@ const GlitchText = ({ text, className = "" }: { text: string, className?: string
   );
 };
 
-const BlinkingDot = () => (
-  <motion.span 
-    animate={{ opacity: [1, 0.2, 1] }}
-    transition={{ duration: 1.5, repeat: Infinity, ease: "linear" }}
-    className="inline-block w-2 h-2 rounded-full bg-primary shadow-[0_0_8px_hsl(var(--primary))]"
-  />
-);
+
 
 function Navbar() {
   const [scrolled, setScrolled] = useState(false);
@@ -112,17 +106,6 @@ function Hero() {
 
       <div className="container mx-auto px-6 relative z-10 grid lg:grid-cols-2 gap-12 items-center">
         <div className="max-w-2xl">
-          <motion.div 
-            initial={{ opacity: 0, y: 24 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true, amount: 0.2 }}
-            transition={{ duration: 0.5 }}
-            className="flex items-center gap-2 mb-6"
-          >
-            <span className="px-3 py-1 bg-primary/10 text-primary border border-primary/20 rounded-full text-xs font-mono uppercase tracking-wider flex items-center gap-2">
-              <BlinkingDot /> System Online
-            </span>
-          </motion.div>
           
           <motion.h1 
             initial={{ opacity: 0, y: 24 }}
@@ -268,7 +251,7 @@ function TerminalSection() {
                     <div className="relative z-10 space-y-3">
                        <div className="flex justify-between items-center pb-2 border-b border-border/30">
                          <div className="text-xs font-mono text-muted-foreground">Latest Sharp Drops</div>
-                         <div className="text-[10px] font-mono text-primary flex items-center gap-1"><BlinkingDot /> Connected</div>
+                         <div className="text-[10px] font-mono text-primary flex items-center gap-1">● LIVE</div>
                        </div>
                        
                        <div className="space-y-2">
