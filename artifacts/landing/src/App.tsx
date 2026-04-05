@@ -289,38 +289,36 @@ function TerminalSection() {
 
 type BookLogo = {
   name: string;
-  bg: string;
-  text: string;
-  style?: string;
+  img?: string;
 };
 
+const BASE = import.meta.env.BASE_URL;
+
 const BOOKS: BookLogo[] = [
-  { name: "bet365",      bg: "#00873D", text: "#ffffff", style: "font-black tracking-tight" },
-  { name: "Unibet",      bg: "#417505", text: "#ffffff", style: "font-bold italic" },
-  { name: "DraftKings",  bg: "#1B1B2F", text: "#FFC72C", style: "font-black tracking-tighter" },
-  { name: "FanDuel",     bg: "#1493FF", text: "#ffffff", style: "font-black" },
-  { name: "Betsson",     bg: "#E6000A", text: "#ffffff", style: "font-bold tracking-wide" },
-  { name: "William Hill",bg: "#532D80", text: "#ffffff", style: "font-bold" },
-  { name: "bwin",        bg: "#E6000A", text: "#ffffff", style: "font-black tracking-widest uppercase" },
-  { name: "BetMGM",      bg: "#000000", text: "#C8AA6E", style: "font-bold tracking-wide" },
-  { name: "Betclic",     bg: "#E8000B", text: "#ffffff", style: "font-black italic" },
-  { name: "Tipico",      bg: "#007038", text: "#ffffff", style: "font-bold" },
-  { name: "888sport",    bg: "#FF6600", text: "#ffffff", style: "font-black" },
-  { name: "Betway",      bg: "#00A651", text: "#ffffff", style: "font-bold tracking-wide" },
-  { name: "Ladbrokes",   bg: "#DD1E2B", text: "#ffffff", style: "font-bold" },
-  { name: "Codere",      bg: "#00AEEF", text: "#ffffff", style: "font-black tracking-tight" },
-  { name: "Marathonbet", bg: "#EE0028", text: "#ffffff", style: "font-bold" },
-  { name: "Interwetten", bg: "#0B3D91", text: "#ffffff", style: "font-bold" },
-  { name: "Pinnacle",    bg: "#1a1a1a", text: "#FFC72C", style: "font-black tracking-widest uppercase" },
-  { name: "1xBet",       bg: "#003399", text: "#ffffff", style: "font-black" },
-  { name: "Sportsbet",   bg: "#0066CC", text: "#ffffff", style: "font-bold italic" },
-  { name: "SBObet",      bg: "#0055A5", text: "#ffffff", style: "font-black tracking-tight" },
+  { name: "bet365" },
+  { name: "Unibet" },
+  { name: "DraftKings" },
+  { name: "William Hill", img: `${BASE}logos/williamhill.png` },
+  { name: "bwin",         img: `${BASE}logos/bwin.png` },
+  { name: "Betclic",      img: `${BASE}logos/betclic.png` },
+  { name: "FanDuel",      img: `${BASE}logos/fanduel.png` },
+  { name: "Betsson",      img: `${BASE}logos/betsson.png` },
+  { name: "BetMGM" },
+  { name: "Tipico",       img: `${BASE}logos/tipico.png` },
+  { name: "888sport",     img: `${BASE}logos/888sport2.png` },
+  { name: "Betway",       img: `${BASE}logos/betway.png` },
+  { name: "Ladbrokes" },
+  { name: "Pinnacle" },
+  { name: "Marathonbet" },
+  { name: "Interwetten" },
+  { name: "1xBet" },
+  { name: "SBObet" },
 ];
 
 function MarqueeBand() {
   const tripled = [...BOOKS, ...BOOKS, ...BOOKS];
   return (
-    <div className="border-y border-border/30 bg-background py-6 overflow-hidden relative">
+    <div className="border-y border-border/30 bg-background py-5 overflow-hidden relative">
       {/* Left label */}
       <div className="absolute left-0 top-0 bottom-0 z-10 flex items-center">
         <div className="bg-gradient-to-r from-background via-background to-transparent w-52 h-full flex items-center pl-6 pr-8 shrink-0">
@@ -336,21 +334,26 @@ function MarqueeBand() {
       {/* Scrolling track */}
       <div className="flex animate-marquee items-center gap-0">
         {tripled.map((book, i) => (
-          <div
-            key={i}
-            className="shrink-0 px-5"
-          >
-            <div
-              className="px-5 py-2.5 rounded-lg whitespace-nowrap select-none"
-              style={{ backgroundColor: book.bg }}
-            >
+          <div key={i} className="shrink-0 px-6 flex items-center">
+            {book.img ? (
+              <img
+                src={book.img}
+                alt={book.name}
+                className="h-7 w-auto object-contain select-none"
+                style={{
+                  filter: "brightness(0) invert(1)",
+                  opacity: 0.32,
+                }}
+                draggable={false}
+              />
+            ) : (
               <span
-                className={`text-sm font-sans ${book.style ?? "font-bold"}`}
-                style={{ color: book.text, letterSpacing: book.style?.includes("tracking-widest") ? "0.15em" : undefined }}
+                className="text-sm font-sans font-bold tracking-wide select-none whitespace-nowrap"
+                style={{ color: "rgba(255,255,255,0.28)" }}
               >
                 {book.name}
               </span>
-            </div>
+            )}
           </div>
         ))}
       </div>
