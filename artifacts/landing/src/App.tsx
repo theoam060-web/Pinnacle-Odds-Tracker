@@ -334,22 +334,27 @@ function MarqueeBand() {
       {/* Scrolling track */}
       <div className="flex animate-marquee items-center gap-0">
         {tripled.map((book, i) => (
-          <div key={i} className="shrink-0 px-6 flex items-center">
+          <div key={i} className="shrink-0 px-6 flex items-center justify-center" style={{ width: "120px" }}>
             {book.img ? (
               <img
                 src={book.img}
                 alt={book.name}
-                className="h-7 w-auto object-contain select-none"
+                className="select-none"
                 style={{
+                  width: "100%",
+                  height: "32px",
+                  objectFit: "contain",
+                  objectPosition: "center",
                   filter: "brightness(0) invert(1)",
-                  opacity: 0.32,
+                  opacity: 0.35,
+                  imageRendering: "auto",
                 }}
                 draggable={false}
               />
             ) : (
               <span
                 className="text-sm font-sans font-bold tracking-wide select-none whitespace-nowrap"
-                style={{ color: "rgba(255,255,255,0.28)" }}
+                style={{ color: "rgba(255,255,255,0.30)" }}
               >
                 {book.name}
               </span>
