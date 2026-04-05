@@ -114,7 +114,8 @@ const FEATURE_ITEMS = [
 function Navbar() {
   const [scrolled, setScrolled] = useState(false);
   const [featuresOpen, setFeaturesOpen] = useState(false);
-  const navRef = useRef<HTMLElement>(null);
+  const triggerRef = useRef<HTMLButtonElement>(null);
+  const panelRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const handleScroll = () => setScrolled(window.scrollY > 50);
@@ -124,7 +125,10 @@ function Navbar() {
 
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
-      if (navRef.current && !navRef.current.contains(e.target as Node)) {
+      const target = e.target as Node;
+      const insideTrigger = triggerRef.current?.contains(target);
+      const insidePanel = panelRef.current?.contains(target);
+      if (!insideTrigger && !insidePanel) {
         setFeaturesOpen(false);
       }
     };
@@ -140,8 +144,10 @@ function Navbar() {
     }, 120);
   };
 
+  const closePanel = () => setFeaturesOpen(false);
+
   return (
-    <nav ref={navRef} className={`fixed top-0 w-full z-50 transition-all duration-300 border-b border-transparent ${scrolled ? "bg-background/80 backdrop-blur-md border-border/50 shadow-sm" : "bg-transparent"}`}>
+    <nav className={`fixed top-0 w-full z-50 transition-all duration-300 border-b border-transparent ${scrolled ? "bg-background/80 backdrop-blur-md border-border/50 shadow-sm" : "bg-transparent"}`}>
       <div className="container mx-auto pl-2 pr-6 h-20 flex items-center justify-between">
         <div className="flex items-center gap-2">
           <Activity className="w-6 h-6 text-primary" />
@@ -151,6 +157,7 @@ function Navbar() {
         <div className="hidden md:flex items-center gap-8 text-sm font-mono tracking-wide text-muted-foreground">
           {/* Features mega-panel trigger */}
           <button
+            ref={triggerRef}
             onClick={() => setFeaturesOpen(v => !v)}
             className={`flex items-center gap-1.5 hover:text-primary transition-colors ${featuresOpen ? "text-primary" : ""}`}
           >
@@ -163,13 +170,13 @@ function Navbar() {
             </svg>
           </button>
 
-          <a href="#terminal" className="hover:text-primary transition-colors">Terminal</a>
-          <a href="#pricing" className="hover:text-primary transition-colors">Pricing</a>
+          <a href="#terminal" onClick={closePanel} className="hover:text-primary transition-colors">Terminal</a>
+          <a href="#pricing" onClick={closePanel} className="hover:text-primary transition-colors">Pricing</a>
         </div>
 
         <div className="flex items-center gap-4">
-          <button className="hidden md:block text-sm font-mono text-foreground hover:text-primary transition-colors" data-testid="btn-login">Log In</button>
-          <button className="bg-primary/10 text-primary border border-primary/30 hover:bg-primary hover:text-primary-foreground px-5 py-2 rounded-md font-mono text-sm transition-all shadow-[0_0_15px_rgba(0,255,255,0.1)] hover:shadow-[0_0_20px_rgba(0,255,255,0.3)]" data-testid="btn-get-access">
+          <button onClick={closePanel} className="hidden md:block text-sm font-mono text-foreground hover:text-primary transition-colors" data-testid="btn-login">Log In</button>
+          <button onClick={closePanel} className="bg-primary/10 text-primary border border-primary/30 hover:bg-primary hover:text-primary-foreground px-5 py-2 rounded-md font-mono text-sm transition-all shadow-[0_0_15px_rgba(0,255,255,0.1)] hover:shadow-[0_0_20px_rgba(0,255,255,0.3)]" data-testid="btn-get-access">
             Get Access
           </button>
         </div>
@@ -179,6 +186,7 @@ function Navbar() {
       <AnimatePresence>
         {featuresOpen && (
           <motion.div
+            ref={panelRef}
             initial={{ opacity: 0, y: -10 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -10 }}
