@@ -140,7 +140,7 @@ function Hero() {
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true, amount: 0.2 }}
             transition={{ duration: 0.5, delay: 0.2 }}
-            className="text-lg md:text-xl text-muted-foreground font-mono leading-relaxed mb-8 max-w-xl"
+            className="text-lg md:text-xl text-muted-foreground leading-relaxed mb-8 max-w-xl"
           >
             Real-time odds movement from Pinnacle. Sub-second latency. Precise CLV tracking. Stop betting on stale lines.
           </motion.p>
@@ -230,7 +230,7 @@ function TerminalSection() {
           className="mb-16 md:mb-24 text-center max-w-3xl mx-auto"
         >
           <h2 className="text-3xl md:text-5xl font-bold font-sans tracking-tight mb-6">Observe the Matrix.</h2>
-          <p className="text-muted-foreground font-mono text-lg">
+          <p className="text-muted-foreground text-lg">
             Stop refreshing sportsbooks. Our terminal ingests thousands of WebSocket events per second, surfacing meaningful price discovery instantly.
           </p>
         </motion.div>
@@ -344,7 +344,7 @@ function FeaturesGrid() {
           className="text-center mb-16 max-w-2xl mx-auto"
         >
           <h2 className="text-3xl md:text-4xl font-bold font-sans mb-4">Precision Instruments.</h2>
-          <p className="text-muted-foreground font-mono">Everything you need to beat the closing line, nothing you don't. Built for speed, accuracy, and execution.</p>
+          <p className="text-muted-foreground">Everything you need to beat the closing line, nothing you don't. Built for speed, accuracy, and execution.</p>
         </motion.div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 max-w-3xl mx-auto">
@@ -362,7 +362,7 @@ function FeaturesGrid() {
               </div>
               <div className="text-xs font-mono text-primary/60 mb-2 uppercase tracking-widest">Step {idx + 1}</div>
               <h3 className="text-xl font-bold font-sans mb-3 text-foreground">{step.title}</h3>
-              <p className="text-muted-foreground font-mono text-sm leading-relaxed">
+              <p className="text-muted-foreground text-sm leading-relaxed">
                 {step.description}
               </p>
             </motion.div>
@@ -415,7 +415,7 @@ function CLVSection() {
 
           <div className="order-1 lg:order-2 space-y-6">
             <h2 className="text-3xl md:text-5xl font-bold font-sans tracking-tight">Measure your edge.</h2>
-            <p className="text-muted-foreground font-mono text-lg leading-relaxed">
+            <p className="text-muted-foreground text-lg leading-relaxed">
               If you aren't beating the closing line consistently, you are going to lose money long-term. Variance happens. CLV doesn't lie.
             </p>
             <ul className="space-y-4 font-mono text-sm">
@@ -452,7 +452,7 @@ function CTASection() {
         className="container mx-auto px-6 relative z-10 text-center max-w-3xl"
       >
         <h2 className="text-4xl md:text-6xl font-bold font-sans mb-6">Stop playing with a handicap.</h2>
-        <p className="text-xl text-muted-foreground font-mono mb-10">
+        <p className="text-xl text-muted-foreground mb-10">
           Join the sharpest bettors leveraging real-time Pinnacle data to print CLV.
         </p>
         <div className="flex flex-col sm:flex-row gap-4 justify-center">
@@ -484,7 +484,7 @@ function Footer() {
               <Activity className="w-6 h-6 text-primary" />
               <span className="font-sans font-bold text-xl tracking-tight text-foreground">SharpTracker</span>
             </div>
-            <p className="text-muted-foreground font-mono text-sm max-w-sm mx-auto md:mx-0">
+            <p className="text-muted-foreground text-sm max-w-sm mx-auto md:mx-0">
               Professional odds tracking and CLV analysis terminal.
             </p>
           </div>
@@ -528,7 +528,7 @@ function AlertConfigSection() {
               <Bell className="w-4 h-4" /> Custom Alerts
             </div>
             <h2 className="text-3xl md:text-5xl font-bold font-sans tracking-tight">Never miss a drop.</h2>
-            <p className="text-muted-foreground font-mono text-lg leading-relaxed">
+            <p className="text-muted-foreground text-lg leading-relaxed">
               Configure precise thresholds across different sports, leagues, and markets. When Pinnacle drops the line past your target EV%, your phone lights up.
             </p>
             <div className="space-y-4 pt-4">
@@ -721,7 +721,7 @@ function PinnacleSection() {
           </div>
           <div>
             <h2 className="text-2xl md:text-4xl font-bold font-sans mb-4 text-foreground">Powered by the Sharpest Book.</h2>
-            <p className="text-muted-foreground font-mono text-lg leading-relaxed max-w-3xl">
+            <p className="text-muted-foreground text-lg leading-relaxed max-w-3xl">
               We exclusively track Pinnacle odds. While other services blend data from slow, recreational books, SharpTracker isolates the signal from the noise by focusing solely on the market maker. When Pinnacle moves, the market follows. We show you the move before the followers can react.
             </p>
           </div>
