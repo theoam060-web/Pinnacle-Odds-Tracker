@@ -1,6 +1,7 @@
+import React from "react";
 import { motion } from "framer-motion";
 import { Link, useLocation } from "wouter";
-import { Activity, Check, Lock, Star, Zap } from "lucide-react";
+import { Activity, Check, Lock, Star } from "lucide-react";
 
 function PricingNav() {
   const [, navigate] = useLocation();
@@ -24,24 +25,30 @@ function PricingNav() {
   );
 }
 
-function PinnacleLogo() {
+function PinnacleIcon() {
   return (
-    <span className="inline-flex items-center gap-1.5 bg-[#1a1a1a] border border-white/10 rounded-md px-2.5 py-1">
-      <span className="w-3.5 h-3.5 rounded-sm bg-[#f5c518] flex items-center justify-center">
-        <span className="text-[8px] font-black text-black leading-none">P</span>
-      </span>
-      <span className="text-[11px] font-bold text-white tracking-tight">Pinnacle</span>
-    </span>
+    <svg width="16" height="16" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <rect width="32" height="32" rx="4" fill="#002147"/>
+      <path d="M9 8h8.5c3.6 0 5.5 1.8 5.5 4.8 0 3-1.9 4.9-5.5 4.9H12.8V24H9V8zm3.8 6.7h4.3c1.4 0 2.1-.7 2.1-1.9s-.7-1.8-2.1-1.8h-4.3v3.7z" fill="white"/>
+    </svg>
   );
 }
 
-function FanDuelLogo() {
+function FanDuelIcon() {
+  return (
+    <svg width="16" height="16" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <rect width="32" height="32" rx="4" fill="#1493FF"/>
+      <path d="M8 8h11v3H11.5v3.2h6.8v3H11.5V24H8V8z" fill="white"/>
+      <path d="M20 8h3.5l-3 16H17L20 8z" fill="white" opacity="0.7"/>
+    </svg>
+  );
+}
+
+function BookmakerBadge({ name, icon }: { name: string; icon: React.ReactNode }) {
   return (
     <span className="inline-flex items-center gap-1.5 bg-[#1a1a1a] border border-white/10 rounded-md px-2.5 py-1">
-      <span className="w-3.5 h-3.5 rounded-sm bg-[#1493ff] flex items-center justify-center">
-        <span className="text-[8px] font-black text-white leading-none">F</span>
-      </span>
-      <span className="text-[11px] font-bold text-white tracking-tight">FanDuel</span>
+      {icon}
+      <span className="text-[11px] font-bold text-white tracking-tight">{name}</span>
     </span>
   );
 }
@@ -53,11 +60,6 @@ function FeatureLine({ text, highlight = false }: FeatureDef) {
     <li className="flex items-start gap-2.5">
       <Check className={`w-4 h-4 mt-0.5 shrink-0 ${highlight ? "text-primary" : "text-primary/60"}`} />
       <span className={`text-sm leading-snug ${highlight ? "text-foreground font-semibold" : "text-foreground/65"}`}>
-        {highlight && (
-          <span className="mr-1.5 inline-flex items-center gap-0.5 text-[9px] font-mono font-bold text-primary bg-primary/10 border border-primary/20 px-1.5 py-0.5 rounded uppercase tracking-widest align-middle">
-            <Zap className="w-2.5 h-2.5" /> key
-          </span>
-        )}
         {text}
       </span>
     </li>
@@ -133,7 +135,7 @@ export default function PricingPage() {
               <div className="mb-5">
                 <p className="text-[10px] font-mono text-muted-foreground uppercase tracking-widest mb-2">Bookmaker</p>
                 <div className="flex flex-wrap gap-2">
-                  <PinnacleLogo />
+                  <BookmakerBadge name="Pinnacle" icon={<PinnacleIcon />} />
                 </div>
               </div>
 
@@ -175,8 +177,8 @@ export default function PricingPage() {
               <div className="mb-5">
                 <p className="text-[10px] font-mono text-muted-foreground uppercase tracking-widest mb-2">Bookmakers</p>
                 <div className="flex flex-wrap gap-2">
-                  <PinnacleLogo />
-                  <FanDuelLogo />
+                  <BookmakerBadge name="Pinnacle" icon={<PinnacleIcon />} />
+                  <BookmakerBadge name="FanDuel" icon={<FanDuelIcon />} />
                 </div>
               </div>
 
