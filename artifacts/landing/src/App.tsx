@@ -2,7 +2,7 @@ import {
   LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer,
   ReferenceLine, Area, AreaChart, CartesianGrid
 } from "recharts";
-import { Switch, Route, Router as WouterRouter, Link } from "wouter";
+import { Switch, Route, Router as WouterRouter, Link, useLocation } from "wouter";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -14,6 +14,12 @@ import {
   TrendingUp, ChevronRight, CheckCircle2,
   Database
 } from "lucide-react";
+import {
+  IconOddsDrop, IconBetTracker, IconCLV, IconStake,
+  IconCalendar, IconMultiSport, IconBankroll,
+  OddsDropPage, BetTrackerPage, CLVPage, StakeCalculatorPage,
+  DailyCalendarPage, MultiSportPage, BankrollPage,
+} from "./FeaturePages";
 
 import NotFound from "@/pages/not-found";
 
@@ -68,44 +74,44 @@ const GlitchText = ({ text, className = "" }: { text: string, className?: string
 
 const FEATURE_ITEMS = [
   {
-    id: "alerts",
-    icon: "📉",
+    route: "odds-drops",
+    Icon: IconOddsDrop,
     name: "Odds Drop Alerts",
     desc: "Instant push notification when sharp money moves",
   },
   {
-    id: "bet-tracker",
-    icon: "📊",
+    route: "bet-tracker",
+    Icon: IconBetTracker,
     name: "Bet Tracker",
     desc: "Log every bet and track every unit you've ever placed",
   },
   {
-    id: "clv",
-    icon: "⚡",
+    route: "clv",
+    Icon: IconCLV,
     name: "CLV & +EV",
     desc: "See if your bets beat the closing line every time",
   },
   {
-    id: "bet-tracker",
-    icon: "🧮",
+    route: "stake-calculator",
+    Icon: IconStake,
     name: "Stake Calculator",
     desc: "Size bets correctly with Kelly criterion built in",
   },
   {
-    id: "clv",
-    icon: "📅",
+    route: "daily-calendar",
+    Icon: IconCalendar,
     name: "Daily P&L Calendar",
     desc: "Visual win/loss calendar — spot patterns instantly",
   },
   {
-    id: "sports",
-    icon: "🌍",
+    route: "multi-sport",
+    Icon: IconMultiSport,
     name: "Multi-Sport Coverage",
     desc: "NFL, NBA, MLB, NHL, Soccer, Tennis and more",
   },
   {
-    id: "bankroll",
-    icon: "📈",
+    route: "bankroll",
+    Icon: IconBankroll,
     name: "Bankroll Growth",
     desc: "Catch value before anyone else and watch your edge compound",
   },
@@ -116,6 +122,7 @@ function Navbar() {
   const [featuresOpen, setFeaturesOpen] = useState(false);
   const triggerRef = useRef<HTMLButtonElement>(null);
   const panelRef = useRef<HTMLDivElement>(null);
+  const [, navigate] = useLocation();
 
   useEffect(() => {
     const handleScroll = () => setScrolled(window.scrollY > 50);
@@ -136,12 +143,9 @@ function Navbar() {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  const scrollToSection = (id: string) => {
+  const goToFeature = (route: string) => {
     setFeaturesOpen(false);
-    setTimeout(() => {
-      const el = document.getElementById(id);
-      if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
-    }, 120);
+    navigate(`/features/${route}`);
   };
 
   const closePanel = () => setFeaturesOpen(false);
@@ -198,11 +202,13 @@ function Navbar() {
               <div className="grid grid-cols-2 md:grid-cols-4 gap-3 pb-2">
                 {FEATURE_ITEMS.map((f) => (
                   <button
-                    key={f.name}
-                    onClick={() => scrollToSection(f.id)}
+                    key={f.route}
+                    onClick={() => goToFeature(f.route)}
                     className="group flex flex-col items-center gap-3 p-5 rounded-xl border border-border/40 bg-card/60 hover:border-primary/50 hover:bg-primary/5 hover:shadow-[0_0_20px_rgba(0,255,255,0.08)] transition-all duration-200 text-center"
                   >
-                    <span className="text-3xl leading-none">{f.icon}</span>
+                    <div className="text-primary group-hover:scale-110 transition-transform duration-200">
+                      <f.Icon className="w-8 h-8" />
+                    </div>
                     <div>
                       <div className="text-sm font-sans font-semibold text-foreground group-hover:text-primary transition-colors">
                         {f.name}
@@ -1380,6 +1386,13 @@ function Router() {
   return (
     <Switch>
       <Route path="/" component={AppContent} />
+      <Route path="/features/odds-drops" component={OddsDropPage} />
+      <Route path="/features/bet-tracker" component={BetTrackerPage} />
+      <Route path="/features/clv" component={CLVPage} />
+      <Route path="/features/stake-calculator" component={StakeCalculatorPage} />
+      <Route path="/features/daily-calendar" component={DailyCalendarPage} />
+      <Route path="/features/multi-sport" component={MultiSportPage} />
+      <Route path="/features/bankroll" component={BankrollPage} />
       <Route component={NotFound} />
     </Switch>
   );

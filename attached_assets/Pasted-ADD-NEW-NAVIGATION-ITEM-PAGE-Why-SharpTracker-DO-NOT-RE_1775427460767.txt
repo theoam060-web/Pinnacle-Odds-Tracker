@@ -1,0 +1,132 @@
+ADD NEW NAVIGATION ITEM + PAGE: "Why SharpTracker?" (DO NOT REBUILD ANYTHING)
+
+---
+
+## GOAL
+
+Create a new top navigation item called:
+
+"Why SharpTracker?"
+
+This should open a dedicated page/section explaining:
+
+* Why users should choose this product
+* The mathematical edge behind the strategy
+
+---
+
+## NAVIGATION
+
+* Add "Why SharpTracker?" to the top navbar
+* Place it between existing menu items (e.g. Features / Pricing)
+* Clicking it should scroll to or open a new section/page
+
+---
+
+## PAGE STRUCTURE
+
+1. HERO SECTION
+
+* Title:
+  "Why SharpTracker?"
+
+* Subtitle:
+  "Built on data, speed, and mathematical edge"
+
+* Short explanation:
+  Explain that the tool is based on identifying value before the market adjusts
+
+---
+
+2. CORE CONCEPT (IMPORTANT)
+
+---
+
+Explain clearly:
+
+* What is an odds drop?
+* Why Pinnacle matters (sharp bookmaker)
+* Why odds movement reflects real probability
+
+Keep it simple but smart
+
+---
+
+3. MATHEMATICAL EDGE
+
+---
+
+Explain the math behind the strategy:
+
+* Implied probability
+* No-vig odds
+* Expected Value (EV)
+* Closing Line Value (CLV)
+
+Include:
+
+* Simple formulas (visual, not code-heavy)
+* Clean explanations
+
+---
+
+4. VISUAL GRAPHS (IMPORTANT)
+
+---
+
+Add images/graphs showing:
+
+* Odds movement over time
+* Example of a value bet (odds drop before market adjusts)
+* CLV example (beating closing odds)
+
+Use:
+
+* Clean line graphs
+* Simple labeled visuals
+
+(Use mock data for now)
+
+---
+
+5. STRATEGY BREAKDOWN
+
+---
+
+Explain the workflow:
+
+1. Detect odds drop
+2. Compare to fair value (no-vig)
+3. Identify +EV bet
+4. Bet before market adjusts
+
+---
+
+6. WHY IT WORKS
+
+---
+
+Explain:
+
+* Market inefficiencies
+* Slow bookmakers vs sharp bookmakers
+* How speed creates edge
+
+---
+
+## DESIGN
+
+* Clean, modern layout
+* Mix of text + visuals
+* Easy to read (not too technical)
+* Mobile-friendly
+
+---
+
+## IMPORTANT
+
+* Do NOT rebuild the whole site
+* Only add this new page/section
+* Use mock data and placeholder graphs/images
+* Focus on clarity + trust + conversion
+* Explain everything clearly in code/comments
