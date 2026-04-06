@@ -104,7 +104,7 @@ function StepIlluMarkets() {
   );
 }
 
-function StepIlluThreshold() {
+function StepIlluMinDrop() {
   // Show a line of drops, some filtered, some passing through
   const drops = [
     { pct: -2.1, pass: false },
@@ -136,7 +136,7 @@ function StepIlluThreshold() {
       <text x="486" y="104" fontSize="8" fill="rgba(255,255,255,0.2)" fontFamily="monospace">20%</text>
       {/* Threshold line across chart */}
       <line x1="28" y1="175" x2="536" y2="175" stroke="hsl(186,100%,50%)" strokeWidth="1.5" strokeDasharray="6,4" opacity="0.6"/>
-      <text x="28" y="172" fontSize="8" fill="hsl(186,100%,50%)" fontFamily="monospace">threshold: −7%</text>
+      <text x="28" y="172" fontSize="8" fill="hsl(186,100%,50%)" fontFamily="monospace">min. drop: −7%</text>
       {/* Drop bars */}
       {drops.map((d, i) => {
         const x = 40 + i * 48;
@@ -301,7 +301,7 @@ const STEPS = [
     description: "Choose which sports, leagues, and bet types matter to you. Everything else is filtered out — you only see what you asked for."
   },
   {
-    visual: StepIlluThreshold,
+    visual: StepIlluMinDrop,
     title: "Set Your Bar",
     description: "Decide how big a move needs to be before it alerts you. Small shifts are ignored. Only the ones that clear your limit come through."
   },

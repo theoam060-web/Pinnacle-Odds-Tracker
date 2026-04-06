@@ -1052,7 +1052,7 @@ export function OddsDropPage() {
       <ContentBlock
         tag="How It Works"
         heading="Line Movement is a Signal."
-        body="When a sharp bookmaker moves a line more than your set threshold, it almost always means serious money has come in. SharpTracker monitors live prices from sharp bookmakers every second, compares each new price to the previous one, and fires an alert the instant a qualifying drop is detected. You get the information in under a second."
+        body="When a sharp bookmaker moves a line more than your set minimum drop, it almost always means serious money has come in. SharpTracker monitors live prices from sharp bookmakers every second, compares each new price to the previous one, and fires an alert the instant a qualifying drop is detected. You get the information in under a second."
         visual={<IlluLiveFeed />}
         dark
       />
