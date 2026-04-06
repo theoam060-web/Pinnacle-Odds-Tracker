@@ -2048,8 +2048,8 @@ function AppContent() {
         <FeaturesGrid />
         <FeatureStripSection />
         <BankrollFeatureCards />
-        <AlertConfigSection />
         <ProfitCalculatorSection />
+        <AlertConfigSection />
         <TestimonialsSection />
         <FAQSection />
         <CTASection />
