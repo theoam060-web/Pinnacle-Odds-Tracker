@@ -190,130 +190,105 @@ function StepIlluMinDrop() {
 
 function StepIlluMonitor() {
   const zones = [
-    { city: "London",   tz: "GMT+1",  local: "14:32", events: 1842 },
-    { city: "New York", tz: "GMT−4",  local: "09:32", events: 934  },
-    { city: "Tokyo",    tz: "GMT+9",  local: "22:32", events: 612  },
-    { city: "Sydney",   tz: "GMT+10", local: "23:32", events: 287  },
+    { city: "London",   tz: "GMT+1", local: "14:32", events: 1842 },
+    { city: "New York", tz: "GMT−4", local: "09:32", events: 934  },
+    { city: "Tokyo",    tz: "GMT+9", local: "22:32", events: 612  },
   ];
-  const hours = Array.from({length: 24}, (_, i) => i);
+  const cyan = "hsl(186,100%,50%)";
+  const cardW = 168;
+  const cardH = 200;
+  const gap   = 14;
   return (
-    <svg viewBox="0 0 560 340" className="w-full" style={{ background: "#0c0c14" }}>
-      <rect x="12" y="12" width="536" height="316" rx="10" fill="#111118" stroke="rgba(255,255,255,0.07)" strokeWidth="1"/>
-      <rect x="12" y="12" width="536" height="34" rx="10" fill="#13131c"/>
-      <circle cx="28" cy="29" r="5" fill="#22c55e"/>
-      <text x="40" y="33" fontSize="10" fill="rgba(255,255,255,0.5)" fontFamily="monospace" fontWeight="bold">24/7 LIVE MONITORING</text>
-      <text x="490" y="33" fontSize="9" fill="hsl(186,100%,50%)" fontFamily="monospace" fontWeight="bold" textAnchor="end">RUNNING</text>
-
-      {/* 24h bar */}
-      <text x="28" y="62" fontSize="8" fill="rgba(255,255,255,0.25)" fontFamily="monospace">ACTIVITY — LAST 24 HOURS</text>
-      {hours.map(h => {
-        const x = 28 + h * 20.5;
-        const active = h >= 7 && h <= 23;
-        const intensity = h >= 12 && h <= 22 ? 0.8 : h >= 7 ? 0.4 : 0.15;
-        return (
-          <rect key={h} x={x} y="70" width="18" height="30" rx="2"
-            fill={active ? `hsl(186,100%,50%)` : "rgba(255,255,255,0.05)"}
-            opacity={intensity}/>
-        );
-      })}
-      <text x="28" y="115" fontSize="7" fill="rgba(255,255,255,0.2)" fontFamily="monospace">00:00</text>
-      <text x="232" y="115" fontSize="7" fill="rgba(255,255,255,0.2)" fontFamily="monospace">12:00</text>
-      <text x="510" y="115" fontSize="7" fill="rgba(255,255,255,0.2)" fontFamily="monospace" textAnchor="end">24:00</text>
-
-      {/* World clocks */}
-      <text x="28" y="138" fontSize="8" fill="rgba(255,255,255,0.25)" fontFamily="monospace">GLOBAL COVERAGE</text>
+    <svg viewBox="0 0 560 300" className="w-full" style={{ background: "#0c0c14" }}>
+      {/* 3 big clock cards */}
       {zones.map((z, i) => {
-        const x = 28 + i * 130;
+        const x = 14 + i * (cardW + gap);
         return (
           <g key={i}>
-            <rect x={x} y="145" width="120" height="68" rx="6" fill="rgba(255,255,255,0.03)" stroke="rgba(255,255,255,0.07)" strokeWidth="0.8"/>
-            <circle cx={x+12} cy="161" r="5" fill="#22c55e" opacity="0.8"/>
-            <text x={x+24} y="165" fontSize="9" fill="rgba(255,255,255,0.6)" fontFamily="sans-serif">{z.city}</text>
-            <text x={x+10} y="180" fontSize="8" fill="rgba(255,255,255,0.25)" fontFamily="monospace">{z.tz}</text>
-            <text x={x+10} y="198" fontSize="16" fill="hsl(186,100%,60%)" fontFamily="monospace" fontWeight="bold">{z.local}</text>
-            <text x={x+10} y="208" fontSize="7" fill="rgba(255,255,255,0.3)" fontFamily="monospace">{z.events.toLocaleString()} events</text>
+            <rect x={x} y="14" width={cardW} height={cardH} rx="10"
+              fill="#111118" stroke="rgba(255,255,255,0.08)" strokeWidth="1"/>
+            {/* Live dot + city */}
+            <circle cx={x + 18} cy="44" r="7" fill="#22c55e"/>
+            <text x={x + 34} y="49" fontSize="15" fill="white" fontFamily="sans-serif" fontWeight="bold">{z.city}</text>
+            {/* Timezone */}
+            <text x={x + 16} y="70" fontSize="11" fill="rgba(255,255,255,0.28)" fontFamily="monospace">{z.tz}</text>
+            {/* Big clock */}
+            <text x={x + 14} y="128" fontSize="40" fill={cyan} fontFamily="monospace" fontWeight="bold">{z.local}</text>
+            {/* Divider */}
+            <line x1={x + 14} y1="142" x2={x + cardW - 14} y2="142" stroke="rgba(255,255,255,0.07)" strokeWidth="1"/>
+            {/* Event count */}
+            <text x={x + 14} y="164" fontSize="11" fill="rgba(255,255,255,0.3)" fontFamily="monospace">Active events</text>
+            <text x={x + 14} y="188" fontSize="22" fill="rgba(255,255,255,0.65)" fontFamily="monospace" fontWeight="bold">{z.events.toLocaleString()}</text>
           </g>
         );
       })}
 
-      {/* Rolling event ticker */}
-      <rect x="28" y="228" width="508" height="86" rx="6" fill="rgba(0,255,255,0.03)" stroke="rgba(0,255,255,0.12)" strokeWidth="1"/>
-      <text x="40" y="246" fontSize="8" fill="rgba(255,255,255,0.25)" fontFamily="monospace">RECENT POLLS</text>
-      {[
-        ["13:34:09","Soccer","15 168 matchups checked","49 803 markets"],
-        ["13:34:08","Tennis","182 matchups checked","2 021 markets"],
-        ["13:34:07","Basketball","369 matchups checked","3 685 markets"],
-        ["13:34:05","Hockey","343 matchups checked","1 416 markets"],
-      ].map(([t,s,m,k], i) => (
-        <g key={i}>
-          <text x="40" y={260 + i * 14} fontSize="8" fill="rgba(255,255,255,0.2)" fontFamily="monospace">{t}</text>
-          <text x="100" y={260 + i * 14} fontSize="8" fill="hsl(186,100%,55%)" fontFamily="monospace">{s}</text>
-          <text x="180" y={260 + i * 14} fontSize="8" fill="rgba(255,255,255,0.5)" fontFamily="monospace">{m} — {k}</text>
-        </g>
-      ))}
+      {/* Status row */}
+      <rect x="14" y="228" width="532" height="56" rx="8" fill="#111118" stroke="rgba(255,255,255,0.07)" strokeWidth="1"/>
+      <circle cx="36" cy="256" r="7" fill="#22c55e"/>
+      <text x="54" y="250" fontSize="13" fill="white" fontFamily="monospace" fontWeight="bold">Monitoring non-stop</text>
+      <text x="54" y="268" fontSize="10" fill="rgba(255,255,255,0.3)" fontFamily="monospace">Price check every 2 seconds · All sports · Every time zone</text>
     </svg>
   );
 }
 
 function StepIlluAlert() {
+  const cyan  = "hsl(186,100%,50%)";
+  const green = "#4ade80";
+  const nodes = [
+    { x: 70,  top: "Sharp book",    sub: "LINE MOVES",  time: "t = 0",      color: cyan,  highlight: false, dim: false },
+    { x: 210, top: "SharpTracker",  sub: "DETECTS",     time: "t = 400 ms", color: green, highlight: false, dim: false },
+    { x: 350, top: "Your phone",    sub: "ALERT ✓",     time: "t < 1s",     color: green, highlight: true,  dim: false },
+    { x: 490, top: "Rec books",     sub: "ADJUST",      time: "t = 30–90s", color: "rgba(255,255,255,0.3)", highlight: false, dim: true },
+  ];
   return (
-    <svg viewBox="0 0 560 340" className="w-full" style={{ background: "#0c0c14" }}>
-      <rect x="12" y="12" width="536" height="316" rx="10" fill="#111118" stroke="rgba(255,255,255,0.07)" strokeWidth="1"/>
-      {/* Timeline header */}
-      <rect x="12" y="12" width="536" height="34" rx="10" fill="#13131c"/>
-      <text x="28" y="33" fontSize="10" fill="rgba(255,255,255,0.5)" fontFamily="monospace" fontWeight="bold">ALERT DELIVERY — YOUR EDGE WINDOW</text>
+    <svg viewBox="0 0 560 320" className="w-full" style={{ background: "#0c0c14" }}>
 
-      {/* Timeline bar */}
-      <line x1="40" y1="110" x2="520" y2="110" stroke="rgba(255,255,255,0.07)" strokeWidth="2"/>
+      {/* Timeline line */}
+      <line x1="70" y1="120" x2="490" y2="120" stroke="rgba(255,255,255,0.08)" strokeWidth="2"/>
 
-      {/* Segment 1: Line moves (t=0) */}
-      <circle cx="80" cy="110" r="8" fill="hsl(186,100%,50%)"/>
-      <line x1="80" y1="70" x2="80" y2="102" stroke="hsl(186,100%,50%)" strokeWidth="1.5" strokeDasharray="3,2"/>
-      <rect x="30" y="42" width="100" height="26" rx="5" fill="rgba(0,255,255,0.08)" stroke="rgba(0,255,255,0.25)" strokeWidth="1"/>
-      <text x="80" y="54" fontSize="7.5" fill="rgba(255,255,255,0.4)" textAnchor="middle" fontFamily="monospace">SHARP BOOK</text>
-      <text x="80" y="64" fontSize="10" fill="hsl(186,100%,60%)" textAnchor="middle" fontFamily="monospace" fontWeight="bold">LINE MOVES</text>
-      <text x="80" y="126" fontSize="8" fill="rgba(255,255,255,0.3)" textAnchor="middle" fontFamily="monospace">t = 0 ms</text>
+      {nodes.map((n, i) => (
+        <g key={i}>
+          {/* Label box above the line */}
+          <rect x={n.x - 55} y="38" width="110" height="52" rx="7"
+            fill={n.highlight ? "rgba(74,222,128,0.12)" : n.dim ? "rgba(255,255,255,0.03)" : "rgba(0,255,255,0.07)"}
+            stroke={n.highlight ? "rgba(74,222,128,0.4)" : n.dim ? "rgba(255,255,255,0.09)" : "rgba(0,255,255,0.2)"}
+            strokeWidth="1"/>
+          <text x={n.x} y="58" fontSize="10" fill={n.dim ? "rgba(255,255,255,0.28)" : "rgba(255,255,255,0.5)"}
+            textAnchor="middle" fontFamily="monospace">{n.top}</text>
+          <text x={n.x} y="76" fontSize="14" fill={n.color}
+            textAnchor="middle" fontFamily="monospace" fontWeight="bold">{n.sub}</text>
+          {/* Connector */}
+          <line x1={n.x} y1="90" x2={n.x} y2="109"
+            stroke={n.dim ? "rgba(255,255,255,0.15)" : n.color}
+            strokeWidth="1.5" strokeDasharray="3,2" opacity="0.7"/>
+          {/* Circle */}
+          {n.highlight
+            ? <circle cx={n.x} cy="120" r="13" fill={green} stroke="#0c0c14" strokeWidth="2.5"/>
+            : <circle cx={n.x} cy="120" r="9"  fill={n.dim ? "rgba(255,255,255,0.18)" : n.color}/>
+          }
+          {n.highlight && <text x={n.x} y="125" fontSize="13" textAnchor="middle">🔔</text>}
+          {/* Time label below */}
+          <text x={n.x} y="145" fontSize="11"
+            fill={n.highlight ? green : n.dim ? "rgba(255,255,255,0.2)" : "rgba(255,255,255,0.38)"}
+            textAnchor="middle" fontFamily="monospace">{n.time}</text>
+        </g>
+      ))}
 
-      {/* Segment 2: SharpTracker detects */}
-      <circle cx="200" cy="110" r="8" fill="#4ade80"/>
-      <line x1="200" y1="70" x2="200" y2="102" stroke="#4ade80" strokeWidth="1.5" strokeDasharray="3,2"/>
-      <rect x="148" y="42" width="104" height="26" rx="5" fill="rgba(34,197,94,0.08)" stroke="rgba(34,197,94,0.25)" strokeWidth="1"/>
-      <text x="200" y="54" fontSize="7.5" fill="rgba(255,255,255,0.4)" textAnchor="middle" fontFamily="monospace">SHARPTRACKER</text>
-      <text x="200" y="64" fontSize="10" fill="#4ade80" textAnchor="middle" fontFamily="monospace" fontWeight="bold">DETECTS</text>
-      <text x="200" y="126" fontSize="8" fill="rgba(255,255,255,0.3)" textAnchor="middle" fontFamily="monospace">t = 400 ms</text>
+      {/* Edge caption */}
+      <text x="280" y="170" fontSize="11" fill="rgba(255,255,255,0.22)"
+        textAnchor="middle" fontFamily="monospace">← your edge: 30+ seconds before others can act →</text>
 
-      {/* Segment 3: Your alert */}
-      <circle cx="310" cy="110" r="10" fill="#4ade80" stroke="#0c0c14" strokeWidth="2"/>
-      <text x="310" y="114" fontSize="11" textAnchor="middle">🔔</text>
-      <line x1="310" y1="62" x2="310" y2="100" stroke="#4ade80" strokeWidth="1.5" strokeDasharray="3,2"/>
-      <rect x="256" y="34" width="108" height="26" rx="5" fill="rgba(34,197,94,0.12)" stroke="rgba(34,197,94,0.4)" strokeWidth="1"/>
-      <text x="310" y="46" fontSize="7.5" fill="rgba(255,255,255,0.5)" textAnchor="middle" fontFamily="monospace">YOUR PHONE</text>
-      <text x="310" y="56" fontSize="10" fill="#4ade80" textAnchor="middle" fontFamily="monospace" fontWeight="bold">ALERT SENT</text>
-      <text x="310" y="126" fontSize="8" fill="#4ade80" textAnchor="middle" fontFamily="monospace">t = &lt;1 s</text>
-
-      {/* Segment 4: Market adjusts */}
-      <circle cx="480" cy="110" r="8" fill="rgba(255,255,255,0.2)"/>
-      <line x1="480" y1="70" x2="480" y2="102" stroke="rgba(255,255,255,0.2)" strokeWidth="1.5" strokeDasharray="3,2"/>
-      <rect x="428" y="42" width="104" height="26" rx="5" fill="rgba(255,255,255,0.04)" stroke="rgba(255,255,255,0.1)" strokeWidth="1"/>
-      <text x="480" y="54" fontSize="7.5" fill="rgba(255,255,255,0.3)" textAnchor="middle" fontFamily="monospace">REC BOOKS</text>
-      <text x="480" y="64" fontSize="10" fill="rgba(255,255,255,0.35)" textAnchor="middle" fontFamily="monospace" fontWeight="bold">ADJUST</text>
-      <text x="480" y="126" fontSize="8" fill="rgba(255,255,255,0.25)" textAnchor="middle" fontFamily="monospace">t = 30–90 s</text>
-
-      {/* Edge window brace */}
-      <path d="M80,148 L80,160 L480,160 L480,148" stroke="rgba(255,255,255,0.1)" strokeWidth="1" fill="none"/>
-      <rect x="190" y="162" width="180" height="22" rx="5" fill="rgba(34,197,94,0.1)" stroke="rgba(34,197,94,0.25)" strokeWidth="1"/>
-      <text x="280" y="177" fontSize="11" fill="#4ade80" textAnchor="middle" fontFamily="monospace" fontWeight="bold">YOUR EDGE WINDOW</text>
-
-      {/* Alert notification card */}
-      <rect x="40" y="200" width="480" height="100" rx="8" fill="#17171f" stroke="rgba(0,255,255,0.18)" strokeWidth="1.5"/>
-      <rect x="40" y="200" width="480" height="3" rx="8" fill="hsl(186,100%,50%)" opacity="0.7"/>
-      <text x="56" y="224" fontSize="9" fill="hsl(186,100%,60%)" fontFamily="monospace" fontWeight="bold">⚡ SHARP ODDS DROP — MAN CITY vs ARSENAL</text>
-      <text x="56" y="241" fontSize="11" fill="rgba(255,255,255,0.8)" fontFamily="sans-serif">1X2 Home Win: 2.10 → 1.84  (−12.4%)</text>
-      <text x="56" y="258" fontSize="9" fill="rgba(255,255,255,0.4)" fontFamily="monospace">Sharp move detected · Premier League · Kickoff in 2h 14m</text>
-      <rect x="56" y="268" width="90" height="22" rx="4" fill="hsl(186,100%,50%)"/>
-      <text x="101" y="283" fontSize="9" fill="#000" textAnchor="middle" fontFamily="monospace" fontWeight="bold">BET NOW →</text>
-      <rect x="156" y="268" width="90" height="22" rx="4" fill="rgba(255,255,255,0.06)" stroke="rgba(255,255,255,0.1)" strokeWidth="0.8"/>
-      <text x="201" y="283" fontSize="9" fill="rgba(255,255,255,0.5)" textAnchor="middle" fontFamily="monospace">+ LOG BET</text>
+      {/* Notification card */}
+      <rect x="24" y="186" width="512" height="114" rx="9" fill="#17171f" stroke="rgba(0,255,255,0.18)" strokeWidth="1.5"/>
+      <rect x="24" y="186" width="512" height="4" rx="9" fill={cyan} opacity="0.7"/>
+      <text x="42" y="212" fontSize="11" fill={cyan} fontFamily="monospace" fontWeight="bold">⚡ SHARP ODDS DROP — MAN CITY vs ARSENAL</text>
+      <text x="42" y="234" fontSize="15" fill="rgba(255,255,255,0.85)" fontFamily="sans-serif">1X2 Home Win: 2.10 → 1.84  (−12.4%)</text>
+      <text x="42" y="254" fontSize="10" fill="rgba(255,255,255,0.38)" fontFamily="monospace">Premier League · Sharp move · Kickoff in 2h 14m</text>
+      <rect x="42" y="268" width="102" height="24" rx="5" fill={cyan}/>
+      <text x="93" y="284" fontSize="11" fill="#000" textAnchor="middle" fontFamily="monospace" fontWeight="bold">BET NOW →</text>
+      <rect x="156" y="268" width="102" height="24" rx="5" fill="rgba(255,255,255,0.06)" stroke="rgba(255,255,255,0.1)" strokeWidth="1"/>
+      <text x="207" y="284" fontSize="11" fill="rgba(255,255,255,0.45)" textAnchor="middle" fontFamily="monospace">+ LOG BET</text>
     </svg>
   );
 }
