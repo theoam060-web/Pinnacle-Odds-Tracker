@@ -128,16 +128,6 @@ function StepIlluMinDrop() {
   const knobX    = Math.round(sliderX + (minDrop / 20) * sliderW); // 182
   return (
     <svg viewBox="0 0 560 360" className="w-full" style={{ background: "#0c0c14" }}>
-      {/* Window card */}
-      <rect x="8" y="8" width="544" height="344" rx="12" fill="#111118" stroke="rgba(255,255,255,0.07)" strokeWidth="1"/>
-      {/* Title bar */}
-      <rect x="8" y="8" width="544" height="36" rx="12" fill="#151520"/>
-      <rect x="8" y="32" width="544" height="12" fill="#151520"/>
-      <circle cx="28" cy="26" r="6" fill="#ef4444" opacity="0.75"/>
-      <circle cx="46" cy="26" r="6" fill="#eab308" opacity="0.75"/>
-      <circle cx="64" cy="26" r="6" fill="#22c55e" opacity="0.75"/>
-      <text x="82" y="30" fontSize="11" fill="rgba(255,255,255,0.28)" fontFamily="monospace">SharpTracker — Set Your Bar</text>
-
       {/* ── Slider section ── */}
       <text x="24" y="68" fontSize="11" fill="rgba(255,255,255,0.45)" fontFamily="monospace">Minimum drop to trigger alert</text>
 
