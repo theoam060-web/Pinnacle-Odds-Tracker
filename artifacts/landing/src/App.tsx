@@ -12,7 +12,7 @@ import { ClerkProvider, SignIn, SignUp, Show, useClerk, useUser } from "@clerk/r
 import { 
   Activity, Bell,
   LineChart as LineChartIcon, Radar,
-  TrendingUp, ChevronRight, CheckCircle2,
+  TrendingUp, ChevronRight, ChevronLeft, CheckCircle2,
   Database, TrendingDown, ClipboardList,
   Calculator, CalendarDays, Wallet, Target
 } from "lucide-react";
@@ -1743,6 +1743,40 @@ function BankrollFeatureCards() {
     },
   ];
 
+  const [active, setActive] = useState(0);
+  const [paused, setPaused] = useState(false);
+  const [direction, setDirection] = useState(1);
+
+  useEffect(() => {
+    if (paused) return;
+    const t = setTimeout(() => {
+      setDirection(1);
+      setActive((a) => (a + 1) % cards.length);
+    }, 4000);
+    return () => clearTimeout(t);
+  }, [active, paused, cards.length]);
+
+  const goTo = (idx: number) => {
+    setDirection(idx > active ? 1 : -1);
+    setActive(idx);
+  };
+  const prev = () => {
+    setDirection(-1);
+    setActive((a) => (a - 1 + cards.length) % cards.length);
+  };
+  const next = () => {
+    setDirection(1);
+    setActive((a) => (a + 1) % cards.length);
+  };
+
+  const card = cards[active];
+
+  const variants = {
+    enter: (dir: number) => ({ opacity: 0, x: dir > 0 ? 60 : -60 }),
+    center: { opacity: 1, x: 0 },
+    exit:  (dir: number) => ({ opacity: 0, x: dir > 0 ? -60 : 60 }),
+  };
+
   return (
     <section className="py-24 bg-background">
       <div className="container mx-auto px-6">
@@ -1764,37 +1798,117 @@ function BankrollFeatureCards() {
           </p>
         </motion.div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {cards.map((card, i) => (
-            <motion.a
+        {/* Carousel */}
+        <div
+          className="relative"
+          onMouseEnter={() => setPaused(true)}
+          onMouseLeave={() => setPaused(false)}
+        >
+          {/* Card */}
+          <div className="rounded-2xl border border-border/50 bg-card overflow-hidden">
+            <div className="grid md:grid-cols-2 min-h-[420px]">
+
+              {/* Art pane */}
+              <div className="relative overflow-hidden bg-[#0a0a0f] flex items-center justify-center">
+                <AnimatePresence mode="wait" custom={direction}>
+                  <motion.div
+                    key={active}
+                    custom={direction}
+                    variants={variants}
+                    initial="enter"
+                    animate="center"
+                    exit="exit"
+                    transition={{ duration: 0.35, ease: "easeInOut" }}
+                    className="w-full px-4 py-6"
+                  >
+                    {card.art}
+                  </motion.div>
+                </AnimatePresence>
+                {/* corner counter */}
+                <span className="absolute top-3 right-4 text-[10px] font-mono text-white/20 tabular-nums">
+                  {active + 1} / {cards.length}
+                </span>
+              </div>
+
+              {/* Text pane */}
+              <div className="flex flex-col justify-center px-8 py-10">
+                <AnimatePresence mode="wait" custom={direction}>
+                  <motion.div
+                    key={active}
+                    custom={direction}
+                    variants={variants}
+                    initial="enter"
+                    animate="center"
+                    exit="exit"
+                    transition={{ duration: 0.35, ease: "easeInOut" }}
+                  >
+                    <span className="text-[10px] font-mono font-bold text-primary tracking-widest uppercase block mb-3">
+                      {card.tag}
+                    </span>
+                    <h3 className="text-2xl md:text-3xl font-bold font-sans text-foreground mb-4 leading-tight">
+                      {card.title}
+                    </h3>
+                    <p className="text-base text-foreground/65 leading-relaxed mb-8">
+                      {card.desc}
+                    </p>
+                    <a
+                      href={card.href}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-2 text-sm font-mono text-primary hover:text-primary/80 transition-colors"
+                    >
+                      See it live <ChevronRight className="w-4 h-4" />
+                    </a>
+                  </motion.div>
+                </AnimatePresence>
+              </div>
+            </div>
+          </div>
+
+          {/* Prev / Next arrows */}
+          <button
+            onClick={prev}
+            className="absolute left-0 top-1/2 -translate-y-1/2 -translate-x-4 w-9 h-9 rounded-full bg-card border border-border/60 flex items-center justify-center text-foreground/60 hover:text-primary hover:border-primary/40 transition-all shadow-md z-10"
+            aria-label="Previous"
+          >
+            <ChevronLeft className="w-4 h-4" />
+          </button>
+          <button
+            onClick={next}
+            className="absolute right-0 top-1/2 -translate-y-1/2 translate-x-4 w-9 h-9 rounded-full bg-card border border-border/60 flex items-center justify-center text-foreground/60 hover:text-primary hover:border-primary/40 transition-all shadow-md z-10"
+            aria-label="Next"
+          >
+            <ChevronRight className="w-4 h-4" />
+          </button>
+        </div>
+
+        {/* Dot indicators */}
+        <div className="flex items-center justify-center gap-2 mt-6">
+          {cards.map((_, i) => (
+            <button
               key={i}
-              href={card.href}
-              target="_blank"
-              rel="noopener noreferrer"
-              initial={{ opacity: 0, y: 24 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true, amount: 0.15 }}
-              transition={{ duration: 0.45, delay: i * 0.07 }}
-              whileHover={{ y: -4, transition: { duration: 0.2 } }}
-              className="group bg-card border border-border/50 rounded-2xl p-6 flex flex-col gap-5 cursor-pointer hover:border-primary/30 hover:shadow-[0_0_40px_-10px_hsl(var(--primary)/0.15)] transition-all duration-300"
-            >
-              <div className="pointer-events-none rounded-xl overflow-hidden relative">
-                {card.art}
-                <div className="absolute top-0 left-0 right-0 h-10 bg-gradient-to-b from-card to-transparent pointer-events-none" />
-              </div>
-              <div>
-                <div className="text-[10px] font-mono font-bold text-primary tracking-widest uppercase mb-2">
-                  {card.tag}
-                </div>
-                <h3 className="text-xl font-bold font-sans text-foreground mb-2 group-hover:text-primary transition-colors">
-                  {card.title}
-                </h3>
-                <p className="text-base text-foreground/72 leading-relaxed">
-                  {card.desc}
-                </p>
-              </div>
-            </motion.a>
+              onClick={() => goTo(i)}
+              className={`transition-all duration-300 rounded-full ${
+                i === active
+                  ? "w-6 h-2 bg-primary"
+                  : "w-2 h-2 bg-foreground/20 hover:bg-foreground/40"
+              }`}
+              aria-label={`Go to card ${i + 1}`}
+            />
           ))}
+        </div>
+
+        {/* Progress bar */}
+        <div className="mt-3 mx-auto max-w-xs h-px bg-border/30 rounded overflow-hidden">
+          {!paused && (
+            <motion.div
+              key={active}
+              className="h-full bg-primary/50"
+              initial={{ width: "0%" }}
+              animate={{ width: "100%" }}
+              transition={{ duration: 4, ease: "linear" }}
+            />
+          )}
         </div>
       </div>
     </section>
