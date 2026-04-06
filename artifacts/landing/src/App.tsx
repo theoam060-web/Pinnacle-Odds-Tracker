@@ -546,7 +546,7 @@ function Hero() {
           >
             <span className="w-2 h-2 rounded-full bg-green-400 animate-pulse shrink-0" />
             {liveCount !== null
-              ? <>Monitoring <span className="font-bold text-green-300">{liveCount.toLocaleString()}</span> live markets right now</>
+              ? <>Monitoring <span className="font-bold text-green-300">{liveCount.toLocaleString()}</span> live events right now</>
               : "Connecting to live markets…"}
           </motion.div>
 
