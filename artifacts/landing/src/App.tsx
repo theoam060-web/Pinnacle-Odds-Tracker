@@ -1455,7 +1455,7 @@ function BankrollFeatureCards() {
   );
 
   const PLArt = () => {
-    const bars = [4, 7, 10, 8, 14];
+    const bars = [4, 7, 10, 13, 16];
     const maxH = 80;
     const maxV = 14;
     const bw = 64;
@@ -1482,27 +1482,25 @@ function BankrollFeatureCards() {
 
   const ROIArt = () => (
     <svg viewBox="0 0 480 160" className="w-full" style={{ background: "#0a0a0f" }}>
-      <rect x="36" y="28" width="172" height="84" rx="8" fill="rgba(255,255,255,0.04)" stroke="rgba(255,255,255,0.09)" strokeWidth="1"/>
-      <text x="122" y="58" fontSize="11" fill={dim} fontFamily="monospace" textAnchor="middle">You stake</text>
-      <text x="122" y="94" fontSize="30" fill="white" fontFamily="monospace" fontWeight="bold" textAnchor="middle">$1 000</text>
-      <text x="240" y="74" fontSize="28" fill={cyan} fontFamily="monospace" textAnchor="middle">→</text>
-      <rect x="272" y="28" width="172" height="84" rx="8" fill="rgba(0,255,255,0.07)" stroke="rgba(0,255,255,0.2)" strokeWidth="1"/>
-      <text x="358" y="58" fontSize="11" fill={cyan} fontFamily="monospace" textAnchor="middle">You get back</text>
-      <text x="358" y="94" fontSize="30" fill={green} fontFamily="monospace" fontWeight="bold" textAnchor="middle">$1 063</text>
-      <text x="240" y="140" fontSize="12" fill="rgba(255,255,255,0.22)" fontFamily="monospace" textAnchor="middle">+6.3% ROI — $63 profit for every $1,000 placed</text>
+      <text x="240" y="30" fontSize="11" fill={dim} fontFamily="monospace" textAnchor="middle">Return on Investment</text>
+      <text x="240" y="104" fontSize="68" fill={green} fontFamily="monospace" fontWeight="bold" textAnchor="middle">+6.3%</text>
+      <text x="240" y="128" fontSize="13" fill="rgba(255,255,255,0.28)" fontFamily="monospace" textAnchor="middle">$6.30 profit for every $100 staked</text>
     </svg>
   );
 
   const CLVArt = () => (
     <svg viewBox="0 0 480 168" className="w-full" style={{ background: "#0a0a0f" }}>
-      <text x="240" y="26" fontSize="11" fill={dim} fontFamily="monospace" textAnchor="middle">Celtics Moneyline · NBA</text>
-      <rect x="36" y="36" width="178" height="88" rx="8" fill="rgba(74,222,128,0.08)" stroke="rgba(74,222,128,0.28)" strokeWidth="1.5"/>
-      <text x="125" y="66" fontSize="12" fill={green} fontFamily="monospace" textAnchor="middle">Your price</text>
-      <text x="125" y="108" fontSize="42" fill={green} fontFamily="monospace" fontWeight="bold" textAnchor="middle">2.10</text>
-      <rect x="266" y="36" width="178" height="88" rx="8" fill="rgba(255,255,255,0.03)" stroke="rgba(255,255,255,0.08)" strokeWidth="1"/>
-      <text x="355" y="66" fontSize="12" fill="rgba(255,255,255,0.38)" fontFamily="monospace" textAnchor="middle">Market closed at</text>
-      <text x="355" y="108" fontSize="42" fill="rgba(255,255,255,0.3)" fontFamily="monospace" fontWeight="bold" textAnchor="middle">1.84</text>
-      <text x="240" y="148" fontSize="13" fill={green} fontFamily="monospace" textAnchor="middle">You got a better price — that's a +CLV bet ✓</text>
+      <text x="240" y="22" fontSize="11" fill={dim} fontFamily="monospace" textAnchor="middle">Celtics Moneyline · NBA</text>
+      <rect x="28" y="34" width="168" height="90" rx="8" fill="rgba(74,222,128,0.08)" stroke="rgba(74,222,128,0.28)" strokeWidth="1.5"/>
+      <text x="112" y="62" fontSize="11" fill={green} fontFamily="monospace" textAnchor="middle">Your price</text>
+      <text x="112" y="108" fontSize="44" fill={green} fontFamily="monospace" fontWeight="bold" textAnchor="middle">2.10</text>
+      <text x="240" y="82" fontSize="26" fill="rgba(255,255,255,0.18)" fontFamily="monospace" textAnchor="middle">→</text>
+      <rect x="284" y="34" width="168" height="90" rx="8" fill="rgba(255,255,255,0.03)" stroke="rgba(255,255,255,0.08)" strokeWidth="1"/>
+      <text x="368" y="62" fontSize="11" fill="rgba(255,255,255,0.38)" fontFamily="monospace" textAnchor="middle">Market closed at</text>
+      <text x="368" y="108" fontSize="44" fill="rgba(255,255,255,0.28)" fontFamily="monospace" fontWeight="bold" textAnchor="middle">1.84</text>
+      <rect x="176" y="64" width="54" height="22" rx="4" fill="rgba(74,222,128,0.18)" stroke="rgba(74,222,128,0.4)" strokeWidth="1"/>
+      <text x="203" y="79" fontSize="11" fill={green} fontFamily="monospace" fontWeight="bold" textAnchor="middle">+CLV</text>
+      <text x="240" y="148" fontSize="12" fill="rgba(255,255,255,0.22)" fontFamily="monospace" textAnchor="middle">You got a better price before the market moved ✓</text>
     </svg>
   );
 
@@ -1546,23 +1544,24 @@ function BankrollFeatureCards() {
 
   const BetLogArt = () => {
     const bets = [
-      { match: "Lakers vs Celtics",    type: "Moneyline",  odds: "+155", result: "+3.1u", win: true  },
-      { match: "Man Utd vs Arsenal",   type: "Asian HDP",  odds: "-108", result: "-1.0u", win: false },
-      { match: "Djokovic vs Alcaraz",  type: "Moneyline",  odds: "+122", result: "+1.8u", win: true  },
+      { match: "Lakers vs Celtics",   type: "Moneyline",  odds: "+155", result: "+3.1u", status: "WON",     color: green },
+      { match: "Man Utd vs Arsenal",  type: "Asian HDP",  odds: "-108", result: "-1.0u", status: "LOST",    color: red   },
+      { match: "Djokovic vs Alcaraz", type: "Moneyline",  odds: "+122", result: "···",   status: "PENDING", color: cyan  },
+      { match: "ATP Madrid R1",       type: "Total Sets", odds: "-115", result: "VOID",  status: "VOID",    color: dim   },
     ];
     return (
-      <svg viewBox="0 0 480 168" className="w-full" style={{ background: "#0a0a0f" }}>
-        <rect x="18" y="8" width="444" height="152" rx="8" fill="rgba(255,255,255,0.02)" stroke="rgba(255,255,255,0.06)" strokeWidth="1"/>
-        <text x="34" y="32" fontSize="10" fill={cyan} fontFamily="monospace" fontWeight="bold" opacity="0.7">BET LOG — APRIL 2026</text>
+      <svg viewBox="0 0 480 182" className="w-full" style={{ background: "#0a0a0f" }}>
+        <rect x="14" y="8" width="452" height="168" rx="8" fill="rgba(255,255,255,0.02)" stroke="rgba(255,255,255,0.06)" strokeWidth="1"/>
+        <text x="30" y="30" fontSize="10" fill={cyan} fontFamily="monospace" fontWeight="bold" opacity="0.7">BET LOG — APRIL 2026</text>
         {bets.map((b, i) => {
-          const y = 50 + i * 40;
+          const y = 44 + i * 34;
           return (
             <g key={i}>
-              <circle cx="34" cy={y + 8} r="6" fill={b.win ? green : red} opacity="0.85"/>
-              <text x="50" y={y + 12} fontSize="14" fill="rgba(255,255,255,0.78)" fontFamily="monospace">{b.match}</text>
-              <text x="50" y={y + 27} fontSize="10" fill="rgba(255,255,255,0.3)" fontFamily="monospace">{b.type} · {b.odds}</text>
-              <text x="452" y={y + 15} fontSize="16" fill={b.win ? green : red} fontFamily="monospace" fontWeight="bold" textAnchor="end">{b.result}</text>
-              {i < bets.length - 1 && <line x1="34" y1={y+36} x2="450" y2={y+36} stroke="rgba(255,255,255,0.04)" strokeWidth="1"/>}
+              <circle cx="30" cy={y + 6} r="5" fill={b.color} opacity="0.8"/>
+              <text x="44" y={y + 11} fontSize="12" fill="rgba(255,255,255,0.75)" fontFamily="monospace">{b.match}</text>
+              <text x="44" y={y + 24} fontSize="9" fill="rgba(255,255,255,0.25)" fontFamily="monospace">{b.type} · {b.odds}</text>
+              <text x="456" y={y + 14} fontSize="13" fill={b.color} fontFamily="monospace" fontWeight="bold" textAnchor="end">{b.result}</text>
+              {i < bets.length - 1 && <line x1="30" y1={y+30} x2="454" y2={y+30} stroke="rgba(255,255,255,0.04)" strokeWidth="1"/>}
             </g>
           );
         })}
@@ -1592,27 +1591,6 @@ function BankrollFeatureCards() {
         </g>
       ))}
       <text x="240" y="156" fontSize="11" fill="rgba(255,255,255,0.18)" fontFamily="monospace" textAnchor="middle">No manual updates. No spreadsheet. Your bankroll stays accurate.</text>
-    </svg>
-  );
-
-  const PendingArt = () => (
-    <svg viewBox="0 0 480 160" className="w-full" style={{ background: "#0a0a0f" }}>
-      <text x="240" y="24" fontSize="10" fill={dim} fontFamily="monospace" textAnchor="middle">Where all your bets stand right now</text>
-      {[
-        { label: "Settled",  count: "42", color: green,  pct: 84, x: 36  },
-        { label: "Pending",  count: "6",  color: cyan,   pct: 12, x: 166 },
-        { label: "Void",     count: "2",  color: dim,    pct: 4,  x: 296 },
-      ].map((s, i) => (
-        <g key={i}>
-          <rect x={s.x} y={36} width={120} height={76} rx="8"
-            fill={i === 0 ? "rgba(74,222,128,0.07)" : i === 1 ? "rgba(0,255,255,0.06)" : "rgba(255,255,255,0.03)"}
-            stroke={i === 0 ? "rgba(74,222,128,0.22)" : i === 1 ? "rgba(0,255,255,0.18)" : "rgba(255,255,255,0.08)"}
-            strokeWidth="1.2"/>
-          <text x={s.x+60} y={80} fontSize="34" fill={s.color} fontFamily="monospace" fontWeight="bold" textAnchor="middle">{s.count}</text>
-          <text x={s.x+60} y={100} fontSize="11" fill="rgba(255,255,255,0.35)" fontFamily="monospace" textAnchor="middle">{s.label}</text>
-        </g>
-      ))}
-      <text x="240" y="140" fontSize="11" fill="rgba(255,255,255,0.18)" fontFamily="monospace" textAnchor="middle">out of 50 bets logged this month</text>
     </svg>
   );
 
@@ -1665,13 +1643,6 @@ function BankrollFeatureCards() {
       desc: "The moment a game ends, SharpTracker logs the result and updates your bankroll. You never have to enter a result by hand.",
       art: <AutoSettleArt />,
       href: `${appBase}/bet-tracker`,
-    },
-    {
-      tag: "Bet Status",
-      title: "Know what's settled and what's still live.",
-      desc: "See at a glance how many bets have finished, how many are still waiting on a result, and how many were cancelled or returned. Everything in one place.",
-      art: <PendingArt />,
-      href: `${appBase}/bet-stats`,
     },
   ];
 
