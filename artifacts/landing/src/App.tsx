@@ -197,7 +197,7 @@ function Navbar() {
         <div className="flex items-center gap-4">
           <button onClick={closePanel} className="hidden md:block text-sm font-mono text-foreground hover:text-primary transition-colors" data-testid="btn-login">Log In</button>
           <div className="flex flex-col items-center gap-0.5">
-            <span className="text-[9px] font-bold text-green-400 leading-none">14 days free</span>
+            <span className="text-[11px] font-bold text-green-400 leading-none tracking-wide">14 days free</span>
             <button onClick={closePanel} className="bg-primary/10 text-primary border border-primary/30 hover:bg-primary hover:text-primary-foreground px-5 py-2 rounded-md font-mono text-sm transition-all shadow-[0_0_15px_rgba(0,255,255,0.1)] hover:shadow-[0_0_20px_rgba(0,255,255,0.3)]" data-testid="btn-get-access">
               Sign Up
             </button>
@@ -292,9 +292,12 @@ function Hero() {
             <button onClick={() => navigate("/signup")} className="bg-primary text-primary-foreground px-8 py-4 rounded-md font-mono font-bold tracking-wide flex items-center justify-center gap-2 hover:bg-primary/90 transition-colors shadow-[0_0_20px_hsl(var(--primary)/0.4)]" data-testid="btn-sign-up">
               Sign Up <ChevronRight className="w-5 h-5" />
             </button>
-            <button onClick={() => navigate("/pricing")} className="bg-secondary text-secondary-foreground border border-border px-8 py-4 rounded-md font-mono tracking-wide flex items-center justify-center gap-2 hover:bg-secondary/80 transition-colors" data-testid="btn-pricing">
-              Pricing
-            </button>
+            <div className="flex items-center gap-3">
+              <button onClick={() => navigate("/pricing")} className="bg-secondary text-secondary-foreground border border-border px-8 py-4 rounded-md font-mono tracking-wide flex items-center justify-center gap-2 hover:bg-secondary/80 transition-colors" data-testid="btn-pricing">
+                Pricing
+              </button>
+              <span className="text-green-400 text-sm font-mono font-bold whitespace-nowrap">14 days free</span>
+            </div>
           </motion.div>
 
         </div>
