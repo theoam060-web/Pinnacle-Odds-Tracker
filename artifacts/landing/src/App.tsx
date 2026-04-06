@@ -41,24 +41,277 @@ const LIVE_ODDS = [
   { id: 5, match: "DAL @ SF", market: "Total U 42.5", old: "-115", new: "-135", drop: "17.4%", time: "4.5s ago", sharp: false },
 ];
 
+// ── Step illustrations ────────────────────────────────────────────────────────
+
+function StepIlluMarkets() {
+  const sports = [
+    { icon: "⚽", name: "Soccer",      leagues: "100+ leagues", on: true  },
+    { icon: "🏀", name: "Basketball", leagues: "NBA, EuroLeague", on: true  },
+    { icon: "🏈", name: "Football",   leagues: "NFL",            on: false },
+    { icon: "🎾", name: "Tennis",     leagues: "ATP, WTA",       on: true  },
+    { icon: "🏒", name: "Hockey",     leagues: "NHL",            on: false },
+    { icon: "⚾", name: "Baseball",   leagues: "MLB",            on: true  },
+  ];
+  const marketTypes = ["1X2", "Asian HDP", "Over/Under", "Moneyline", "Spread"];
+  return (
+    <svg viewBox="0 0 560 340" className="w-full" style={{ background: "#0c0c14" }}>
+      {/* Left panel: sports */}
+      <rect x="12" y="12" width="248" height="316" rx="10" fill="#111118" stroke="rgba(255,255,255,0.07)" strokeWidth="1"/>
+      <rect x="12" y="12" width="248" height="34" rx="10" fill="#13131c"/>
+      <text x="28" y="33" fontSize="10" fill="rgba(255,255,255,0.5)" fontFamily="monospace" fontWeight="bold">SPORTS</text>
+      {sports.map((s, i) => {
+        const y = 60 + i * 43;
+        return (
+          <g key={i}>
+            <rect x="22" y={y - 10} width="228" height="36" rx="6"
+              fill={s.on ? "rgba(0,255,255,0.04)" : "transparent"}
+              stroke={s.on ? "rgba(0,255,255,0.12)" : "rgba(255,255,255,0.04)"} strokeWidth="0.8"/>
+            <text x="38" y={y + 8} fontSize="15">{s.icon}</text>
+            <text x="58" y={y + 7} fontSize="10" fill={s.on ? "rgba(255,255,255,0.85)" : "rgba(255,255,255,0.3)"} fontFamily="sans-serif">{s.name}</text>
+            <text x="58" y={y + 20} fontSize="8" fill={s.on ? "rgba(255,255,255,0.3)" : "rgba(255,255,255,0.15)"} fontFamily="monospace">{s.leagues}</text>
+            {/* Toggle */}
+            <rect x="214" y={y} width="26" height="14" rx="7"
+              fill={s.on ? "hsl(186,100%,50%)" : "rgba(255,255,255,0.12)"}/>
+            <circle cx={s.on ? 233 : 221} cy={y + 7} r="5" fill="white"/>
+          </g>
+        );
+      })}
+
+      {/* Right panel: market types */}
+      <rect x="272" y="12" width="276" height="316" rx="10" fill="#111118" stroke="rgba(255,255,255,0.07)" strokeWidth="1"/>
+      <rect x="272" y="12" width="276" height="34" rx="10" fill="#13131c"/>
+      <text x="288" y="33" fontSize="10" fill="rgba(255,255,255,0.5)" fontFamily="monospace" fontWeight="bold">BET TYPES</text>
+      {marketTypes.map((m, i) => {
+        const y = 62 + i * 38;
+        const on = i !== 2;
+        return (
+          <g key={i}>
+            <rect x="282" y={y - 6} width="256" height="28" rx="5"
+              fill={on ? "rgba(0,255,255,0.04)" : "transparent"}
+              stroke={on ? "rgba(0,255,255,0.12)" : "rgba(255,255,255,0.04)"} strokeWidth="0.8"/>
+            <rect x="290" y={y - 1} width="14" height="14" rx="3"
+              fill={on ? "hsl(186,100%,50%)" : "rgba(255,255,255,0.08)"}/>
+            {on && <text x="297" y={y + 10} fontSize="9" fill="#000" textAnchor="middle" fontFamily="monospace" fontWeight="bold">✓</text>}
+            <text x="312" y={y + 10} fontSize="10" fill={on ? "rgba(255,255,255,0.8)" : "rgba(255,255,255,0.25)"} fontFamily="sans-serif">{m}</text>
+          </g>
+        );
+      })}
+      {/* Counter at bottom */}
+      <rect x="282" y="278" width="256" height="36" rx="6" fill="rgba(0,255,255,0.06)" stroke="rgba(0,255,255,0.2)" strokeWidth="1"/>
+      <text x="410" y="292" fontSize="8" fill="rgba(255,255,255,0.4)" textAnchor="middle" fontFamily="monospace">MATCHING MARKETS</text>
+      <text x="410" y="308" fontSize="13" fill="hsl(186,100%,60%)" textAnchor="middle" fontFamily="monospace" fontWeight="bold">14 382 events filtered in</text>
+    </svg>
+  );
+}
+
+function StepIlluThreshold() {
+  // Show a line of drops, some filtered, some passing through
+  const drops = [
+    { pct: -2.1, pass: false },
+    { pct: -4.8, pass: false },
+    { pct: -8.3, pass: true  },
+    { pct: -1.5, pass: false },
+    { pct: -11.2, pass: true },
+    { pct: -3.0, pass: false },
+    { pct: -9.7, pass: true  },
+    { pct: -0.8, pass: false },
+    { pct: -6.2, pass: false },
+    { pct: -13.5, pass: true },
+  ];
+  const threshold = -7;
+  const barMax = 16;
+  return (
+    <svg viewBox="0 0 560 340" className="w-full" style={{ background: "#0c0c14" }}>
+      <rect x="12" y="12" width="536" height="316" rx="10" fill="#111118" stroke="rgba(255,255,255,0.07)" strokeWidth="1"/>
+      {/* Header */}
+      <rect x="12" y="12" width="536" height="34" rx="10" fill="#13131c"/>
+      <text x="28" y="33" fontSize="10" fill="rgba(255,255,255,0.5)" fontFamily="monospace" fontWeight="bold">ALERT THRESHOLD — SET YOUR BAR</text>
+      {/* Slider */}
+      <text x="28" y="68" fontSize="9" fill="rgba(255,255,255,0.3)" fontFamily="monospace">Minimum line drop to trigger alert</text>
+      <rect x="28" y="80" width="460" height="6" rx="3" fill="rgba(255,255,255,0.08)"/>
+      <rect x="28" y="80" width="276" height="6" rx="3" fill="hsl(186,100%,50%)" opacity="0.8"/>
+      <circle cx="304" cy="83" r="10" fill="hsl(186,100%,50%)" stroke="#0c0c14" strokeWidth="2"/>
+      <text x="504" y="86" fontSize="12" fill="hsl(186,100%,60%)" fontFamily="monospace" fontWeight="bold">7%</text>
+      <text x="28" y="104" fontSize="8" fill="rgba(255,255,255,0.2)" fontFamily="monospace">0%</text>
+      <text x="486" y="104" fontSize="8" fill="rgba(255,255,255,0.2)" fontFamily="monospace">20%</text>
+      {/* Threshold line across chart */}
+      <line x1="28" y1="175" x2="536" y2="175" stroke="hsl(186,100%,50%)" strokeWidth="1.5" strokeDasharray="6,4" opacity="0.6"/>
+      <text x="28" y="172" fontSize="8" fill="hsl(186,100%,50%)" fontFamily="monospace">threshold: −7%</text>
+      {/* Drop bars */}
+      {drops.map((d, i) => {
+        const x = 40 + i * 48;
+        const barH = Math.abs(d.pct) / barMax * 100;
+        const y = 235 - barH;
+        return (
+          <g key={i}>
+            <rect x={x} y={y} width="32" height={barH} rx="3"
+              fill={d.pass ? "rgba(0,255,255,0.25)" : "rgba(255,255,255,0.08)"}
+              stroke={d.pass ? "rgba(0,255,255,0.5)" : "rgba(255,255,255,0.12)"} strokeWidth="0.8"/>
+            <text x={x + 16} y="252" fontSize="7.5" fill={d.pass ? "hsl(186,100%,60%)" : "rgba(255,255,255,0.25)"} textAnchor="middle" fontFamily="monospace">
+              {d.pct}%
+            </text>
+            {d.pass && <text x={x + 16} y={y - 6} fontSize="9" fill="hsl(186,100%,70%)" textAnchor="middle">🔔</text>}
+          </g>
+        );
+      })}
+      {/* Labels */}
+      <rect x="28" y="268" width="120" height="20" rx="4" fill="rgba(255,255,255,0.04)"/>
+      <text x="88" y="282" fontSize="8" fill="rgba(255,255,255,0.3)" textAnchor="middle" fontFamily="monospace">filtered out (below bar)</text>
+      <rect x="162" y="268" width="120" height="20" rx="4" fill="rgba(0,255,255,0.06)" stroke="rgba(0,255,255,0.2)" strokeWidth="0.8"/>
+      <text x="222" y="282" fontSize="8" fill="hsl(186,100%,60%)" textAnchor="middle" fontFamily="monospace">alert triggered ✓</text>
+      <text x="292" y="282" fontSize="8" fill="rgba(255,255,255,0.15)" textAnchor="middle" fontFamily="monospace">— 4 alerts from 10 moves</text>
+    </svg>
+  );
+}
+
+function StepIlluMonitor() {
+  const zones = [
+    { city: "London",   tz: "GMT+1",  local: "14:32", events: 1842 },
+    { city: "New York", tz: "GMT−4",  local: "09:32", events: 934  },
+    { city: "Tokyo",    tz: "GMT+9",  local: "22:32", events: 612  },
+    { city: "Sydney",   tz: "GMT+10", local: "23:32", events: 287  },
+  ];
+  const hours = Array.from({length: 24}, (_, i) => i);
+  return (
+    <svg viewBox="0 0 560 340" className="w-full" style={{ background: "#0c0c14" }}>
+      <rect x="12" y="12" width="536" height="316" rx="10" fill="#111118" stroke="rgba(255,255,255,0.07)" strokeWidth="1"/>
+      <rect x="12" y="12" width="536" height="34" rx="10" fill="#13131c"/>
+      <circle cx="28" cy="29" r="5" fill="#22c55e"/>
+      <text x="40" y="33" fontSize="10" fill="rgba(255,255,255,0.5)" fontFamily="monospace" fontWeight="bold">24/7 LIVE MONITORING</text>
+      <text x="490" y="33" fontSize="9" fill="hsl(186,100%,50%)" fontFamily="monospace" fontWeight="bold" textAnchor="end">RUNNING</text>
+
+      {/* 24h bar */}
+      <text x="28" y="62" fontSize="8" fill="rgba(255,255,255,0.25)" fontFamily="monospace">ACTIVITY — LAST 24 HOURS</text>
+      {hours.map(h => {
+        const x = 28 + h * 20.5;
+        const active = h >= 7 && h <= 23;
+        const intensity = h >= 12 && h <= 22 ? 0.8 : h >= 7 ? 0.4 : 0.15;
+        return (
+          <rect key={h} x={x} y="70" width="18" height="30" rx="2"
+            fill={active ? `hsl(186,100%,50%)` : "rgba(255,255,255,0.05)"}
+            opacity={intensity}/>
+        );
+      })}
+      <text x="28" y="115" fontSize="7" fill="rgba(255,255,255,0.2)" fontFamily="monospace">00:00</text>
+      <text x="232" y="115" fontSize="7" fill="rgba(255,255,255,0.2)" fontFamily="monospace">12:00</text>
+      <text x="510" y="115" fontSize="7" fill="rgba(255,255,255,0.2)" fontFamily="monospace" textAnchor="end">24:00</text>
+
+      {/* World clocks */}
+      <text x="28" y="138" fontSize="8" fill="rgba(255,255,255,0.25)" fontFamily="monospace">GLOBAL COVERAGE</text>
+      {zones.map((z, i) => {
+        const x = 28 + i * 130;
+        return (
+          <g key={i}>
+            <rect x={x} y="145" width="120" height="68" rx="6" fill="rgba(255,255,255,0.03)" stroke="rgba(255,255,255,0.07)" strokeWidth="0.8"/>
+            <circle cx={x+12} cy="161" r="5" fill="#22c55e" opacity="0.8"/>
+            <text x={x+24} y="165" fontSize="9" fill="rgba(255,255,255,0.6)" fontFamily="sans-serif">{z.city}</text>
+            <text x={x+10} y="180" fontSize="8" fill="rgba(255,255,255,0.25)" fontFamily="monospace">{z.tz}</text>
+            <text x={x+10} y="198" fontSize="16" fill="hsl(186,100%,60%)" fontFamily="monospace" fontWeight="bold">{z.local}</text>
+            <text x={x+10} y="208" fontSize="7" fill="rgba(255,255,255,0.3)" fontFamily="monospace">{z.events.toLocaleString()} events</text>
+          </g>
+        );
+      })}
+
+      {/* Rolling event ticker */}
+      <rect x="28" y="228" width="508" height="86" rx="6" fill="rgba(0,255,255,0.03)" stroke="rgba(0,255,255,0.12)" strokeWidth="1"/>
+      <text x="40" y="246" fontSize="8" fill="rgba(255,255,255,0.25)" fontFamily="monospace">RECENT POLLS</text>
+      {[
+        ["13:34:09","Soccer","15 168 matchups checked","49 803 markets"],
+        ["13:34:08","Tennis","182 matchups checked","2 021 markets"],
+        ["13:34:07","Basketball","369 matchups checked","3 685 markets"],
+        ["13:34:05","Hockey","343 matchups checked","1 416 markets"],
+      ].map(([t,s,m,k], i) => (
+        <g key={i}>
+          <text x="40" y={260 + i * 14} fontSize="8" fill="rgba(255,255,255,0.2)" fontFamily="monospace">{t}</text>
+          <text x="100" y={260 + i * 14} fontSize="8" fill="hsl(186,100%,55%)" fontFamily="monospace">{s}</text>
+          <text x="180" y={260 + i * 14} fontSize="8" fill="rgba(255,255,255,0.5)" fontFamily="monospace">{m} — {k}</text>
+        </g>
+      ))}
+    </svg>
+  );
+}
+
+function StepIlluAlert() {
+  return (
+    <svg viewBox="0 0 560 340" className="w-full" style={{ background: "#0c0c14" }}>
+      <rect x="12" y="12" width="536" height="316" rx="10" fill="#111118" stroke="rgba(255,255,255,0.07)" strokeWidth="1"/>
+      {/* Timeline header */}
+      <rect x="12" y="12" width="536" height="34" rx="10" fill="#13131c"/>
+      <text x="28" y="33" fontSize="10" fill="rgba(255,255,255,0.5)" fontFamily="monospace" fontWeight="bold">ALERT DELIVERY — YOUR EDGE WINDOW</text>
+
+      {/* Timeline bar */}
+      <line x1="40" y1="110" x2="520" y2="110" stroke="rgba(255,255,255,0.07)" strokeWidth="2"/>
+
+      {/* Segment 1: Line moves (t=0) */}
+      <circle cx="80" cy="110" r="8" fill="hsl(186,100%,50%)"/>
+      <line x1="80" y1="70" x2="80" y2="102" stroke="hsl(186,100%,50%)" strokeWidth="1.5" strokeDasharray="3,2"/>
+      <rect x="30" y="42" width="100" height="26" rx="5" fill="rgba(0,255,255,0.08)" stroke="rgba(0,255,255,0.25)" strokeWidth="1"/>
+      <text x="80" y="54" fontSize="7.5" fill="rgba(255,255,255,0.4)" textAnchor="middle" fontFamily="monospace">SHARP BOOK</text>
+      <text x="80" y="64" fontSize="10" fill="hsl(186,100%,60%)" textAnchor="middle" fontFamily="monospace" fontWeight="bold">LINE MOVES</text>
+      <text x="80" y="126" fontSize="8" fill="rgba(255,255,255,0.3)" textAnchor="middle" fontFamily="monospace">t = 0 ms</text>
+
+      {/* Segment 2: SharpTracker detects */}
+      <circle cx="200" cy="110" r="8" fill="#4ade80"/>
+      <line x1="200" y1="70" x2="200" y2="102" stroke="#4ade80" strokeWidth="1.5" strokeDasharray="3,2"/>
+      <rect x="148" y="42" width="104" height="26" rx="5" fill="rgba(34,197,94,0.08)" stroke="rgba(34,197,94,0.25)" strokeWidth="1"/>
+      <text x="200" y="54" fontSize="7.5" fill="rgba(255,255,255,0.4)" textAnchor="middle" fontFamily="monospace">SHARPTRACKER</text>
+      <text x="200" y="64" fontSize="10" fill="#4ade80" textAnchor="middle" fontFamily="monospace" fontWeight="bold">DETECTS</text>
+      <text x="200" y="126" fontSize="8" fill="rgba(255,255,255,0.3)" textAnchor="middle" fontFamily="monospace">t = 400 ms</text>
+
+      {/* Segment 3: Your alert */}
+      <circle cx="310" cy="110" r="10" fill="#4ade80" stroke="#0c0c14" strokeWidth="2"/>
+      <text x="310" y="114" fontSize="11" textAnchor="middle">🔔</text>
+      <line x1="310" y1="62" x2="310" y2="100" stroke="#4ade80" strokeWidth="1.5" strokeDasharray="3,2"/>
+      <rect x="256" y="34" width="108" height="26" rx="5" fill="rgba(34,197,94,0.12)" stroke="rgba(34,197,94,0.4)" strokeWidth="1"/>
+      <text x="310" y="46" fontSize="7.5" fill="rgba(255,255,255,0.5)" textAnchor="middle" fontFamily="monospace">YOUR PHONE</text>
+      <text x="310" y="56" fontSize="10" fill="#4ade80" textAnchor="middle" fontFamily="monospace" fontWeight="bold">ALERT SENT</text>
+      <text x="310" y="126" fontSize="8" fill="#4ade80" textAnchor="middle" fontFamily="monospace">t = &lt;1 s</text>
+
+      {/* Segment 4: Market adjusts */}
+      <circle cx="480" cy="110" r="8" fill="rgba(255,255,255,0.2)"/>
+      <line x1="480" y1="70" x2="480" y2="102" stroke="rgba(255,255,255,0.2)" strokeWidth="1.5" strokeDasharray="3,2"/>
+      <rect x="428" y="42" width="104" height="26" rx="5" fill="rgba(255,255,255,0.04)" stroke="rgba(255,255,255,0.1)" strokeWidth="1"/>
+      <text x="480" y="54" fontSize="7.5" fill="rgba(255,255,255,0.3)" textAnchor="middle" fontFamily="monospace">REC BOOKS</text>
+      <text x="480" y="64" fontSize="10" fill="rgba(255,255,255,0.35)" textAnchor="middle" fontFamily="monospace" fontWeight="bold">ADJUST</text>
+      <text x="480" y="126" fontSize="8" fill="rgba(255,255,255,0.25)" textAnchor="middle" fontFamily="monospace">t = 30–90 s</text>
+
+      {/* Edge window brace */}
+      <path d="M80,148 L80,160 L480,160 L480,148" stroke="rgba(255,255,255,0.1)" strokeWidth="1" fill="none"/>
+      <rect x="190" y="162" width="180" height="22" rx="5" fill="rgba(34,197,94,0.1)" stroke="rgba(34,197,94,0.25)" strokeWidth="1"/>
+      <text x="280" y="177" fontSize="11" fill="#4ade80" textAnchor="middle" fontFamily="monospace" fontWeight="bold">YOUR EDGE WINDOW</text>
+
+      {/* Alert notification card */}
+      <rect x="40" y="200" width="480" height="100" rx="8" fill="#17171f" stroke="rgba(0,255,255,0.18)" strokeWidth="1.5"/>
+      <rect x="40" y="200" width="480" height="3" rx="8" fill="hsl(186,100%,50%)" opacity="0.7"/>
+      <text x="56" y="224" fontSize="9" fill="hsl(186,100%,60%)" fontFamily="monospace" fontWeight="bold">⚡ SHARP ODDS DROP — MAN CITY vs ARSENAL</text>
+      <text x="56" y="241" fontSize="11" fill="rgba(255,255,255,0.8)" fontFamily="sans-serif">1X2 Home Win: 2.10 → 1.84  (−12.4%)</text>
+      <text x="56" y="258" fontSize="9" fill="rgba(255,255,255,0.4)" fontFamily="monospace">Sharp move detected · Premier League · Kickoff in 2h 14m</text>
+      <rect x="56" y="268" width="90" height="22" rx="4" fill="hsl(186,100%,50%)"/>
+      <text x="101" y="283" fontSize="9" fill="#000" textAnchor="middle" fontFamily="monospace" fontWeight="bold">BET NOW →</text>
+      <rect x="156" y="268" width="90" height="22" rx="4" fill="rgba(255,255,255,0.06)" stroke="rgba(255,255,255,0.1)" strokeWidth="0.8"/>
+      <text x="201" y="283" fontSize="9" fill="rgba(255,255,255,0.5)" textAnchor="middle" fontFamily="monospace">+ LOG BET</text>
+    </svg>
+  );
+}
+
 const STEPS = [
   {
-    image: `${import.meta.env.BASE_URL}screenshots/alert-config.jpg`,
+    visual: StepIlluMarkets,
     title: "Pick Your Markets",
     description: "Choose which sports, leagues, and bet types matter to you. Everything else is filtered out — you only see what you asked for."
   },
   {
-    image: `${import.meta.env.BASE_URL}screenshots/alert-config.jpg`,
+    visual: StepIlluThreshold,
     title: "Set Your Bar",
     description: "Decide how big a move needs to be before it alerts you. Small shifts are ignored. Only the ones that clear your limit come through."
   },
   {
-    image: `${import.meta.env.BASE_URL}screenshots/live-feed.jpg`,
+    visual: StepIlluMonitor,
     title: "We Watch Around the Clock",
     description: "SharpTracker runs all day and night. The moment a line moves enough to matter, we catch it — no matter when it happens."
   },
   {
-    image: `${import.meta.env.BASE_URL}screenshots/live-feed.jpg`,
+    visual: StepIlluAlert,
     title: "You Hear About It First",
     description: "The alert reaches you while other bettors are still unaware. The gap between the move and the market catching up is where your edge lives."
   }
@@ -659,11 +912,9 @@ function FeaturesGrid() {
                 <span className="w-2.5 h-2.5 rounded-full bg-green-500/70" />
                 <span className="ml-3 text-[10px] font-mono text-white/25 truncate">SharpTracker — {STEPS[active].title}</span>
               </div>
-              <img
-                src={STEPS[active].image}
-                alt={STEPS[active].title}
-                className="w-full block"
-              />
+              <div className="w-full block">
+                {(() => { const Visual = STEPS[active].visual; return <Visual />; })()}
+              </div>
             </div>
 
             {/* Description shown below image on mobile */}
