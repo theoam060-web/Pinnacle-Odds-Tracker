@@ -41,23 +41,23 @@ const LIVE_ODDS = [
 const STEPS = [
   {
     image: `${import.meta.env.BASE_URL}screenshots/alert-config.jpg`,
-    title: "Choose Your Markets",
-    description: "Select exactly which sports, leagues, and bet types you care about. Filter out everything else — only what's relevant reaches you."
+    title: "Pick Your Markets",
+    description: "Choose which sports, leagues, and bet types matter to you. Everything else is filtered out — you only see what you asked for."
   },
   {
     image: `${import.meta.env.BASE_URL}screenshots/alert-config.jpg`,
-    title: "Define Your Thresholds",
-    description: "Set a minimum drop percentage per market. Only moves that clear your bar trigger a notification — no noise, no false positives."
+    title: "Set Your Bar",
+    description: "Decide how big a move needs to be before it alerts you. Small shifts are ignored. Only the ones that clear your limit come through."
   },
   {
     image: `${import.meta.env.BASE_URL}screenshots/live-feed.jpg`,
-    title: "We Watch 24/7",
-    description: "SharpTracker continuously monitors sharp markets around the clock. The instant a qualifying line shifts, we catch it — regardless of the hour."
+    title: "We Watch Around the Clock",
+    description: "SharpTracker runs all day and night. The moment a line moves enough to matter, we catch it — no matter when it happens."
   },
   {
     image: `${import.meta.env.BASE_URL}screenshots/live-feed.jpg`,
-    title: "You're First to Know",
-    description: "A real-time alert lands before the broader market has had a chance to react. Your edge is the time between the move and everyone else noticing."
+    title: "You Hear About It First",
+    description: "The alert reaches you while other bettors are still unaware. The gap between the move and the market catching up is where your edge lives."
   }
 ];
 
