@@ -851,26 +851,34 @@ function FeaturesGrid() {
             return (
               <motion.div
                 key={i}
-                initial={{ opacity: 0, y: 24 }}
+                initial={{ opacity: 0, y: 28 }}
                 whileInView={{ opacity: 1, y: 0 }}
+                whileHover={{ scale: 1.015, transition: { duration: 0.2 } }}
                 viewport={{ once: true, amount: 0.2 }}
-                transition={{ duration: 0.45, delay: i * 0.08 }}
-                className="relative bg-card rounded-2xl border border-border/50 overflow-hidden flex flex-col"
+                transition={{ duration: 0.5, delay: i * 0.1 }}
+                className="relative bg-card rounded-2xl border border-border/40 overflow-hidden flex flex-col group"
+                style={{ boxShadow: "0 0 0 0 rgba(0,255,255,0)" }}
               >
+                {/* Subtle corner glow */}
+                <div className="absolute top-0 left-0 w-32 h-32 bg-primary/5 rounded-full blur-2xl -translate-x-8 -translate-y-8 group-hover:bg-primary/10 transition-colors duration-500 pointer-events-none" />
+
                 {/* Text block */}
-                <div className="px-6 pt-6 pb-4">
-                  <span className="text-xs font-mono text-primary/60 tracking-widest mb-2 block">
+                <div className="relative z-10 px-7 pt-7 pb-3">
+                  <span className="text-sm font-mono font-bold text-primary mb-3 block tracking-widest">
                     {String(i + 1).padStart(2, "0")}
                   </span>
-                  <h3 className="text-lg font-bold font-sans text-foreground mb-1.5">{step.title}</h3>
-                  <p className="text-sm font-sans text-foreground/70 leading-relaxed">{step.description}</p>
+                  <h3 className="text-2xl font-bold font-sans text-foreground mb-2 leading-snug">{step.title}</h3>
+                  <p className="text-base font-sans text-foreground/82 leading-relaxed">{step.description}</p>
                 </div>
 
-                {/* Illustration — fades in from the top */}
-                <div className="relative flex-1 min-h-0">
-                  <div className="absolute top-0 left-0 right-0 h-10 bg-gradient-to-b from-card to-transparent z-10 pointer-events-none" />
+                {/* Illustration — tall fade blends into text above */}
+                <div className="relative flex-1 min-h-0 -mt-2">
+                  <div className="absolute top-0 left-0 right-0 h-20 bg-gradient-to-b from-card to-transparent z-10 pointer-events-none" />
                   <Visual />
                 </div>
+
+                {/* Bottom glow on hover */}
+                <div className="absolute bottom-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-primary/40 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
               </motion.div>
             );
           })}
