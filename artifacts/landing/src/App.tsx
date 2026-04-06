@@ -180,6 +180,18 @@ function Navbar() {
 
           <button onClick={() => { closePanel(); navigate("/why"); }} className="hover:text-primary transition-colors">Why SharpTracker?</button>
           <button onClick={() => { closePanel(); navigate("/pricing"); }} className="hover:text-primary transition-colors">Pricing</button>
+          <button
+            onClick={() => {
+              closePanel();
+              if (window.location.pathname.replace(/\/+$/, "").endsWith("/landing") || window.location.pathname === "/") {
+                document.getElementById("faq")?.scrollIntoView({ behavior: "smooth" });
+              } else {
+                navigate("/");
+                setTimeout(() => document.getElementById("faq")?.scrollIntoView({ behavior: "smooth" }), 300);
+              }
+            }}
+            className="hover:text-primary transition-colors"
+          >FAQ</button>
         </div>
 
         <div className="flex items-center gap-4">
@@ -1533,6 +1545,109 @@ function MultiSportSection() {
   );
 }
 
+const FAQ_ITEMS = [
+  {
+    q: "What exactly is SharpTracker?",
+    a: "SharpTracker monitors odds movements at sharp bookmakers in real time. The moment a line moves significantly, you get an alert — so you can place your bet before softer bookmakers and exchanges catch up and adjust their prices."
+  },
+  {
+    q: "How fast are the alerts?",
+    a: "Alerts are delivered within seconds of a line movement being detected. Speed is everything in odds dropping — even a 30-second head start can mean the difference between getting the value price and missing it entirely."
+  },
+  {
+    q: "What sports do you cover?",
+    a: "We cover football (soccer), basketball, American football, tennis, ice hockey, and baseball. More sports are added regularly based on user demand."
+  },
+  {
+    q: "Do I need to be an expert bettor to use this?",
+    a: "No. The app is built to be clear and simple. If you understand what odds are and want to get better prices on your bets, you can use SharpTracker right away. The CLV and bankroll tools are there when you're ready to go deeper."
+  },
+  {
+    q: "What is CLV and why does it matter?",
+    a: "CLV stands for Closing Line Value. It measures how much better your odds were at the time you bet compared to the final odds before the game starts. Consistently beating the closing line is the strongest indicator that you're a long-term winning bettor."
+  },
+  {
+    q: "Which bookmakers does the data come from?",
+    a: "We pull odds from sharp, high-limits bookmakers that professional bettors rely on as market benchmarks. These are the books that move first — if they move their line, the whole market follows."
+  },
+  {
+    q: "Is there a free trial?",
+    a: "Yes — every new account gets a 14-day free trial with full access. No credit card required to start. You'll only be asked to choose a plan when your trial ends."
+  },
+  {
+    q: "Can I cancel anytime?",
+    a: "Absolutely. There are no contracts or lock-in periods. You can cancel your subscription at any time from your account settings. You'll keep access until the end of your current billing period."
+  },
+  {
+    q: "What is the Stake Calculator for?",
+    a: "The Stake Calculator uses the Kelly Criterion to help you size each bet correctly based on your bankroll and the edge you have. Proper bet sizing is one of the most overlooked parts of profitable betting."
+  },
+  {
+    q: "What's the difference between SharpTracker and a tipster service?",
+    a: "We don't tell you who to bet on. We give you the tools to find and act on value yourself — live odds movement data, CLV tracking, and bet analysis. You stay in control of every decision."
+  },
+];
+
+function FAQSection() {
+  const [open, setOpen] = useState<number | null>(null);
+  return (
+    <section id="faq" className="py-24 bg-card border-y border-border/20">
+      <div className="container mx-auto px-6 max-w-3xl">
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true, amount: 0.2 }}
+          transition={{ duration: 0.5 }}
+          className="text-center mb-14"
+        >
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary/10 text-primary text-xs font-mono border border-primary/20 mb-5">
+            FAQ
+          </div>
+          <h2 className="text-3xl md:text-4xl font-bold font-sans tracking-tight mb-3">Common questions, honest answers.</h2>
+          <p className="text-foreground/60 font-sans text-base">Everything you need to know before getting started.</p>
+        </motion.div>
+
+        <div className="space-y-2">
+          {FAQ_ITEMS.map((item, i) => (
+            <motion.div
+              key={i}
+              initial={{ opacity: 0, y: 12 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.3, delay: i * 0.04 }}
+              className="bg-background border border-border rounded-xl overflow-hidden"
+            >
+              <button
+                onClick={() => setOpen(open === i ? null : i)}
+                className="w-full flex items-center justify-between px-6 py-4 text-left group hover:bg-primary/5 transition-colors"
+              >
+                <span className="font-sans font-semibold text-sm md:text-base text-foreground group-hover:text-primary transition-colors">{item.q}</span>
+                <ChevronRight
+                  className={`w-4 h-4 text-muted-foreground shrink-0 ml-4 transition-transform duration-200 ${open === i ? "rotate-90 text-primary" : ""}`}
+                />
+              </button>
+              <AnimatePresence initial={false}>
+                {open === i && (
+                  <motion.div
+                    key="body"
+                    initial={{ height: 0, opacity: 0 }}
+                    animate={{ height: "auto", opacity: 1 }}
+                    exit={{ height: 0, opacity: 0 }}
+                    transition={{ duration: 0.22 }}
+                    className="overflow-hidden"
+                  >
+                    <p className="px-6 pb-5 text-sm font-sans text-foreground/65 leading-relaxed">{item.a}</p>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </motion.div>
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+}
+
 function BetTrackerSection() {
   return (
     <section id="bet-tracker" className="py-24 bg-secondary/20 border-y border-border/20">
@@ -1615,8 +1730,7 @@ function AppContent() {
         <BankrollFeatureCards />
         <AlertConfigSection />
         <ProfitCalculatorSection />
-        <BetTrackerSection />
-        <SharpDataSection />
+        <FAQSection />
         <CTASection />
       </main>
       <Footer />
