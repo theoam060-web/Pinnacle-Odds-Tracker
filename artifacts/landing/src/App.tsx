@@ -183,10 +183,12 @@ function Navbar() {
 
         <div className="flex items-center gap-4">
           <button onClick={closePanel} className="hidden md:block text-sm font-mono text-foreground hover:text-primary transition-colors" data-testid="btn-login">Log In</button>
-          <button onClick={closePanel} className="relative bg-primary/10 text-primary border border-primary/30 hover:bg-primary hover:text-primary-foreground px-5 py-2 rounded-md font-mono text-sm transition-all shadow-[0_0_15px_rgba(0,255,255,0.1)] hover:shadow-[0_0_20px_rgba(0,255,255,0.3)]" data-testid="btn-get-access">
-            Sign Up
-            <span className="absolute -top-2.5 -right-2 text-[9px] font-bold text-green-400 bg-green-950 border border-green-500/40 px-1.5 py-0.5 rounded-full leading-none whitespace-nowrap">14 days free</span>
-          </button>
+          <div className="flex flex-col items-center gap-0.5">
+            <button onClick={closePanel} className="bg-primary/10 text-primary border border-primary/30 hover:bg-primary hover:text-primary-foreground px-5 py-2 rounded-md font-mono text-sm transition-all shadow-[0_0_15px_rgba(0,255,255,0.1)] hover:shadow-[0_0_20px_rgba(0,255,255,0.3)]" data-testid="btn-get-access">
+              Sign Up
+            </button>
+            <span className="text-[9px] font-bold text-green-400 leading-none">14 days free</span>
+          </div>
         </div>
       </div>
 
