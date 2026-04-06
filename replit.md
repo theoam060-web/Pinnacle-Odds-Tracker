@@ -1,18 +1,20 @@
-# Pinnacle Odds Dropper Clone
+# SharpTracker
 
 ## What This Is
 
-A sports odds movement tracker inspired by Pinnacle Odds Dropper. Bettors and value hunters use it to monitor significant odds movements across sports in real time.
+A professional dark-themed sports odds movement tracker for sharp bettors. Users monitor significant odds movements in real time, track bets, and calculate stake sizes. The platform includes a marketing landing page, user authentication, and subscription-based access.
 
 ## Features
 
-- Live market feed with 16+ events and real odds movements
+- Real-time odds movement feed (Pinnacle polling, WebSocket push)
 - Sport, league, and movement direction filters
-- Summary stats bar (total events, drops, rises, avg drop %)
-- Auto-refreshes every 15 seconds
-- Event detail page with interactive odds movement chart (Recharts)
+- Bet Tracker with auto-settle and CLV/EV tracking
 - Top Movers page highlighting biggest single moves
-- Dark trading terminal aesthetic (charcoal + amber)
+- Alert configuration system (customisable minimum drop thresholds)
+- Landing page with hero, features, pricing, FAQ, testimonials, legal pages
+- User authentication via Clerk (Google sign-in + email)
+- Subscription purchasing via Stripe (Silver €34.99/mo, Gold €84.99/mo)
+- Dark terminal aesthetic (bg `240 5% 4%`, cyan primary `186 100% 50%`)
 
 ---
 
@@ -31,104 +33,109 @@ pnpm workspace monorepo using TypeScript. Each package manages its own dependenc
 - **API framework**: Express 5
 - **Database**: PostgreSQL + Drizzle ORM
 - **Validation**: Zod (`zod/v4`), `drizzle-zod`
+- **Auth**: Clerk (`@clerk/express` on server, `@clerk/react` on clients)
+- **Payments**: Stripe + `stripe-replit-sync` (integration via Replit connector)
+- **Frontend**: React 19 + Vite + TailwindCSS v4 + Wouter routing + Framer Motion
 - **API codegen**: Orval (from OpenAPI spec)
-- **Build**: esbuild (CJS bundle)
+- **Build**: esbuild (CJS bundle for api-server)
 
 ## Structure
 
 ```text
 artifacts-monorepo/
-├── artifacts/              # Deployable applications
-│   └── api-server/         # Express API server
-├── lib/                    # Shared libraries
+├── artifacts/
+│   ├── api-server/         # Express API server (Clerk auth, Stripe webhooks, odds polling)
+│   ├── landing/            # SharpTracker marketing landing page (ClerkProvider, PricingPage)
+│   └── odds-dropper/       # Main app — gated behind Clerk sign-in
+├── lib/
 │   ├── api-spec/           # OpenAPI spec + Orval codegen config
-│   ├── api-client-react/   # Generated React Query hooks
+│   ├── api-client-react/   # Generated React Query hooks + fetch client
 │   ├── api-zod/            # Generated Zod schemas from OpenAPI
 │   └── db/                 # Drizzle ORM schema + DB connection
-├── scripts/                # Utility scripts (single workspace package)
-│   └── src/                # Individual .ts scripts, run via `pnpm --filter @workspace/scripts run <script>`
-├── pnpm-workspace.yaml     # pnpm workspace (artifacts/*, lib/*, lib/integrations/*, scripts)
-├── tsconfig.base.json      # Shared TS options (composite, bundler resolution, es2022)
-├── tsconfig.json           # Root TS project references
-└── package.json            # Root package with hoisted devDeps
+├── scripts/
+│   └── src/                # Utility scripts (seed-products.ts, etc.)
+├── pnpm-workspace.yaml     # workspace config
+├── tsconfig.base.json      # Shared TS options
+└── package.json            # Root with hoisted devDeps
 ```
 
 ## TypeScript & Composite Projects
 
-Every package extends `tsconfig.base.json` which sets `composite: true`. The root `tsconfig.json` lists all packages as project references. This means:
+Every package extends `tsconfig.base.json` which sets `composite: true`. The root `tsconfig.json` lists all packages as project references.
 
-- **Always typecheck from the root** — run `pnpm run typecheck` (which runs `tsc --build --emitDeclarationOnly`). This builds the full dependency graph so that cross-package imports resolve correctly. Running `tsc` inside a single package will fail if its dependencies haven't been built yet.
-- **`emitDeclarationOnly`** — we only emit `.d.ts` files during typecheck; actual JS bundling is handled by esbuild/tsx/vite...etc, not `tsc`.
-- **Project references** — when package A depends on package B, A's `tsconfig.json` must list B in its `references` array. `tsc --build` uses this to determine build order and skip up-to-date packages.
+- **Always typecheck from the root** — `pnpm run typecheck`
+- **`emitDeclarationOnly`** — actual JS bundling is esbuild/vite, not `tsc`
 
 ## Root Scripts
 
-- `pnpm run build` — runs `typecheck` first, then recursively runs `build` in all packages that define it
-- `pnpm run typecheck` — runs `tsc --build --emitDeclarationOnly` using project references
+- `pnpm run build` — typecheck then recursive `build`
+- `pnpm run typecheck` — `tsc --build --emitDeclarationOnly`
+
+---
 
 ## Packages
 
 ### `artifacts/api-server` (`@workspace/api-server`)
 
-Express 5 API server. Routes live in `src/routes/` and use `@workspace/api-zod` for request and response validation and `@workspace/db` for persistence.
+Express 5 API server.
 
-- Entry: `src/index.ts` — reads `PORT`, starts Express
-- App setup: `src/app.ts` — mounts CORS, JSON/urlencoded parsing, routes at `/api`
-- Routes: `src/routes/index.ts` mounts sub-routers; `src/routes/health.ts` exposes `GET /health` (full path: `/api/health`)
-- Depends on: `@workspace/db`, `@workspace/api-zod`
-- `pnpm --filter @workspace/api-server run dev` — run the dev server
-- `pnpm --filter @workspace/api-server run build` — production esbuild bundle (`dist/index.cjs`)
-- Build bundles an allowlist of deps (express, cors, pg, drizzle-orm, zod, etc.) and externalizes the rest
+- **Auth**: `@clerk/express` — `clerkMiddleware()` + proxy at `__clerk_proxy`
+- **Stripe**: webhook route registered BEFORE `express.json()` using `express.raw()`
+- **Routes**: `src/routes/index.ts` mounts sub-routers including `stripe.ts` and `user.ts`
+- **Key files**:
+  - `src/app.ts` — Clerk proxy, Stripe webhook, CORS, JSON, clerkMiddleware
+  - `src/stripeClient.ts` — `getUncachableStripeClient()` + `getStripeSync()` (updated after Stripe integration)
+  - `src/webhookHandlers.ts` — `WebhookHandlers.processWebhook()`
+  - `src/storage.ts` — `Storage` class (users CRUD + stripe schema queries)
+  - `src/stripeService.ts` — checkout session, customer portal, customer creation
+  - `src/routes/stripe.ts` — GET /stripe/products, POST /stripe/checkout, POST /stripe/portal
+  - `src/routes/user.ts` — GET/POST /user (Clerk userId → DB user)
+  - `src/middlewares/clerkProxyMiddleware.ts` — Clerk JWKS proxy
+
+**Stripe setup** (do after connecting integration):
+1. Update `src/stripeClient.ts` with template from `addIntegration()`
+2. Run `pnpm --filter @workspace/scripts run seed-products` to create Silver + Gold products
+3. Register Stripe webhook in the Stripe dashboard pointing to `/api/stripe/webhook`
+
+### `artifacts/landing` (`@workspace/landing`)
+
+SharpTracker marketing landing page.
+
+- **Auth**: `@clerk/react` ClerkProvider with Wouter-based routing
+- **Routes**: `/sign-in`, `/sign-up` (Clerk components), `/pricing` (PricingPage), `/why`, `/features/*`, `/legal/*`
+- **Key files**:
+  - `src/App.tsx` — ClerkProvider, NavUserMenu, all routes
+  - `src/PricingPage.tsx` — pricing cards, fetches `/api/stripe/products`, checkout handler
+- **Env vars**: `VITE_CLERK_PUBLISHABLE_KEY`, `VITE_CLERK_PROXY_URL`
+- **API base**: `https://84e61830-7611-4d35-8623-77d057b02e4e-00-30ovvqhxka0d5.kirk.replit.dev` (hardcoded in App.tsx + PricingPage.tsx)
+
+### `artifacts/odds-dropper` (`@workspace/odds-dropper`)
+
+Main trading dashboard — gated behind Clerk auth.
+
+- **Auth**: `@clerk/react` ClerkProvider + `AuthGate` component (redirects to `/landing/sign-in` if not signed in)
+- **Key file**: `src/App.tsx` — ClerkProvider wraps all providers; AuthGate inside
 
 ### `lib/db` (`@workspace/db`)
 
-Database layer using Drizzle ORM with PostgreSQL. Exports a Drizzle client instance and schema models.
+Drizzle ORM. Schema: `users` table (public schema), Stripe tables live in `stripe` schema (managed by `stripe-replit-sync`).
 
-- `src/index.ts` — creates a `Pool` + Drizzle instance, exports schema
-- `src/schema/index.ts` — barrel re-export of all models
-- `src/schema/<modelname>.ts` — table definitions with `drizzle-zod` insert schemas (no models definitions exist right now)
-- `drizzle.config.ts` — Drizzle Kit config (requires `DATABASE_URL`, automatically provided by Replit)
-- Exports: `.` (pool, db, schema), `./schema` (schema only)
-
-Production migrations are handled by Replit when publishing. In development, we just use `pnpm --filter @workspace/db run push`, and we fallback to `pnpm --filter @workspace/db run push-force`.
-
-### `lib/api-spec` (`@workspace/api-spec`)
-
-Owns the OpenAPI 3.1 spec (`openapi.yaml`) and the Orval config (`orval.config.ts`). Running codegen produces output into two sibling packages:
-
-1. `lib/api-client-react/src/generated/` — React Query hooks + fetch client
-2. `lib/api-zod/src/generated/` — Zod schemas
-
-Run codegen: `pnpm --filter @workspace/api-spec run codegen`
-
-### `lib/api-zod` (`@workspace/api-zod`)
-
-Generated Zod schemas from the OpenAPI spec (e.g. `HealthCheckResponse`). Used by `api-server` for response validation.
-
-### `lib/api-client-react` (`@workspace/api-client-react`)
-
-Generated React Query hooks and fetch client from the OpenAPI spec (e.g. `useHealthCheck`, `healthCheck`).
+- `src/schema/users.ts` — id (Clerk userId), email, stripe_customer_id, stripe_subscription_id, created_at
+- Run `pnpm --filter @workspace/db run push` to sync schema changes
+- **NEVER change ID column types** — destructive ALTER TABLE
 
 ### `scripts` (`@workspace/scripts`)
 
-Utility scripts package. Each script is a `.ts` file in `src/` with a corresponding npm script in `package.json`. Run scripts via `pnpm --filter @workspace/scripts run <script>`. Scripts can import any workspace package (e.g., `@workspace/db`) by adding it as a dependency in `scripts/package.json`.
+Utility scripts in `src/`. Run via `pnpm --filter @workspace/scripts run <script>`.
+
+- `seed-products.ts` — creates Silver + Gold Stripe products and prices (run once after Stripe connection)
 
 ---
 
 ## Content & Writing Guidelines (Landing Page)
 
-These rules apply to ALL copy written for the landing page, WhyPage, FeaturePages, and any future pages.
-
-### Language
-- **Always write in simple, everyday English.** Assume the reader has never bet before. Avoid jargon wherever possible. When a technical term must be used, explain it immediately in plain words.
-- Keep sentences short. One idea per sentence.
-
-### Bookmaker References
-- **Never name a specific bookmaker** (e.g. do not write "Pinnacle"). Always refer to them generically as "sharp bookmakers" or "the sharpest bookmakers".
-- The logo marquee band in App.tsx may list individual brand names for recognition purposes — that is the only exception.
-- Reason: SharpTracker monitors multiple sharp bookmakers, not just one. Tying the brand to a single name is inaccurate and limits flexibility.
-
-### Tone
-- Confident but not aggressive. Factual, not hype-driven.
-- Odds drops are caused by syndicates and large organised money — not simply "a smart person placing a bet". Reflect this nuance when explaining line movements.
-- Use "price" and "bookmaker" instead of "odds" and "sportsbook" when writing for a general audience.
+- **Simple English**: assume the reader has never bet before. Explain every term.
+- **No specific bookmaker names** in body copy (Pinnacle, FanDuel, etc.) — only the logo marquee is exempt
+- **Tone**: confident, factual, not hype-driven
+- **Terminology**: "minimum drop" (not "threshold"), CLV = "did you get a better price?", ROI = "$X profit per $100 bet"
+- **Color**: bg `240 5% 4%`, primary `186 100% 50%` (cyan), green `#4ade80`, red `#f87171`

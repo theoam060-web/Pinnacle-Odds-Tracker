@@ -1,10 +1,14 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { Link, useLocation } from "wouter";
-import { Activity, Check, Lock, Star } from "lucide-react";
+import { Activity, Check, Lock, Loader2, Star } from "lucide-react";
+import { useUser } from "@clerk/react";
+
+const API_BASE = "https://84e61830-7611-4d35-8623-77d057b02e4e-00-30ovvqhxka0d5.kirk.replit.dev";
 
 function PricingNav() {
   const [, navigate] = useLocation();
+  const { isSignedIn } = useUser();
   return (
     <nav className="fixed top-0 w-full z-50 bg-background/80 backdrop-blur-md border-b border-border/50 shadow-sm">
       <div className="container mx-auto px-6 h-16 flex items-center justify-between">
@@ -14,12 +18,21 @@ function PricingNav() {
             Sharp<span className="text-primary">Tracker</span>
           </span>
         </button>
-        <button
-          onClick={() => navigate("/signup")}
-          className="bg-primary/10 text-primary border border-primary/30 hover:bg-primary hover:text-primary-foreground px-5 py-2 rounded-md font-mono text-sm transition-all"
-        >
-          Sign Up
-        </button>
+        {isSignedIn ? (
+          <button
+            onClick={() => navigate("/")}
+            className="bg-primary/10 text-primary border border-primary/30 hover:bg-primary hover:text-primary-foreground px-5 py-2 rounded-md font-mono text-sm transition-all"
+          >
+            Dashboard
+          </button>
+        ) : (
+          <button
+            onClick={() => navigate("/sign-in")}
+            className="bg-primary/10 text-primary border border-primary/30 hover:bg-primary hover:text-primary-foreground px-5 py-2 rounded-md font-mono text-sm transition-all"
+          >
+            Sign In
+          </button>
+        )}
       </div>
     </nav>
   );
@@ -86,8 +99,74 @@ const GOLD_FEATURES: FeatureDef[] = [
   { text: "Closing EV in Bet Tracker", highlight: true },
 ];
 
+interface StripePrice {
+  id: string;
+  unit_amount: number;
+  currency: string;
+  recurring: { interval: string } | null;
+}
+
+interface StripeProduct {
+  id: string;
+  name: string;
+  description: string;
+  metadata: { plan?: string };
+  prices: StripePrice[];
+}
+
 export default function PricingPage() {
   const [, navigate] = useLocation();
+  const { isSignedIn } = useUser();
+  const [products, setProducts] = useState<StripeProduct[]>([]);
+  const [loading, setLoading] = useState<Record<string, boolean>>({});
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    fetch(`${API_BASE}/api/stripe/products`)
+      .then(r => r.json())
+      .then(({ data }) => setProducts(data ?? []))
+      .catch(() => {});
+  }, []);
+
+  const getPriceId = (plan: string): string | null => {
+    const product = products.find(p => p.metadata?.plan === plan);
+    return product?.prices[0]?.id ?? null;
+  };
+
+  const handleCheckout = async (plan: string) => {
+    if (!isSignedIn) {
+      navigate("/sign-in");
+      return;
+    }
+    const priceId = getPriceId(plan);
+    if (!priceId) {
+      setError("Plan not available yet — products not configured. Run seed-products script.");
+      return;
+    }
+    setLoading(l => ({ ...l, [plan]: true }));
+    setError(null);
+    try {
+      const res = await fetch(`${API_BASE}/api/stripe/checkout`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({ priceId }),
+      });
+      const data = await res.json();
+      if (data.url) {
+        window.location.href = data.url;
+      } else {
+        setError(data.error ?? "Failed to start checkout");
+      }
+    } catch {
+      setError("Network error — please try again");
+    } finally {
+      setLoading(l => ({ ...l, [plan]: false }));
+    }
+  };
+
+  const silverLoading = loading["silver"];
+  const goldLoading = loading["gold"];
 
   return (
     <div className="min-h-[100dvh] bg-background text-foreground font-sans">
@@ -112,6 +191,12 @@ export default function PricingPage() {
             </p>
           </motion.div>
 
+          {error && (
+            <div className="mb-8 rounded-lg bg-red-500/10 border border-red-500/30 px-4 py-3 text-sm text-red-400 font-mono text-center">
+              {error}
+            </div>
+          )}
+
           {/* Cards */}
           <div className="grid md:grid-cols-3 gap-6 items-start">
 
@@ -131,7 +216,6 @@ export default function PricingPage() {
                 <p className="text-foreground/40 text-xs mt-0.5 font-mono">per month</p>
               </div>
 
-              {/* Bookmaker */}
               <div className="mb-5">
                 <p className="text-[10px] font-mono text-muted-foreground uppercase tracking-widest mb-2">Bookmaker</p>
                 <div className="flex flex-wrap gap-2">
@@ -144,10 +228,11 @@ export default function PricingPage() {
               </ul>
 
               <button
-                onClick={() => navigate("/signup")}
-                className="w-full py-3 rounded-lg border border-border/60 text-foreground/80 font-mono text-sm hover:border-primary/40 hover:text-primary transition-all"
+                onClick={() => handleCheckout("silver")}
+                disabled={silverLoading}
+                className="w-full py-3 rounded-lg border border-border/60 text-foreground/80 font-mono text-sm hover:border-primary/40 hover:text-primary transition-all disabled:opacity-60 flex items-center justify-center gap-2"
               >
-                Get Started
+                {silverLoading ? <><Loader2 className="w-4 h-4 animate-spin" /> Processing…</> : isSignedIn ? "Subscribe" : "Get Started"}
               </button>
             </motion.div>
 
@@ -173,7 +258,6 @@ export default function PricingPage() {
                 <p className="text-foreground/40 text-xs mt-0.5 font-mono">per month</p>
               </div>
 
-              {/* Bookmakers */}
               <div className="mb-5">
                 <p className="text-[10px] font-mono text-muted-foreground uppercase tracking-widest mb-2">Bookmakers</p>
                 <div className="flex flex-wrap gap-2">
@@ -187,10 +271,11 @@ export default function PricingPage() {
               </ul>
 
               <button
-                onClick={() => navigate("/signup")}
-                className="w-full py-3 rounded-lg bg-primary text-primary-foreground font-mono text-sm font-bold hover:bg-primary/90 transition-all shadow-[0_0_20px_rgba(0,255,255,0.25)]"
+                onClick={() => handleCheckout("gold")}
+                disabled={goldLoading}
+                className="w-full py-3 rounded-lg bg-primary text-primary-foreground font-mono text-sm font-bold hover:bg-primary/90 transition-all shadow-[0_0_20px_rgba(0,255,255,0.25)] disabled:opacity-60 flex items-center justify-center gap-2"
               >
-                Get Started
+                {goldLoading ? <><Loader2 className="w-4 h-4 animate-spin" /> Processing…</> : isSignedIn ? "Subscribe" : "Get Started"}
               </button>
             </motion.div>
 

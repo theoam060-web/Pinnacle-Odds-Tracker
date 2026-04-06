@@ -2,12 +2,13 @@ import {
   LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer,
   ReferenceLine, Area, AreaChart, CartesianGrid
 } from "recharts";
-import { Switch, Route, Router as WouterRouter, Link, useLocation } from "wouter";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { Switch, Route, Router as WouterRouter, Link, useLocation, Redirect } from "wouter";
+import { QueryClient, QueryClientProvider, useQueryClient } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { motion, useScroll, useTransform, AnimatePresence } from "framer-motion";
 import { useEffect, useState, useRef } from "react";
+import { ClerkProvider, SignIn, SignUp, Show, useClerk, useUser } from "@clerk/react";
 import { 
   Activity, Bell,
   LineChart as LineChartIcon, Radar,
@@ -23,13 +24,22 @@ import {
 } from "./FeaturePages";
 import WhyPage from "./WhyPage";
 import PricingPage from "./PricingPage";
-import SignUpPage from "./SignUpPage";
 import TermsPage from "./TermsPage";
 import PrivacyPage from "./PrivacyPage";
 
 import NotFound from "@/pages/not-found";
 
 const queryClient = new QueryClient();
+
+const clerkPubKey = import.meta.env.VITE_CLERK_PUBLISHABLE_KEY;
+const clerkProxyUrl = import.meta.env.VITE_CLERK_PROXY_URL;
+const basePath = import.meta.env.BASE_URL.replace(/\/$/, "");
+
+function stripBase(path: string): string {
+  return basePath && path.startsWith(basePath)
+    ? path.slice(basePath.length) || "/"
+    : path;
+}
 
 // --- Mock Data ---
 
@@ -360,6 +370,60 @@ const FEATURE_ITEMS = [
   },
 ];
 
+function NavUserMenu({ closePanel }: { closePanel: () => void }) {
+  const { user, isLoaded } = useUser();
+  const { signOut } = useClerk();
+  const [open, setOpen] = useState(false);
+  const menuRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const handleClick = (e: MouseEvent) => {
+      if (!menuRef.current?.contains(e.target as Node)) setOpen(false);
+    };
+    document.addEventListener("mousedown", handleClick);
+    return () => document.removeEventListener("mousedown", handleClick);
+  }, []);
+
+  if (!isLoaded || !user) return null;
+
+  const initials = (user.firstName?.[0] ?? user.emailAddresses?.[0]?.emailAddress?.[0] ?? "U").toUpperCase();
+  const displayName = user.firstName ?? user.emailAddresses?.[0]?.emailAddress ?? "Account";
+
+  return (
+    <div ref={menuRef} className="relative">
+      <button
+        onClick={() => setOpen(v => !v)}
+        className="flex items-center gap-2 text-sm font-mono text-foreground hover:text-primary transition-colors"
+      >
+        <div className="w-7 h-7 rounded-full bg-primary/20 border border-primary/40 flex items-center justify-center text-primary text-xs font-bold">
+          {initials}
+        </div>
+        <span className="hidden md:block max-w-[120px] truncate">{displayName}</span>
+        <svg className="w-3 h-3" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="2">
+          <path d="M2 4l4 4 4-4" strokeLinecap="round" strokeLinejoin="round"/>
+        </svg>
+      </button>
+      {open && (
+        <div className="absolute right-0 top-full mt-2 w-44 rounded-xl border border-border/50 bg-background/95 backdrop-blur-xl shadow-[0_8px_32px_rgba(0,0,0,0.6)] py-1 z-50">
+          <div className="px-4 py-2 border-b border-border/40">
+            <p className="text-xs font-mono text-muted-foreground truncate">{user.emailAddresses?.[0]?.emailAddress}</p>
+          </div>
+          <button
+            onClick={() => {
+              setOpen(false);
+              closePanel();
+              signOut();
+            }}
+            className="w-full text-left px-4 py-2 text-sm font-mono text-foreground/70 hover:text-primary hover:bg-primary/5 transition-colors"
+          >
+            Sign out
+          </button>
+        </div>
+      )}
+    </div>
+  );
+}
+
 function Navbar() {
   const [scrolled, setScrolled] = useState(false);
   const [featuresOpen, setFeaturesOpen] = useState(false);
@@ -434,13 +498,18 @@ function Navbar() {
         </div>
 
         <div className="flex items-center gap-4">
-          <button onClick={closePanel} className="hidden md:block text-sm font-mono text-foreground hover:text-primary transition-colors" data-testid="btn-login">Log In</button>
-          <div className="flex flex-col items-center gap-0.5">
-            <span className="text-[11px] font-bold text-green-400 leading-none tracking-wide">14 days free</span>
-            <button onClick={closePanel} className="bg-primary/10 text-primary border border-primary/30 hover:bg-primary hover:text-primary-foreground px-5 py-2 rounded-md font-mono text-sm transition-all shadow-[0_0_15px_rgba(0,255,255,0.1)] hover:shadow-[0_0_20px_rgba(0,255,255,0.3)]" data-testid="btn-get-access">
-              Sign Up
-            </button>
-          </div>
+          <Show when="signed-out">
+            <button onClick={() => { closePanel(); navigate("/sign-in"); }} className="hidden md:block text-sm font-mono text-foreground hover:text-primary transition-colors" data-testid="btn-login">Log In</button>
+            <div className="flex flex-col items-center gap-0.5">
+              <span className="text-[11px] font-bold text-green-400 leading-none tracking-wide">14 days free</span>
+              <button onClick={() => { closePanel(); navigate("/sign-up"); }} className="bg-primary/10 text-primary border border-primary/30 hover:bg-primary hover:text-primary-foreground px-5 py-2 rounded-md font-mono text-sm transition-all shadow-[0_0_15px_rgba(0,255,255,0.1)] hover:shadow-[0_0_20px_rgba(0,255,255,0.3)]" data-testid="btn-get-access">
+                Sign Up
+              </button>
+            </div>
+          </Show>
+          <Show when="signed-in">
+            <NavUserMenu closePanel={closePanel} />
+          </Show>
         </div>
       </div>
 
@@ -587,7 +656,7 @@ function Hero() {
             className="flex flex-col sm:flex-row items-center gap-4"
           >
             <button
-              onClick={() => navigate("/signup")}
+              onClick={() => navigate("/sign-up")}
               className="bg-primary text-primary-foreground px-10 py-4 rounded-md font-mono font-bold tracking-wide flex items-center justify-center gap-2 hover:bg-primary/90 transition-colors shadow-[0_0_30px_hsl(var(--primary)/0.35)]"
               data-testid="btn-sign-up"
             >
@@ -1153,7 +1222,7 @@ function Footer() {
             <ul className="space-y-2 font-mono text-sm text-muted-foreground">
               <li><Link href="/pricing" className="hover:text-primary">Pricing</Link></li>
               <li><Link href="/why" className="hover:text-primary">Why SharpTracker?</Link></li>
-              <li><Link href="/signup" className="hover:text-primary">Sign Up</Link></li>
+              <li><Link href="/sign-up" className="hover:text-primary">Sign Up</Link></li>
             </ul>
           </div>
           <div>
@@ -2118,10 +2187,48 @@ function ScrollToTop() {
   return null;
 }
 
+function ClerkSignInPage() {
+  return (
+    <div className="min-h-[100dvh] bg-background flex items-center justify-center py-16">
+      <SignIn routing="path" path={`${basePath}/sign-in`} signUpUrl={`${basePath}/sign-up`} />
+    </div>
+  );
+}
+
+function ClerkSignUpPage() {
+  return (
+    <div className="min-h-[100dvh] bg-background flex items-center justify-center py-16">
+      <SignUp routing="path" path={`${basePath}/sign-up`} signInUrl={`${basePath}/sign-in`} />
+    </div>
+  );
+}
+
+function ClerkQueryClientCacheInvalidator() {
+  const { addListener } = useClerk();
+  const qc = useQueryClient();
+  const prevUserIdRef = useRef<string | null | undefined>(undefined);
+
+  useEffect(() => {
+    const unsubscribe = addListener(({ user }) => {
+      const userId = user?.id ?? null;
+      if (prevUserIdRef.current !== undefined && prevUserIdRef.current !== userId) {
+        qc.clear();
+      }
+      prevUserIdRef.current = userId;
+    });
+    return unsubscribe;
+  }, [addListener, qc]);
+
+  return null;
+}
+
 function Router() {
   return (
     <Switch>
       <Route path="/" component={AppContent} />
+      <Route path="/sign-in/*?" component={ClerkSignInPage} />
+      <Route path="/sign-up/*?" component={ClerkSignUpPage} />
+      <Route path="/signup" component={() => <Redirect to="/sign-up" />} />
       <Route path="/why" component={WhyPage} />
       <Route path="/features/odds-drops" component={OddsDropPage} />
       <Route path="/features/bet-tracker" component={BetTrackerPage} />
@@ -2131,7 +2238,6 @@ function Router() {
       <Route path="/features/multi-sport" component={MultiSportPage} />
       <Route path="/features/bankroll" component={BankrollPage} />
       <Route path="/pricing" component={PricingPage} />
-      <Route path="/signup" component={SignUpPage} />
       <Route path="/terms" component={TermsPage} />
       <Route path="/privacy" component={PrivacyPage} />
       <Route component={NotFound} />
@@ -2139,17 +2245,33 @@ function Router() {
   );
 }
 
-function App() {
+function ClerkProviderWithRoutes() {
+  const [, setLocation] = useLocation();
+
   return (
-    <QueryClientProvider client={queryClient}>
-      <TooltipProvider>
-        <WouterRouter base={import.meta.env.BASE_URL.replace(/\/$/, "")}>
+    <ClerkProvider
+      publishableKey={clerkPubKey}
+      proxyUrl={clerkProxyUrl}
+      routerPush={(to) => setLocation(stripBase(to))}
+      routerReplace={(to) => setLocation(stripBase(to), { replace: true })}
+    >
+      <QueryClientProvider client={queryClient}>
+        <ClerkQueryClientCacheInvalidator />
+        <TooltipProvider>
           <ScrollToTop />
           <Router />
-        </WouterRouter>
-        <Toaster />
-      </TooltipProvider>
-    </QueryClientProvider>
+          <Toaster />
+        </TooltipProvider>
+      </QueryClientProvider>
+    </ClerkProvider>
+  );
+}
+
+function App() {
+  return (
+    <WouterRouter base={basePath}>
+      <ClerkProviderWithRoutes />
+    </WouterRouter>
   );
 }
 

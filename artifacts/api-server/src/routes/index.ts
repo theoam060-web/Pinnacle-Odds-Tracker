@@ -5,6 +5,8 @@ import sportsRouter from "./sports";
 import marketsRouter from "./markets";
 import betsRouter from "./bets";
 import resultsRouter from "./results";
+import userRouter from "./user";
+import stripeRouter from "./stripe";
 
 const router: IRouter = Router();
 
@@ -14,5 +16,7 @@ router.use(sportsRouter);
 router.use(marketsRouter);
 router.use(betsRouter);
 router.use(resultsRouter);
+router.use(userRouter);
+router.use(stripeRouter);
 
 export default router;
