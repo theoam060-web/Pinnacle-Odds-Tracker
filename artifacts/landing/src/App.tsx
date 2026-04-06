@@ -24,6 +24,7 @@ import {
 } from "./FeaturePages";
 import WhyPage from "./WhyPage";
 import PricingPage from "./PricingPage";
+import SuccessPage from "./SuccessPage";
 import TermsPage from "./TermsPage";
 import PrivacyPage from "./PrivacyPage";
 
@@ -2352,6 +2353,7 @@ function Router() {
       <Route path="/features/multi-sport" component={MultiSportPage} />
       <Route path="/features/bankroll" component={BankrollPage} />
       <Route path="/pricing" component={PricingPage} />
+      <Route path="/success" component={SuccessPage} />
       <Route path="/terms" component={TermsPage} />
       <Route path="/privacy" component={PrivacyPage} />
       <Route component={NotFound} />

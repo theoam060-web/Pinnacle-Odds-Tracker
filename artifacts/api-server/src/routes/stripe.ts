@@ -2,6 +2,7 @@ import { Router, type IRouter } from 'express';
 import { getAuth } from '@clerk/express';
 import { storage } from '../storage';
 import { stripeService } from '../stripeService';
+import { fulfillCheckout } from '../fulfillment';
 
 const router: IRouter = Router();
 
@@ -38,7 +39,6 @@ router.get('/stripe/products', async (_req, res) => {
     }
     res.json({ data: Array.from(productsMap.values()) });
   } catch (err: any) {
-    // Stripe schema doesn't exist yet (integration not connected) — return empty
     if (err?.message?.includes('stripe') || err?.code === '3F000' || err?.code === '42P01') {
       return res.json({ data: [] });
     }
@@ -67,16 +67,27 @@ router.post('/stripe/checkout', requireAuth, async (req: any, res) => {
     const proto = req.headers['x-forwarded-proto'] || 'https';
     const baseUrl = `${proto}://${host}`;
 
-    const session = await stripeService.createCheckoutSession(
-      customerId,
-      priceId,
-      `${baseUrl}/landing/`,
-      `${baseUrl}/landing/pricing`,
-    );
+    // Success URL includes {CHECKOUT_SESSION_ID} — Stripe replaces it with the real session ID
+    const successUrl = `${baseUrl}/landing/success?session_id={CHECKOUT_SESSION_ID}`;
+    const cancelUrl  = `${baseUrl}/landing/pricing`;
+
+    const session = await stripeService.createCheckoutSession(customerId, priceId, successUrl, cancelUrl);
 
     res.json({ url: session.url });
   } catch (err: any) {
     res.status(500).json({ error: err.message ?? 'Failed to create checkout session' });
+  }
+});
+
+// Called by the success page — fulfills the checkout session and returns plan info
+router.get('/stripe/checkout/session', async (req, res) => {
+  const sessionId = req.query.session_id as string;
+  if (!sessionId) return res.status(400).json({ error: 'session_id required' });
+  try {
+    const result = await fulfillCheckout(sessionId);
+    res.json({ ok: true, ...result });
+  } catch (err: any) {
+    res.status(500).json({ error: err.message ?? 'Failed to fulfill session' });
   }
 });
 
