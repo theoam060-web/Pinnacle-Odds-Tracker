@@ -12,7 +12,8 @@ import {
   Activity, Bell,
   LineChart as LineChartIcon, Radar,
   TrendingUp, ChevronRight, CheckCircle2,
-  Database
+  Database, TrendingDown, ClipboardList,
+  Calculator, CalendarDays, Wallet, Target
 } from "lucide-react";
 import {
   IconOddsDrop, IconBetTracker, IconCLV, IconStake,
@@ -1221,6 +1222,54 @@ function EVComparisonSection() {
   );
 }
 
+const FEATURE_TILES = [
+  { icon: TrendingDown,   label: "Live Odds Drops",       href: "/features/odds-drops"      },
+  { icon: ClipboardList,  label: "Bet Tracker",            href: "/features/bet-tracker"     },
+  { icon: Target,         label: "CLV Analysis",           href: "/features/clv"             },
+  { icon: Calculator,     label: "Stake Calculator",       href: "/features/stake-calculator"},
+  { icon: CalendarDays,   label: "Daily Calendar",         href: "/features/daily-calendar"  },
+  { icon: Wallet,         label: "Bankroll Management",    href: "/features/bankroll"        },
+];
+
+function FeatureStripSection() {
+  const [, navigate] = useLocation();
+  return (
+    <section className="py-20 bg-background">
+      <div className="container mx-auto px-6">
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true, amount: 0.2 }}
+          transition={{ duration: 0.5 }}
+          className="text-center mb-10"
+        >
+          <h2 className="text-2xl md:text-3xl font-bold font-sans tracking-tight mb-2">Everything you need. Nothing you don't.</h2>
+          <p className="text-foreground/55 text-base font-sans">Six tools built for serious bettors — each one focused, fast, and actionable.</p>
+        </motion.div>
+
+        <div className="grid grid-cols-2 md:grid-cols-3 gap-3 max-w-3xl mx-auto">
+          {FEATURE_TILES.map(({ icon: Icon, label, href }, i) => (
+            <motion.button
+              key={href}
+              initial={{ opacity: 0, y: 16 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.35, delay: i * 0.06 }}
+              onClick={() => navigate(href)}
+              className="group flex items-center gap-3 bg-card border border-border hover:border-primary/40 hover:bg-primary/5 rounded-xl px-5 py-4 text-left transition-all duration-200 cursor-pointer"
+            >
+              <div className="w-9 h-9 rounded-lg bg-primary/10 border border-primary/20 flex items-center justify-center shrink-0 group-hover:bg-primary/20 transition-colors">
+                <Icon className="w-4.5 h-4.5 text-primary" strokeWidth={1.75} />
+              </div>
+              <span className="text-sm font-sans font-semibold text-foreground group-hover:text-primary transition-colors leading-tight">{label}</span>
+            </motion.button>
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+}
+
 function BankrollFeatureCards() {
   const appBase = "https://84e61830-7611-4d35-8623-77d057b02e4e-00-30ovvqhxka0d5.kirk.replit.dev";
 
@@ -1562,6 +1611,7 @@ function AppContent() {
         <MarqueeBand />
         <FeaturesGrid />
         <EVComparisonSection />
+        <FeatureStripSection />
         <BankrollFeatureCards />
         <AlertConfigSection />
         <ProfitCalculatorSection />
