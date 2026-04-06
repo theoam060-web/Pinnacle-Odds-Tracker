@@ -542,7 +542,7 @@ function Hero() {
             transition={{ duration: 0.55, delay: 0.08 }}
             className="text-5xl sm:text-6xl md:text-8xl font-bold font-sans tracking-tighter leading-[1.05] mb-6 text-foreground"
           >
-            The market moves.<br />
+            When the market moves.<br />
             <span
               style={{
                 background: "linear-gradient(90deg, hsl(186 100% 50%), hsl(186 100% 80%), hsl(186 100% 50%))",
