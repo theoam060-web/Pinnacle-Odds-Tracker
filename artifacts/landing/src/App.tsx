@@ -249,53 +249,102 @@ function Navbar() {
   );
 }
 
+const HERO_STATS = [
+  { value: "€2.6B", label: "earned annually by private bettors using this strategy" },
+  { value: "< 1s",  label: "average alert delivery time after a line moves" },
+  { value: "6",     label: "sports covered — soccer, basketball, tennis, hockey, NFL & baseball" },
+];
+
 function Hero() {
   const [, navigate] = useLocation();
   return (
-    <section className="relative min-h-[100dvh] flex items-center pt-20 overflow-hidden bg-background">
+    <section className="relative min-h-[100dvh] flex flex-col overflow-hidden bg-background">
       {/* Grid Background */}
-      <div className="absolute inset-0 bg-[linear-gradient(to_right,#80808012_1px,transparent_1px),linear-gradient(to_bottom,#80808012_1px,transparent_1px)] bg-[size:24px_24px]"></div>
-      
-      {/* Glow Effects */}
-      <div className="absolute top-1/4 -left-1/4 w-1/2 h-1/2 bg-primary/10 rounded-full blur-[120px] pointer-events-none"></div>
-      <div className="absolute bottom-0 right-0 w-1/3 h-1/3 bg-blue-900/20 rounded-full blur-[100px] pointer-events-none"></div>
+      <div className="absolute inset-0 bg-[linear-gradient(to_right,#80808012_1px,transparent_1px),linear-gradient(to_bottom,#80808012_1px,transparent_1px)] bg-[size:24px_24px] pointer-events-none" />
 
-      <div className="container mx-auto px-6 relative z-10 grid lg:grid-cols-2 gap-12 items-center">
-        <div className="max-w-2xl">
-          
-          <motion.h1 
-            initial={{ opacity: 0, y: 24 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true, amount: 0.2 }}
-            transition={{ duration: 0.5, delay: 0.1 }}
-            className="text-5xl md:text-7xl font-bold font-sans tracking-tighter leading-[1.1] mb-6 text-foreground"
+      {/* Glow blobs */}
+      <div className="absolute top-1/4 left-1/2 -translate-x-1/2 w-[700px] h-[400px] bg-primary/8 rounded-full blur-[140px] pointer-events-none" />
+      <div className="absolute bottom-0 left-1/4 w-1/2 h-1/3 bg-blue-900/15 rounded-full blur-[100px] pointer-events-none" />
+
+      {/* Main content — vertically centred in the upper portion */}
+      <div className="flex-1 flex items-center justify-center pt-24 pb-16">
+        <div className="container mx-auto px-6 relative z-10 flex flex-col items-center text-center max-w-4xl">
+
+          {/* Eyebrow badge */}
+          <motion.div
+            initial={{ opacity: 0, y: 16 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5 }}
+            className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-primary/10 border border-primary/25 text-primary text-xs font-mono mb-8"
           >
-            Track Sharp Odds Drops <br />
-            <GlitchText text="Before Anyone Else." className="text-white" />
+            <span className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse" />
+            Real-time sharp odds tracking · 6 sports
+          </motion.div>
+
+          {/* Headline */}
+          <motion.h1
+            initial={{ opacity: 0, y: 24 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.55, delay: 0.08 }}
+            className="text-5xl sm:text-6xl md:text-8xl font-bold font-sans tracking-tighter leading-[1.05] mb-6 text-foreground"
+          >
+            The market moves.<br />
+            <span
+              style={{
+                background: "linear-gradient(90deg, hsl(186 100% 50%), hsl(186 100% 80%), hsl(186 100% 50%))",
+                backgroundSize: "200% auto",
+                WebkitBackgroundClip: "text",
+                WebkitTextFillColor: "transparent",
+                animation: "shimmer 3s linear infinite",
+              }}
+            >You move first.</span>
           </motion.h1>
-          
-          <motion.p 
+
+          {/* Subtitle */}
+          <motion.p
             initial={{ opacity: 0, y: 24 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true, amount: 0.2 }}
-            transition={{ duration: 0.5, delay: 0.2 }}
-            className="text-lg md:text-xl text-muted-foreground leading-relaxed mb-8 max-w-xl"
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, delay: 0.18 }}
+            className="text-lg md:text-xl text-foreground/60 font-sans leading-relaxed mb-10 max-w-2xl"
           >
-            Get alerted the moment sharp bookmakers move their lines. Place your bet before the rest of the market has a chance to react.
+            Get alerted the second sharp bookmakers move their lines — and place your bet while everyone else is still catching up. The gap between the move and the market reaction is where your edge lives.
           </motion.p>
-          
-          <motion.div 
-            initial={{ opacity: 0, y: 24 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true, amount: 0.2 }}
-            transition={{ duration: 0.5, delay: 0.3 }}
-            className="flex flex-col sm:flex-row gap-4"
+
+          {/* Stat chips */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, delay: 0.28 }}
+            className="flex flex-col sm:flex-row gap-4 justify-center mb-10 w-full max-w-3xl"
           >
-            <button onClick={() => navigate("/signup")} className="bg-primary text-primary-foreground px-8 py-4 rounded-md font-mono font-bold tracking-wide flex items-center justify-center gap-2 hover:bg-primary/90 transition-colors shadow-[0_0_20px_hsl(var(--primary)/0.4)]" data-testid="btn-sign-up">
+            {HERO_STATS.map((s, i) => (
+              <div key={i} className="flex-1 bg-card border border-border/60 rounded-xl px-5 py-4 text-left">
+                <div className="text-2xl font-bold font-sans text-primary mb-1">{s.value}</div>
+                <div className="text-xs font-sans text-foreground/50 leading-snug">{s.label}</div>
+              </div>
+            ))}
+          </motion.div>
+
+          {/* CTA buttons */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, delay: 0.36 }}
+            className="flex flex-col sm:flex-row items-center gap-4"
+          >
+            <button
+              onClick={() => navigate("/signup")}
+              className="bg-primary text-primary-foreground px-10 py-4 rounded-md font-mono font-bold tracking-wide flex items-center justify-center gap-2 hover:bg-primary/90 transition-colors shadow-[0_0_30px_hsl(var(--primary)/0.35)]"
+              data-testid="btn-sign-up"
+            >
               Sign Up <ChevronRight className="w-5 h-5" />
             </button>
             <div className="flex items-center gap-3">
-              <button onClick={() => navigate("/pricing")} className="bg-secondary text-secondary-foreground border border-border px-8 py-4 rounded-md font-mono tracking-wide flex items-center justify-center gap-2 hover:bg-secondary/80 transition-colors" data-testid="btn-pricing">
+              <button
+                onClick={() => navigate("/pricing")}
+                className="bg-secondary text-secondary-foreground border border-border px-8 py-4 rounded-md font-mono tracking-wide hover:bg-secondary/80 transition-colors"
+                data-testid="btn-pricing"
+              >
                 Pricing
               </button>
               <span className="text-green-400 text-sm font-mono font-bold whitespace-nowrap">14 days free</span>
@@ -303,26 +352,11 @@ function Hero() {
           </motion.div>
 
         </div>
+      </div>
 
-        {/* Hero Terminal Mockup */}
-        <motion.div 
-          initial={{ opacity: 0, x: 20, rotateY: -10 }}
-          whileInView={{ opacity: 1, x: 0, rotateY: 0 }}
-          viewport={{ once: true, amount: 0.2 }}
-          transition={{ duration: 0.8, delay: 0.2, type: "spring" }}
-          style={{ perspective: 1000 }}
-          className="relative hidden lg:block"
-        >
-          <div className="absolute inset-0 bg-gradient-to-tr from-primary/20 to-transparent rounded-2xl blur-3xl -z-10 scale-105"></div>
-          <div className="rounded-2xl overflow-hidden border border-primary/20 shadow-[0_0_60px_rgba(0,255,255,0.08)] transform-gpu">
-            <img
-              src={`${import.meta.env.BASE_URL}feed-screenshot.jpg`}
-              alt="SharpTracker Live Market Feed"
-              className="w-full block"
-              style={{ maxWidth: 640 }}
-            />
-          </div>
-        </motion.div>
+      {/* Carousel pinned to bottom of section */}
+      <div className="relative z-10 border-t border-border/20">
+        <MarqueeBand />
       </div>
     </section>
   );
@@ -1746,7 +1780,6 @@ function AppContent() {
       <Navbar />
       <main>
         <Hero />
-        <MarqueeBand />
         <FeaturesGrid />
         <EVComparisonSection />
         <FeatureStripSection />
