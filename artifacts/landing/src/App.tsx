@@ -178,16 +178,14 @@ function Navbar() {
           </button>
 
           <button onClick={() => { closePanel(); navigate("/why"); }} className="hover:text-primary transition-colors">Why SharpTracker?</button>
-          <button onClick={() => { closePanel(); navigate("/pricing"); }} className="hover:text-primary transition-colors flex items-center gap-2">
-            Pricing
-            <span className="text-[10px] font-bold text-green-400 bg-green-400/10 border border-green-400/20 px-1.5 py-0.5 rounded leading-none">14 days free</span>
-          </button>
+          <button onClick={() => { closePanel(); navigate("/pricing"); }} className="hover:text-primary transition-colors">Pricing</button>
         </div>
 
         <div className="flex items-center gap-4">
           <button onClick={closePanel} className="hidden md:block text-sm font-mono text-foreground hover:text-primary transition-colors" data-testid="btn-login">Log In</button>
-          <button onClick={closePanel} className="bg-primary/10 text-primary border border-primary/30 hover:bg-primary hover:text-primary-foreground px-5 py-2 rounded-md font-mono text-sm transition-all shadow-[0_0_15px_rgba(0,255,255,0.1)] hover:shadow-[0_0_20px_rgba(0,255,255,0.3)]" data-testid="btn-get-access">
-            Get Access
+          <button onClick={closePanel} className="relative bg-primary/10 text-primary border border-primary/30 hover:bg-primary hover:text-primary-foreground px-5 py-2 rounded-md font-mono text-sm transition-all shadow-[0_0_15px_rgba(0,255,255,0.1)] hover:shadow-[0_0_20px_rgba(0,255,255,0.3)]" data-testid="btn-get-access">
+            Sign Up
+            <span className="absolute -top-2.5 -right-2 text-[9px] font-bold text-green-400 bg-green-950 border border-green-500/40 px-1.5 py-0.5 rounded-full leading-none whitespace-nowrap">14 days free</span>
           </button>
         </div>
       </div>
@@ -1558,8 +1556,8 @@ function AppContent() {
     <div className="min-h-[100dvh] bg-background text-foreground font-sans selection:bg-primary/30 selection:text-primary">
       <Navbar />
       <main>
-        <MarqueeBand />
         <Hero />
+        <MarqueeBand />
         <FeaturesGrid />
         <EVComparisonSection />
         <BankrollFeatureCards />
