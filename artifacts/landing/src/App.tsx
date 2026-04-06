@@ -585,53 +585,178 @@ function FeaturesGrid() {
   );
 }
 
-function CLVSection() {
+const USAGE_OPTIONS = [
+  { value: "light",  label: "Light (2–5 hours / week)",   weeklyRate: 0.024 },
+  { value: "medium", label: "Medium (5–10 hours / week)",  weeklyRate: 0.042 },
+  { value: "heavy",  label: "Heavy (10–20 hours / week)",  weeklyRate: 0.065 },
+];
+const TIMEFRAME_OPTIONS = [
+  { value: "2w",  label: "2 weeks",  weeks: 2  },
+  { value: "1m",  label: "1 month",  weeks: 4  },
+  { value: "3m",  label: "3 months", weeks: 13 },
+  { value: "6m",  label: "6 months", weeks: 26 },
+];
+
+function ProfitCalculatorSection() {
+  const [bankroll, setBankroll] = useState(1000);
+  const [usage, setUsage]       = useState("medium");
+  const [timeframe, setTimeframe] = useState("3m");
+  const [result, setResult]     = useState<{ data: { w: string; v: number }[]; profit: number; roi: number } | null>(null);
+
+  function calculate() {
+    const u  = USAGE_OPTIONS.find(o => o.value === usage)!;
+    const tf = TIMEFRAME_OPTIONS.find(o => o.value === timeframe)!;
+    let cur  = bankroll;
+    const data: { w: string; v: number }[] = [{ w: "Start", v: Math.round(cur) }];
+    const seed = Date.now();
+    for (let i = 1; i <= tf.weeks; i++) {
+      const noise = (((seed * i * 9301 + 49297) % 233280) / 233280 - 0.38) * u.weeklyRate;
+      cur = cur * (1 + u.weeklyRate + noise);
+      data.push({ w: `W${i}`, v: Math.round(cur) });
+    }
+    const profit = data[data.length - 1].v - bankroll;
+    setResult({ data, profit, roi: (profit / bankroll) * 100 });
+  }
+
+  const inputCls = "w-full bg-background border border-border rounded-lg px-4 py-3 font-mono text-sm focus:outline-none focus:border-primary/50 focus:ring-1 focus:ring-primary/20 transition-colors";
+
   return (
-    <section id="clv" className="py-24 bg-background">
+    <section id="profit-calculator" className="py-24 bg-background border-t border-border/20">
       <div className="container mx-auto px-6">
         <motion.div
           initial={{ opacity: 0, y: 24 }}
           whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true, amount: 0.2 }}
+          viewport={{ once: true, amount: 0.15 }}
           transition={{ duration: 0.5 }}
-          className="grid lg:grid-cols-2 gap-16 items-center"
+          className="text-center mb-12"
         >
-          <div className="order-2 lg:order-1 relative">
-            <div className="absolute -inset-4 bg-primary/6 rounded-3xl blur-3xl" />
-            <div className="relative rounded-2xl overflow-hidden border border-primary/25 shadow-[0_0_60px_rgba(0,255,255,0.1)] -rotate-1 hover:rotate-0 transition-transform duration-500">
-              <div className="bg-[#0f1117] border-b border-white/5 px-4 py-2.5 flex items-center gap-2">
-                <span className="w-2.5 h-2.5 rounded-full bg-red-500/70" />
-                <span className="w-2.5 h-2.5 rounded-full bg-yellow-500/70" />
-                <span className="w-2.5 h-2.5 rounded-full bg-green-500/70" />
-                <span className="ml-3 text-[10px] font-mono text-white/25">SharpTracker — Live Market Feed</span>
-              </div>
-              <img
-                src={`${import.meta.env.BASE_URL}screenshots/live-feed.jpg`}
-                alt="SharpTracker Live Market Feed"
-                className="w-full block"
-              />
-            </div>
-          </div>
+          <span className="text-xs font-mono tracking-widest text-primary uppercase">Tools</span>
+          <h2 className="text-3xl md:text-5xl font-bold font-sans tracking-tight mt-3 mb-4">Profit Calculator.</h2>
+          <p className="text-foreground/65 text-lg max-w-xl mx-auto">
+            See what SharpTracker could do for your bankroll based on how you plan to use it.
+          </p>
+        </motion.div>
 
-          <div className="order-1 lg:order-2 space-y-6">
-            <h2 className="text-3xl md:text-5xl font-bold font-sans tracking-tight">Measure your edge.</h2>
-            <p className="text-muted-foreground text-lg leading-relaxed">
-              If you aren't beating the closing line consistently, you are going to lose money long-term. Variance happens. CLV doesn't lie.
-            </p>
-            <ul className="space-y-4 font-mono text-sm">
-              <li className="flex items-start gap-3">
-                <CheckCircle2 className="w-5 h-5 text-primary shrink-0 mt-0.5" />
-                <span className="text-foreground">Track every bet against the sharp closing line automatically.</span>
-              </li>
-              <li className="flex items-start gap-3">
-                <CheckCircle2 className="w-5 h-5 text-primary shrink-0 mt-0.5" />
-                <span className="text-foreground">Calculate true Expected Value (EV) for every wager placed.</span>
-              </li>
-              <li className="flex items-start gap-3">
-                <CheckCircle2 className="w-5 h-5 text-primary shrink-0 mt-0.5" />
-                <span className="text-foreground">Export your history to CSV for deeper analysis in Excel/Sheets.</span>
-              </li>
-            </ul>
+        <motion.div
+          initial={{ opacity: 0, y: 24 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true, amount: 0.1 }}
+          transition={{ duration: 0.5, delay: 0.1 }}
+          className="max-w-4xl mx-auto bg-card border border-border/60 rounded-2xl overflow-hidden shadow-[0_0_60px_rgba(0,255,255,0.04)]"
+        >
+          <div className="grid lg:grid-cols-2 divide-y lg:divide-y-0 lg:divide-x divide-border/50">
+
+            {/* ── LEFT: inputs ── */}
+            <div className="p-8 space-y-6">
+              <div className="space-y-2">
+                <label className="text-sm font-bold font-sans">Initial Bankroll</label>
+                <div className="relative">
+                  <span className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground font-mono text-sm">€</span>
+                  <input
+                    type="number"
+                    min={100}
+                    value={bankroll}
+                    onChange={e => setBankroll(Math.max(0, Number(e.target.value)))}
+                    className={inputCls + " pl-8"}
+                  />
+                </div>
+                <p className="text-xs text-muted-foreground">We recommend starting with at least €500</p>
+              </div>
+
+              <div className="space-y-2">
+                <label className="text-sm font-bold font-sans">Weekly Usage</label>
+                <div className="relative">
+                  <select
+                    value={usage}
+                    onChange={e => setUsage(e.target.value)}
+                    className={inputCls + " appearance-none pr-10 cursor-pointer"}
+                  >
+                    {USAGE_OPTIONS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
+                  </select>
+                  <span className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-muted-foreground text-xs">▾</span>
+                </div>
+                <p className="text-xs text-muted-foreground">How many hours a week you plan to use SharpTracker</p>
+              </div>
+
+              <div className="space-y-2">
+                <label className="text-sm font-bold font-sans">Timeframe</label>
+                <div className="relative">
+                  <select
+                    value={timeframe}
+                    onChange={e => setTimeframe(e.target.value)}
+                    className={inputCls + " appearance-none pr-10 cursor-pointer"}
+                  >
+                    {TIMEFRAME_OPTIONS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
+                  </select>
+                  <span className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-muted-foreground text-xs">▾</span>
+                </div>
+              </div>
+
+              <button
+                onClick={calculate}
+                className="w-full bg-primary text-background font-bold font-sans py-3.5 rounded-lg hover:bg-primary/85 active:scale-[0.98] transition-all text-sm tracking-wide"
+              >
+                Calculate
+              </button>
+            </div>
+
+            {/* ── RIGHT: chart / placeholder ── */}
+            <div className="p-8 flex flex-col min-h-[340px]">
+              {result ? (
+                <>
+                  <div className="flex-1">
+                    <ResponsiveContainer width="100%" height={190}>
+                      <AreaChart data={result.data} margin={{ top: 6, right: 6, left: 4, bottom: 0 }}>
+                        <defs>
+                          <linearGradient id="calcGrad" x1="0" y1="0" x2="0" y2="1">
+                            <stop offset="5%"  stopColor="hsl(186 100% 50%)" stopOpacity={0.22} />
+                            <stop offset="95%" stopColor="hsl(186 100% 50%)" stopOpacity={0.01} />
+                          </linearGradient>
+                        </defs>
+                        <YAxis
+                          tickFormatter={v => `€${v >= 1000 ? (v / 1000).toFixed(1) + "k" : v}`}
+                          tick={{ fontSize: 10, fontFamily: "monospace", fill: "hsl(var(--muted-foreground))" }}
+                          axisLine={false} tickLine={false} width={52}
+                        />
+                        <Tooltip
+                          contentStyle={{ background: "hsl(var(--card))", border: "1px solid hsl(var(--border))", borderRadius: 8, fontFamily: "monospace", fontSize: 12 }}
+                          formatter={(v: number) => [`€${v.toLocaleString()}`, "Bankroll"]}
+                          labelFormatter={l => l}
+                        />
+                        <Area type="monotone" dataKey="v" stroke="hsl(186 100% 50%)" strokeWidth={2} fill="url(#calcGrad)" dot={false} activeDot={{ r: 3, fill: "hsl(186 100% 50%)" }} />
+                      </AreaChart>
+                    </ResponsiveContainer>
+                  </div>
+
+                  <div className="mt-4 pt-5 border-t border-border/50">
+                    <div className="flex justify-between items-end mb-3">
+                      <div>
+                        <p className="text-xs text-muted-foreground font-mono mb-1">Estimated Profit</p>
+                        <p className="text-2xl font-bold font-mono text-primary">+€{result.profit.toLocaleString()}</p>
+                      </div>
+                      <div className="text-right">
+                        <p className="text-xs text-muted-foreground font-mono mb-1">ROI</p>
+                        <p className="text-2xl font-bold font-mono text-primary">+{result.roi.toFixed(1)}%</p>
+                      </div>
+                    </div>
+                    <p className="text-xs text-muted-foreground leading-relaxed">
+                      This is a simulation and does not guarantee results. Based on average edge per qualifying odds drop using flat stake sizing.
+                    </p>
+                  </div>
+                </>
+              ) : (
+                <div className="flex-1 flex flex-col items-center justify-center text-center gap-4">
+                  <div className="w-14 h-14 rounded-full bg-primary/8 border border-primary/15 flex items-center justify-center">
+                    <TrendingUp className="w-7 h-7 text-primary/50" />
+                  </div>
+                  <div>
+                    <p className="text-foreground/50 text-sm font-mono">Fill in your details and press</p>
+                    <p className="text-foreground font-bold font-sans mt-1">Calculate</p>
+                  </div>
+                </div>
+              )}
+            </div>
+
           </div>
         </motion.div>
       </div>
@@ -1373,7 +1498,7 @@ function AppContent() {
         <EVComparisonSection />
         <BankrollFeatureCards />
         <AlertConfigSection />
-        <CLVSection />
+        <ProfitCalculatorSection />
         <BetTrackerSection />
         <SharpDataSection />
         <CTASection />
