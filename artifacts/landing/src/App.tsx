@@ -606,14 +606,28 @@ function ProfitCalculatorSection() {
   function calculate() {
     const u  = USAGE_OPTIONS.find(o => o.value === usage)!;
     const tf = TIMEFRAME_OPTIONS.find(o => o.value === timeframe)!;
-    let cur  = bankroll;
-    const data: { w: string; v: number }[] = [{ w: "Start", v: Math.round(cur) }];
-    const seed = Date.now();
-    for (let i = 1; i <= tf.weeks; i++) {
-      const noise = (((seed * i * 9301 + 49297) % 233280) / 233280 - 0.38) * u.weeklyRate;
-      cur = cur * (1 + u.weeklyRate + noise);
-      data.push({ w: `W${i}`, v: Math.round(cur) });
+
+    // XOR-shift seeded RNG so each Calculate click gives a different path
+    let rng = ((Date.now() * 1000003) ^ 0xdeadbeef) >>> 0;
+    const rand = () => {
+      rng ^= rng << 13; rng ^= rng >> 17; rng ^= rng << 5;
+      return (rng >>> 0) / 4294967296;
+    };
+
+    const days       = tf.weeks * 7;
+    const dailyDrift = u.weeklyRate / 7;
+    const noiseFactor = dailyDrift * 6; // noise 6× drift → very jagged, realistic
+
+    let cur = bankroll;
+    const data: { w: string; v: number }[] = [{ w: "0", v: Math.round(cur) }];
+
+    for (let i = 1; i <= days; i++) {
+      const r    = rand();
+      const move = dailyDrift + (r - 0.46) * noiseFactor * 2;
+      cur = Math.max(cur * (1 + move), bankroll * 0.4);
+      data.push({ w: String(i), v: Math.round(cur) });
     }
+
     const profit = data[data.length - 1].v - bankroll;
     setResult({ data, profit, roi: (profit / bankroll) * 100 });
   }
