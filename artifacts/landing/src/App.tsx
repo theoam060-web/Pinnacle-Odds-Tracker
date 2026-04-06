@@ -634,13 +634,14 @@ function ProfitCalculatorSection() {
     // Blend in a linear drift so: start = bankroll, end = targetFinal, zigzag preserved
     const rawFinal = raw[raw.length - 1];
     const driftScale = targetFinal / rawFinal;
+    // Store profit (gain only), so chart starts at 0 and trends upward
     const data = raw.map((v, i) => {
-      const t = i / (raw.length - 1);                // 0 → 1
-      const drift = 1 + t * (driftScale - 1);        // 1 at start, driftScale at end
-      return { w: String(i), v: Math.round(v * drift) };
+      const t = i / (raw.length - 1);
+      const drift = 1 + t * (driftScale - 1);
+      return { w: String(i), v: Math.max(0, Math.round(v * drift - bankroll)) };
     });
 
-    const profit = data[data.length - 1].v - bankroll;
+    const profit = data[data.length - 1].v;
     setResult({ data, profit, roi: (profit / bankroll) * 100 });
   }
 
@@ -746,7 +747,7 @@ function ProfitCalculatorSection() {
                         />
                         <Tooltip
                           contentStyle={{ background: "hsl(var(--card))", border: "1px solid hsl(var(--border))", borderRadius: 8, fontFamily: "monospace", fontSize: 12 }}
-                          formatter={(v: number) => [`€${v.toLocaleString()}`, "Bankroll"]}
+                          formatter={(v: number) => [`+€${v.toLocaleString()}`, "Profit"]}
                           labelFormatter={l => l}
                         />
                         <Area type="monotone" dataKey="v" stroke="hsl(186 100% 50%)" strokeWidth={2} fill="url(#calcGrad)" dot={false} activeDot={{ r: 3, fill: "hsl(186 100% 50%)" }} />
