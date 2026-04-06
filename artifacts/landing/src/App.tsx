@@ -614,19 +614,31 @@ function ProfitCalculatorSection() {
       return (rng >>> 0) / 4294967296;
     };
 
-    const days       = tf.weeks * 7;
-    const dailyDrift = u.weeklyRate / 7;
-    const noiseFactor = dailyDrift * 6; // noise 6× drift → very jagged, realistic
+    // Target ROI always lands 30–50%
+    const targetROI   = 30 + rand() * 20;
+    const targetFinal = bankroll * (1 + targetROI / 100);
+
+    const days        = tf.weeks * 7;
+    const noiseFactor = 0.04; // ±4% per day → very jagged
 
     let cur = bankroll;
-    const data: { w: string; v: number }[] = [{ w: "0", v: Math.round(cur) }];
+    const raw: number[] = [cur];
 
     for (let i = 1; i <= days; i++) {
       const r    = rand();
-      const move = dailyDrift + (r - 0.46) * noiseFactor * 2;
-      cur = Math.max(cur * (1 + move), bankroll * 0.4);
-      data.push({ w: String(i), v: Math.round(cur) });
+      const move = (r - 0.46) * noiseFactor * 2; // noise only, no drift
+      cur = Math.max(cur * (1 + move), bankroll * 0.5);
+      raw.push(cur);
     }
+
+    // Blend in a linear drift so: start = bankroll, end = targetFinal, zigzag preserved
+    const rawFinal = raw[raw.length - 1];
+    const driftScale = targetFinal / rawFinal;
+    const data = raw.map((v, i) => {
+      const t = i / (raw.length - 1);                // 0 → 1
+      const drift = 1 + t * (driftScale - 1);        // 1 at start, driftScale at end
+      return { w: String(i), v: Math.round(v * drift) };
+    });
 
     const profit = data[data.length - 1].v - bankroll;
     setResult({ data, profit, roi: (profit / bankroll) * 100 });
