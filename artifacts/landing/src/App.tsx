@@ -1594,55 +1594,83 @@ function BankrollFeatureCards() {
     </svg>
   );
 
+  const PendingArt = () => (
+    <svg viewBox="0 0 480 160" className="w-full" style={{ background: "#0a0a0f" }}>
+      <text x="240" y="24" fontSize="10" fill={dim} fontFamily="monospace" textAnchor="middle">Where all your bets stand right now</text>
+      {[
+        { label: "Settled",  count: "42", color: green, x: 36  },
+        { label: "Pending",  count: "6",  color: cyan,  x: 178 },
+        { label: "Void",     count: "2",  color: dim,   x: 320 },
+      ].map((s, i) => (
+        <g key={i}>
+          <rect x={s.x} y={34} width={120} height={76} rx="8"
+            fill={i === 0 ? "rgba(74,222,128,0.07)" : i === 1 ? "rgba(0,255,255,0.06)" : "rgba(255,255,255,0.03)"}
+            stroke={i === 0 ? "rgba(74,222,128,0.22)" : i === 1 ? "rgba(0,255,255,0.18)" : "rgba(255,255,255,0.08)"}
+            strokeWidth="1.2"/>
+          <text x={s.x+60} y={81} fontSize="34" fill={s.color} fontFamily="monospace" fontWeight="bold" textAnchor="middle">{s.count}</text>
+          <text x={s.x+60} y={100} fontSize="11" fill="rgba(255,255,255,0.32)" fontFamily="monospace" textAnchor="middle">{s.label}</text>
+        </g>
+      ))}
+      <text x="240" y="140" fontSize="11" fill="rgba(255,255,255,0.18)" fontFamily="monospace" textAnchor="middle">out of 50 bets logged this month</text>
+    </svg>
+  );
+
   const cards = [
     {
       tag: "Win Rate",
       title: "How often do you win?",
-      desc: "Out of every 100 settled bets, how many did you win? SharpTracker counts your wins, losses, and pushes automatically.",
+      desc: "Out of every 100 finished bets, how many did you win? SharpTracker counts your wins and losses automatically — no spreadsheet needed.",
       art: <WinRateArt />,
       href: `${appBase}/bet-stats`,
     },
     {
       tag: "Profit & Loss",
       title: "Are you up or down overall?",
-      desc: "Your total profit or loss in units across all your bets. Green means ahead, red means behind — updated the moment each result comes in.",
+      desc: "Your total profit or loss across all your bets, shown in units. Green means you're ahead, red means behind — updated the moment each result comes in.",
       art: <PLArt />,
       href: `${appBase}/bet-stats`,
     },
     {
       tag: "Return on Investment",
       title: "How much do you make per $100?",
-      desc: "For every $100 you stake, ROI tells you how much profit you made. A positive ROI means your betting is paying off over time.",
+      desc: "For every $100 you put on, this tells you how much profit you made back. A positive number means you're coming out ahead over time.",
       art: <ROIArt />,
       href: `${appBase}/bet-stats`,
     },
     {
       tag: "Did You Beat the Market?",
       title: "Did you get a good price?",
-      desc: "When a game kicks off, the odds stop moving. We compare the price you got to where they ended up — getting a consistently better price is a strong sign you're betting smart.",
+      desc: "When a game kicks off, the prices stop moving. We compare the price you got to where they ended — if you got a better price, that's a great sign you're betting smart.",
       art: <CLVArt />,
       href: `${appBase}/bet-stats`,
     },
     {
       tag: "Daily Calendar",
       title: "See every day at a glance.",
-      desc: "Green days made money, red days lost it. One look at the calendar and you know exactly when you run hot — and when it's time to step back.",
+      desc: "Green days made money, red days lost it. One look and you know exactly when your bets ran hot — and when it might be time to take a break.",
       art: <CalendarArt />,
       href: `${appBase}/bet-stats`,
     },
     {
       tag: "Bet Log",
       title: "Every bet saved automatically.",
-      desc: "Log each bet with the match, market, odds, and stake. SharpTracker saves your full history so you can sort, filter, and review any wager you've ever placed.",
+      desc: "Each bet is saved with the match, the type of bet, the price, and the result. Your full history in one place — sort, filter, and review any bet you've ever placed.",
       art: <BetLogArt />,
       href: `${appBase}/bet-tracker`,
     },
     {
       tag: "Auto-settle",
       title: "Results update themselves.",
-      desc: "The moment a game ends, SharpTracker logs the result and updates your bankroll. You never have to enter a result by hand.",
+      desc: "The moment a game ends, SharpTracker logs the result and updates your total. You never have to enter anything by hand.",
       art: <AutoSettleArt />,
       href: `${appBase}/bet-tracker`,
+    },
+    {
+      tag: "Bet Status",
+      title: "Know what's finished and what's still live.",
+      desc: "See at a glance how many bets have a result, how many are still waiting, and how many were cancelled and returned. Everything in one place.",
+      art: <PendingArt />,
+      href: `${appBase}/bet-stats`,
     },
   ];
 
