@@ -817,10 +817,8 @@ function MarqueeBand() {
 }
 
 function FeaturesGrid() {
-  const [active, setActive] = useState(0);
-
   return (
-    <section id="features" className="py-20 bg-secondary/30 border-y border-border/20 overflow-hidden">
+    <section id="features" className="py-20 bg-secondary/30 border-y border-border/20">
       <div className="container mx-auto px-6">
 
         {/* Title */}
@@ -829,83 +827,53 @@ function FeaturesGrid() {
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true, amount: 0.3 }}
           transition={{ duration: 0.5 }}
-          className="text-center mb-12 max-w-2xl mx-auto"
+          className="text-center mb-10 max-w-2xl mx-auto"
         >
           <h2 className="text-3xl md:text-5xl font-bold font-sans tracking-tight mb-3 leading-tight">
             Your filters.{" "}
-            <span className="relative inline-block">
-              <span
-                className="relative z-10"
-                style={{
-                  background: "linear-gradient(90deg, hsl(186 100% 50%), hsl(186 100% 75%), hsl(186 100% 50%))",
-                  backgroundSize: "200% auto",
-                  WebkitBackgroundClip: "text",
-                  WebkitTextFillColor: "transparent",
-                  animation: "shimmer 3s linear infinite",
-                }}
-              >Your rules.</span>
-            </span>
+            <span
+              style={{
+                background: "linear-gradient(90deg, hsl(186 100% 50%), hsl(186 100% 75%), hsl(186 100% 50%))",
+                backgroundSize: "200% auto",
+                WebkitBackgroundClip: "text",
+                WebkitTextFillColor: "transparent",
+                animation: "shimmer 3s linear infinite",
+              }}
+            >Your rules.</span>
           </h2>
-          <p className="text-foreground/60 font-sans text-lg">Tell SharpTracker exactly what matters to you. It watches the markets around the clock and alerts you the moment something moves.</p>
+          <p className="text-foreground/65 font-sans text-lg">Tell SharpTracker exactly what matters to you. It watches the markets around the clock and alerts you the moment something moves.</p>
         </motion.div>
 
-        {/* Tabbed layout */}
-        <div className="flex flex-col lg:flex-row gap-8 items-start max-w-5xl mx-auto">
-
-          {/* Left — step selector */}
-          <div className="flex flex-row lg:flex-col gap-2 lg:w-64 shrink-0 overflow-x-auto lg:overflow-visible pb-1 lg:pb-0">
-            {STEPS.map((step, i) => (
-              <button
+        {/* 2×2 grid */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 max-w-5xl mx-auto">
+          {STEPS.map((step, i) => {
+            const Visual = step.visual;
+            return (
+              <motion.div
                 key={i}
-                onClick={() => setActive(i)}
-                className={`flex-shrink-0 lg:flex-shrink text-left px-4 py-3.5 rounded-xl border transition-all duration-200 ${
-                  active === i
-                    ? "bg-primary/10 border-primary/40 shadow-[0_0_20px_rgba(0,255,255,0.08)]"
-                    : "bg-background/40 border-border hover:border-primary/20 hover:bg-primary/5"
-                }`}
+                initial={{ opacity: 0, y: 24 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true, amount: 0.2 }}
+                transition={{ duration: 0.45, delay: i * 0.08 }}
+                className="relative bg-card rounded-2xl border border-border/50 overflow-hidden flex flex-col"
               >
-                <div className="flex items-center gap-2.5 mb-2">
-                  <span className={`text-sm font-mono font-bold tracking-widest ${active === i ? "text-primary" : "text-foreground/40"}`}>
+                {/* Text block */}
+                <div className="px-6 pt-6 pb-4">
+                  <span className="text-xs font-mono text-primary/60 tracking-widest mb-2 block">
                     {String(i + 1).padStart(2, "0")}
                   </span>
-                  {active === i && <span className="w-2 h-2 rounded-full bg-primary animate-pulse" />}
+                  <h3 className="text-lg font-bold font-sans text-foreground mb-1.5">{step.title}</h3>
+                  <p className="text-sm font-sans text-foreground/70 leading-relaxed">{step.description}</p>
                 </div>
-                <p className={`text-base font-sans font-bold leading-tight ${active === i ? "text-primary" : "text-foreground/70"}`}>
-                  {step.title}
-                </p>
-                <p className={`text-sm font-sans mt-1.5 leading-snug hidden lg:block ${active === i ? "text-foreground/90" : "text-foreground/65"}`}>
-                  {step.description}
-                </p>
-              </button>
-            ))}
-          </div>
 
-          {/* Right — screenshot */}
-          <motion.div
-            key={active}
-            initial={{ opacity: 0, y: active * 22 + 12 }}
-            animate={{ opacity: 1, y: active * 22 }}
-            transition={{ duration: 0.35, ease: "easeOut" }}
-            className="flex-1 relative min-h-[280px]"
-          >
-            <div className="absolute -inset-4 bg-primary/5 rounded-3xl blur-3xl" />
-            <div className="relative rounded-2xl overflow-hidden border border-primary/25 shadow-[0_0_60px_rgba(0,255,255,0.1)]">
-              <div className="bg-[#0f1117] border-b border-white/5 px-4 py-2.5 flex items-center gap-2">
-                <span className="w-2.5 h-2.5 rounded-full bg-red-500/70" />
-                <span className="w-2.5 h-2.5 rounded-full bg-yellow-500/70" />
-                <span className="w-2.5 h-2.5 rounded-full bg-green-500/70" />
-                <span className="ml-3 text-[10px] font-mono text-white/25 truncate">SharpTracker — {STEPS[active].title}</span>
-              </div>
-              <div className="w-full block">
-                {(() => { const Visual = STEPS[active].visual; return <Visual />; })()}
-              </div>
-            </div>
-
-            {/* Description shown below image on mobile */}
-            <p className="lg:hidden mt-4 text-base font-sans text-foreground/60 leading-relaxed">
-              {STEPS[active].description}
-            </p>
-          </motion.div>
+                {/* Illustration — fades in from the top */}
+                <div className="relative flex-1 min-h-0">
+                  <div className="absolute top-0 left-0 right-0 h-10 bg-gradient-to-b from-card to-transparent z-10 pointer-events-none" />
+                  <Visual />
+                </div>
+              </motion.div>
+            );
+          })}
         </div>
 
       </div>
