@@ -282,22 +282,22 @@ const STEPS = [
   {
     visual: StepIlluMarkets,
     title: "Pick Your Markets",
-    description: "Choose which sports, leagues, and bet types matter to you. Everything else is filtered out — you only see what you asked for."
+    description: "Choose the sports and leagues you follow. Only what you pick gets through — nothing else."
   },
   {
     visual: StepIlluMinDrop,
-    title: "Set Your Bar",
-    description: "Decide how big a move needs to be before it alerts you. Small shifts are ignored. Only the ones that clear your limit come through."
+    title: "Set Your Minimum Drop",
+    description: "Choose how big a price drop must be before you get an alert. Small moves are ignored. You only hear about the ones that matter."
   },
   {
     visual: StepIlluMonitor,
-    title: "We Watch Around the Clock",
-    description: "SharpTracker runs all day and night. The moment a line moves enough to matter, we catch it — no matter when it happens."
+    title: "We Watch 24/7",
+    description: "SharpTracker tracks every market all day and night. The second a line drops, we catch it — no matter when it happens."
   },
   {
     visual: StepIlluAlert,
     title: "You Hear About It First",
-    description: "The alert reaches you while other bettors are still unaware. The gap between the move and the market catching up is where your edge lives."
+    description: "You get the alert before anyone else. That time gap is your advantage."
   }
 ];
 
@@ -873,7 +873,7 @@ function FeaturesGrid() {
                 <p className={`text-base font-sans font-bold leading-tight ${active === i ? "text-primary" : "text-foreground/70"}`}>
                   {step.title}
                 </p>
-                <p className={`text-sm font-sans mt-1.5 leading-snug hidden lg:block ${active === i ? "text-foreground/75" : "text-foreground/45"}`}>
+                <p className={`text-sm font-sans mt-1.5 leading-snug hidden lg:block ${active === i ? "text-foreground/90" : "text-foreground/65"}`}>
                   {step.description}
                 </p>
               </button>
