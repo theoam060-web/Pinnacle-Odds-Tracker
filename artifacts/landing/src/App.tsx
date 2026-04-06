@@ -586,16 +586,22 @@ function FeaturesGrid() {
 }
 
 const USAGE_OPTIONS = [
-  { value: "light",  label: "Light (2–5 hours / week)",  roiMin: 8,  roiMax: 14 },
-  { value: "medium", label: "Medium (5–10 hours / week)", roiMin: 18, roiMax: 26 },
-  { value: "heavy",  label: "Heavy (10–20 hours / week)", roiMin: 32, roiMax: 42 },
+  { value: "light",  label: "Light (2–5 hours / week)"   },
+  { value: "medium", label: "Medium (5–10 hours / week)"  },
+  { value: "heavy",  label: "Heavy (10–20 hours / week)"  },
 ];
 const TIMEFRAME_OPTIONS = [
-  { value: "2w", label: "2 weeks",  weeks: 2,  scale: 0.30 },
-  { value: "1m", label: "1 month",  weeks: 4,  scale: 0.55 },
-  { value: "3m", label: "3 months", weeks: 13, scale: 1.00 },
-  { value: "6m", label: "6 months", weeks: 26, scale: 1.70 },
+  { value: "2w", label: "2 weeks",  weeks: 2  },
+  { value: "1m", label: "1 month",  weeks: 4  },
+  { value: "3m", label: "3 months", weeks: 13 },
+  { value: "6m", label: "6 months", weeks: 26 },
 ];
+// Profit ranges in € for a €1 000 bankroll — scales linearly with bankroll
+const PROFIT_TABLE: Record<string, Record<string, [number, number]>> = {
+  light:  { "2w": [10, 40],   "1m": [20, 80],   "3m": [60, 240],   "6m": [120, 480]  },
+  medium: { "2w": [20, 80],   "1m": [40, 160],  "3m": [120, 500],  "6m": [250, 900]  },
+  heavy:  { "2w": [40, 150],  "1m": [80, 300],  "3m": [250, 1200], "6m": [500, 2500] },
+};
 
 function ProfitCalculatorSection() {
   const [bankroll, setBankroll] = useState(1000);
@@ -604,7 +610,6 @@ function ProfitCalculatorSection() {
   const [result, setResult]     = useState<{ data: { w: string; v: number }[]; profit: number; roi: number } | null>(null);
 
   function calculate() {
-    const u  = USAGE_OPTIONS.find(o => o.value === usage)!;
     const tf = TIMEFRAME_OPTIONS.find(o => o.value === timeframe)!;
 
     // XOR-shift seeded RNG so each Calculate click gives a different path
@@ -614,11 +619,11 @@ function ProfitCalculatorSection() {
       return (rng >>> 0) / 4294967296;
     };
 
-    // Target ROI scales with usage level and timeframe
-    const roiMin = u.roiMin * tf.scale;
-    const roiMax = u.roiMax * tf.scale;
-    const targetROI   = roiMin + rand() * (roiMax - roiMin);
-    const targetFinal = bankroll * (1 + targetROI / 100);
+    // Profit range from table, scaled linearly with bankroll
+    const [pMin, pMax] = PROFIT_TABLE[usage][timeframe];
+    const scaleFactor  = bankroll / 1000;
+    const targetProfit = (pMin + rand() * (pMax - pMin)) * scaleFactor;
+    const targetFinal  = bankroll + targetProfit;
 
     const days        = tf.weeks * 7;
     const noiseFactor = 0.04; // ±4% per day → very jagged
