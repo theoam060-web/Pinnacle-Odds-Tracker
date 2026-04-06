@@ -850,7 +850,7 @@ function FeaturesGrid() {
         </motion.div>
 
         {/* Tabbed layout */}
-        <div className="flex flex-col lg:flex-row gap-8 items-stretch max-w-5xl mx-auto">
+        <div className="flex flex-col lg:flex-row gap-8 items-start max-w-5xl mx-auto">
 
           {/* Left — step selector */}
           <div className="flex flex-row lg:flex-col gap-2 lg:w-64 shrink-0 overflow-x-auto lg:overflow-visible pb-1 lg:pb-0">
@@ -883,9 +883,9 @@ function FeaturesGrid() {
           {/* Right — screenshot */}
           <motion.div
             key={active}
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.3 }}
+            initial={{ opacity: 0, y: active * 22 + 12 }}
+            animate={{ opacity: 1, y: active * 22 }}
+            transition={{ duration: 0.35, ease: "easeOut" }}
             className="flex-1 relative min-h-[280px]"
           >
             <div className="absolute -inset-4 bg-primary/5 rounded-3xl blur-3xl" />
