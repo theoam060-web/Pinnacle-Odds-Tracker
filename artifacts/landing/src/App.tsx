@@ -880,16 +880,16 @@ function FeaturesGrid() {
                     : "bg-background/40 border-border hover:border-primary/20 hover:bg-primary/5"
                 }`}
               >
-                <div className="flex items-center gap-2.5 mb-1">
-                  <span className={`text-[10px] font-mono font-bold tracking-widest ${active === i ? "text-primary" : "text-muted-foreground"}`}>
+                <div className="flex items-center gap-2.5 mb-2">
+                  <span className={`text-sm font-mono font-bold tracking-widest ${active === i ? "text-primary" : "text-foreground/40"}`}>
                     {String(i + 1).padStart(2, "0")}
                   </span>
-                  {active === i && <span className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse" />}
+                  {active === i && <span className="w-2 h-2 rounded-full bg-primary animate-pulse" />}
                 </div>
-                <p className={`text-sm font-sans font-semibold leading-tight ${active === i ? "text-foreground" : "text-foreground/60"}`}>
+                <p className={`text-base font-sans font-bold leading-tight ${active === i ? "text-primary" : "text-foreground/70"}`}>
                   {step.title}
                 </p>
-                <p className={`text-sm font-sans mt-1 leading-snug hidden lg:block ${active === i ? "text-foreground/60" : "text-foreground/35"}`}>
+                <p className={`text-sm font-sans mt-1.5 leading-snug hidden lg:block ${active === i ? "text-foreground/75" : "text-foreground/45"}`}>
                   {step.description}
                 </p>
               </button>
