@@ -527,78 +527,99 @@ function MarqueeBand() {
 }
 
 function FeaturesGrid() {
+  const [active, setActive] = useState(0);
+
   return (
-    <section id="features" className="py-24 bg-secondary/30 border-y border-border/20 overflow-hidden">
+    <section id="features" className="py-20 bg-secondary/30 border-y border-border/20 overflow-hidden">
       <div className="container mx-auto px-6">
+
+        {/* Title */}
         <motion.div
-          initial={{ opacity: 0, y: 24 }}
+          initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true, amount: 0.3 }}
           transition={{ duration: 0.5 }}
-          className="text-center mb-20 max-w-2xl mx-auto"
+          className="text-center mb-12 max-w-2xl mx-auto"
         >
-          <h2 className="text-3xl md:text-4xl font-bold font-sans mb-4">Your filters. Your rules.</h2>
-          <p className="text-muted-foreground">Tell SharpTracker exactly what you care about. It watches the markets around the clock and alerts you the second something moves — so you can bet before everyone else.</p>
+          <h2 className="text-3xl md:text-5xl font-bold font-sans tracking-tight mb-3 leading-tight">
+            Your filters.{" "}
+            <span className="relative inline-block">
+              <span
+                className="relative z-10"
+                style={{
+                  background: "linear-gradient(90deg, hsl(186 100% 50%), hsl(186 100% 75%), hsl(186 100% 50%))",
+                  backgroundSize: "200% auto",
+                  WebkitBackgroundClip: "text",
+                  WebkitTextFillColor: "transparent",
+                  animation: "shimmer 3s linear infinite",
+                }}
+              >Your rules.</span>
+            </span>
+          </h2>
+          <p className="text-foreground/60 font-sans text-base">Tell SharpTracker exactly what matters to you. It watches the markets around the clock and alerts you the moment something moves.</p>
         </motion.div>
 
-        <div className="space-y-28 max-w-5xl mx-auto">
-          {STEPS.map((step, idx) => {
-            const isEven = idx % 2 === 0;
-            return (
-              <div
-                key={idx}
-                className={`flex flex-col ${isEven ? 'md:flex-row' : 'md:flex-row-reverse'} gap-10 md:gap-16 items-center`}
-              >
-                {/* Image side */}
-                <motion.div
-                  initial={{ opacity: 0, x: isEven ? 60 : -60 }}
-                  whileInView={{ opacity: 1, x: 0 }}
-                  viewport={{ once: true, amount: 0.25 }}
-                  transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
-                  className="flex-1 relative"
-                >
-                  {/* Ambient glow behind image */}
-                  <div className="absolute -inset-6 bg-primary/8 rounded-3xl blur-3xl" />
-                  {/* Browser-chrome frame */}
-                  <div className={`relative rounded-2xl overflow-hidden border border-primary/25 shadow-[0_0_60px_rgba(0,255,255,0.12)] ${isEven ? 'rotate-1 hover:rotate-0' : '-rotate-1 hover:rotate-0'} transition-transform duration-500`}>
-                    {/* Fake title bar */}
-                    <div className="bg-[#0f1117] border-b border-white/5 px-4 py-2.5 flex items-center gap-2">
-                      <span className="w-2.5 h-2.5 rounded-full bg-red-500/70" />
-                      <span className="w-2.5 h-2.5 rounded-full bg-yellow-500/70" />
-                      <span className="w-2.5 h-2.5 rounded-full bg-green-500/70" />
-                      <span className="ml-3 text-[10px] font-mono text-white/25 truncate">SharpTracker — {step.title}</span>
-                    </div>
-                    <img
-                      src={step.image}
-                      alt={step.title}
-                      className="w-full block"
-                    />
-                  </div>
-                </motion.div>
+        {/* Tabbed layout */}
+        <div className="flex flex-col lg:flex-row gap-8 items-stretch max-w-5xl mx-auto">
 
-                {/* Text side */}
-                <motion.div
-                  initial={{ opacity: 0, x: isEven ? -60 : 60 }}
-                  whileInView={{ opacity: 1, x: 0 }}
-                  viewport={{ once: true, amount: 0.25 }}
-                  transition={{ duration: 0.7, delay: 0.12, ease: [0.22, 1, 0.36, 1] }}
-                  className="flex-1 max-w-md"
-                >
-                  <div className="inline-flex items-center gap-2 text-xs font-mono text-primary/70 border border-primary/20 bg-primary/5 rounded-full px-3 py-1 mb-5">
-                    <span className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse" />
-                    STEP {String(idx + 1).padStart(2, '0')}
-                  </div>
-                  <h3 className="text-3xl md:text-4xl font-bold font-sans mb-5 text-foreground leading-tight">
-                    {step.title}
-                  </h3>
-                  <p className="text-muted-foreground text-lg leading-relaxed">
-                    {step.description}
-                  </p>
-                </motion.div>
+          {/* Left — step selector */}
+          <div className="flex flex-row lg:flex-col gap-2 lg:w-64 shrink-0 overflow-x-auto lg:overflow-visible pb-1 lg:pb-0">
+            {STEPS.map((step, i) => (
+              <button
+                key={i}
+                onClick={() => setActive(i)}
+                className={`flex-shrink-0 lg:flex-shrink text-left px-4 py-3.5 rounded-xl border transition-all duration-200 ${
+                  active === i
+                    ? "bg-primary/10 border-primary/40 shadow-[0_0_20px_rgba(0,255,255,0.08)]"
+                    : "bg-background/40 border-border hover:border-primary/20 hover:bg-primary/5"
+                }`}
+              >
+                <div className="flex items-center gap-2.5 mb-1">
+                  <span className={`text-[10px] font-mono font-bold tracking-widest ${active === i ? "text-primary" : "text-muted-foreground"}`}>
+                    {String(i + 1).padStart(2, "0")}
+                  </span>
+                  {active === i && <span className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse" />}
+                </div>
+                <p className={`text-sm font-sans font-semibold leading-tight ${active === i ? "text-foreground" : "text-foreground/60"}`}>
+                  {step.title}
+                </p>
+                <p className={`text-xs font-sans mt-1 leading-snug hidden lg:block ${active === i ? "text-foreground/60" : "text-foreground/35"}`}>
+                  {step.description}
+                </p>
+              </button>
+            ))}
+          </div>
+
+          {/* Right — screenshot */}
+          <motion.div
+            key={active}
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.3 }}
+            className="flex-1 relative min-h-[280px]"
+          >
+            <div className="absolute -inset-4 bg-primary/5 rounded-3xl blur-3xl" />
+            <div className="relative rounded-2xl overflow-hidden border border-primary/25 shadow-[0_0_60px_rgba(0,255,255,0.1)]">
+              <div className="bg-[#0f1117] border-b border-white/5 px-4 py-2.5 flex items-center gap-2">
+                <span className="w-2.5 h-2.5 rounded-full bg-red-500/70" />
+                <span className="w-2.5 h-2.5 rounded-full bg-yellow-500/70" />
+                <span className="w-2.5 h-2.5 rounded-full bg-green-500/70" />
+                <span className="ml-3 text-[10px] font-mono text-white/25 truncate">SharpTracker — {STEPS[active].title}</span>
               </div>
-            );
-          })}
+              <img
+                src={STEPS[active].image}
+                alt={STEPS[active].title}
+                className="w-full block"
+              />
+            </div>
+
+            {/* Description shown below image on mobile */}
+            <p className="lg:hidden mt-4 text-sm font-sans text-foreground/60 leading-relaxed">
+              {STEPS[active].description}
+            </p>
+          </motion.div>
         </div>
+
       </div>
     </section>
   );
