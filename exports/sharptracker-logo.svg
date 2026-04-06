@@ -1,0 +1,53 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 120" width="400" height="120">
+  <defs>
+    <linearGradient id="iconGlow" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#00ffff;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#00cccc;stop-opacity:1" />
+    </linearGradient>
+    <filter id="glow">
+      <feGaussianBlur stdDeviation="2" result="coloredBlur"/>
+      <feMerge>
+        <feMergeNode in="coloredBlur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  </defs>
+
+  <!-- Background -->
+  <rect width="400" height="120" fill="#0a0a0d" rx="12"/>
+
+  <!-- Activity / pulse icon — scaled to 36x36 at x=24 y=42 -->
+  <!-- lucide-react Activity: M22 12h-4l-3 9L9 3l-3 9H2, scaled 1.5x, shifted -->
+  <polyline
+    points="27,60 40.5,60 45,46.5 54,79.5 63,33 67.5,46.5 81,46.5"
+    fill="none"
+    stroke="url(#iconGlow)"
+    stroke-width="3.5"
+    stroke-linecap="round"
+    stroke-linejoin="round"
+    filter="url(#glow)"
+  />
+
+  <!-- "Sharp" in white -->
+  <text
+    x="104"
+    y="72"
+    font-family="'Inter', 'Helvetica Neue', Arial, sans-serif"
+    font-weight="700"
+    font-size="38"
+    letter-spacing="-1"
+    fill="#ffffff"
+  >Sharp</text>
+
+  <!-- "Tracker" in cyan -->
+  <text
+    x="245"
+    y="72"
+    font-family="'Inter', 'Helvetica Neue', Arial, sans-serif"
+    font-weight="700"
+    font-size="38"
+    letter-spacing="-1"
+    fill="#00ffff"
+    filter="url(#glow)"
+  >Tracker</text>
+</svg>
