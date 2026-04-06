@@ -324,7 +324,7 @@ function Hero() {
             transition={{ duration: 0.5, delay: 0.18 }}
             className="text-xl md:text-2xl text-foreground/70 font-sans leading-relaxed mb-10 max-w-2xl"
           >
-            Sharp bookmakers move first. We alert you the moment they do — so you can bet at the better price before anyone else reacts.
+            Place bets that are mathematically in your favour. Our real-time alerts are driven by the world's sharpest bookmaker — the global benchmark every market follows.
           </motion.p>
 
           {/* Stat cards */}
