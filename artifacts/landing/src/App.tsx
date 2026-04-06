@@ -1455,25 +1455,27 @@ function BankrollFeatureCards() {
   );
 
   const PLArt = () => {
-    const bars = [3, -1, 5, 2, -2, 7, 4];
-    const maxH = 54;
-    const maxV = 7;
-    const bw = 44;
-    const gap = 20;
-    const baseY = 108;
+    const bars = [4, 7, 10, 8, 14];
+    const maxH = 80;
+    const maxV = 14;
+    const bw = 64;
+    const gap = 28;
+    const baseY = 120;
     return (
       <svg viewBox="0 0 480 170" className="w-full" style={{ background: "#0a0a0f" }}>
-        <text x="36" y="24" fontSize="10" fill={dim} fontFamily="monospace">Profit / loss each week (units)</text>
+        <text x="36" y="24" fontSize="10" fill={dim} fontFamily="monospace">Cumulative profit — 5 months (units)</text>
         {bars.map((v, i) => {
-          const h = (Math.abs(v) / maxV) * maxH;
-          const x = 36 + i * (bw + gap);
+          const h = (v / maxV) * maxH;
+          const x = 44 + i * (bw + gap);
           return (
-            <rect key={i} x={x} y={v >= 0 ? baseY - h : baseY} width={bw} height={h}
-              rx="3" fill={v >= 0 ? green : red} opacity={v >= 0 ? 0.7 : 0.5}/>
+            <g key={i}>
+              <rect x={x} y={baseY - h} width={bw} height={h} rx="4" fill={green} opacity={0.55 + i * 0.09}/>
+              <text x={x + bw / 2} y={baseY - h - 6} fontSize="11" fill={green} fontFamily="monospace" fontWeight="bold" textAnchor="middle">+{v}</text>
+            </g>
           );
         })}
         <line x1="36" y1={baseY} x2="444" y2={baseY} stroke="rgba(255,255,255,0.07)" strokeWidth="1"/>
-        <text x="240" y="150" fontSize="20" fill={green} fontFamily="monospace" fontWeight="bold" textAnchor="middle">+18 units this month</text>
+        <text x="240" y="152" fontSize="18" fill={green} fontFamily="monospace" fontWeight="bold" textAnchor="middle">+43 units across 5 months</text>
       </svg>
     );
   };
@@ -1568,6 +1570,52 @@ function BankrollFeatureCards() {
     );
   };
 
+  const AutoSettleArt = () => (
+    <svg viewBox="0 0 480 168" className="w-full" style={{ background: "#0a0a0f" }}>
+      <text x="240" y="24" fontSize="10" fill={dim} fontFamily="monospace" textAnchor="middle">Results come in — your record updates automatically</text>
+      {[
+        { label: "Bet placed",       sub: "1x2 Home Win · 2.10", color: cyan,  x: 40  },
+        { label: "Game ends",        sub: "Full time whistle",   color: dim,   x: 190 },
+        { label: "Result logged",    sub: "WON  +1.1u",         color: green, x: 340 },
+      ].map((n, i) => (
+        <g key={i}>
+          <circle cx={n.x + 60} cy={78} r={i === 2 ? 16 : 12}
+            fill={i === 2 ? "rgba(74,222,128,0.15)" : "rgba(255,255,255,0.05)"}
+            stroke={i === 2 ? green : "rgba(255,255,255,0.12)"} strokeWidth="1.5"/>
+          {i === 2
+            ? <text x={n.x+60} y={83} fontSize="14" fill={green} fontFamily="monospace" textAnchor="middle">✓</text>
+            : <text x={n.x+60} y={83} fontSize="11" fill="rgba(255,255,255,0.3)" fontFamily="monospace" textAnchor="middle">{i+1}</text>
+          }
+          <text x={n.x+60} y={110} fontSize="12" fill={i === 2 ? green : "rgba(255,255,255,0.6)"} fontFamily="monospace" textAnchor="middle">{n.label}</text>
+          <text x={n.x+60} y={126} fontSize="9.5" fill="rgba(255,255,255,0.22)" fontFamily="monospace" textAnchor="middle">{n.sub}</text>
+          {i < 2 && <line x1={n.x+72} y1={78} x2={n.x+118} y2={78} stroke="rgba(255,255,255,0.08)" strokeWidth="1" strokeDasharray="4,3"/>}
+        </g>
+      ))}
+      <text x="240" y="156" fontSize="11" fill="rgba(255,255,255,0.18)" fontFamily="monospace" textAnchor="middle">No manual updates. No spreadsheet. Your bankroll stays accurate.</text>
+    </svg>
+  );
+
+  const PendingArt = () => (
+    <svg viewBox="0 0 480 160" className="w-full" style={{ background: "#0a0a0f" }}>
+      <text x="240" y="24" fontSize="10" fill={dim} fontFamily="monospace" textAnchor="middle">Where all your bets stand right now</text>
+      {[
+        { label: "Settled",  count: "42", color: green,  pct: 84, x: 36  },
+        { label: "Pending",  count: "6",  color: cyan,   pct: 12, x: 166 },
+        { label: "Void",     count: "2",  color: dim,    pct: 4,  x: 296 },
+      ].map((s, i) => (
+        <g key={i}>
+          <rect x={s.x} y={36} width={120} height={76} rx="8"
+            fill={i === 0 ? "rgba(74,222,128,0.07)" : i === 1 ? "rgba(0,255,255,0.06)" : "rgba(255,255,255,0.03)"}
+            stroke={i === 0 ? "rgba(74,222,128,0.22)" : i === 1 ? "rgba(0,255,255,0.18)" : "rgba(255,255,255,0.08)"}
+            strokeWidth="1.2"/>
+          <text x={s.x+60} y={80} fontSize="34" fill={s.color} fontFamily="monospace" fontWeight="bold" textAnchor="middle">{s.count}</text>
+          <text x={s.x+60} y={100} fontSize="11" fill="rgba(255,255,255,0.35)" fontFamily="monospace" textAnchor="middle">{s.label}</text>
+        </g>
+      ))}
+      <text x="240" y="140" fontSize="11" fill="rgba(255,255,255,0.18)" fontFamily="monospace" textAnchor="middle">out of 50 bets logged this month</text>
+    </svg>
+  );
+
   const cards = [
     {
       tag: "Win Rate",
@@ -1611,6 +1659,20 @@ function BankrollFeatureCards() {
       art: <BetLogArt />,
       href: `${appBase}/bet-tracker`,
     },
+    {
+      tag: "Auto-settle",
+      title: "Results update themselves.",
+      desc: "The moment a game ends, SharpTracker logs the result and updates your bankroll. You never have to enter a result by hand.",
+      art: <AutoSettleArt />,
+      href: `${appBase}/bet-tracker`,
+    },
+    {
+      tag: "Bet Status",
+      title: "Know what's settled and what's still live.",
+      desc: "See at a glance how many bets have finished, how many are still waiting on a result, and how many were cancelled or returned. Everything in one place.",
+      art: <PendingArt />,
+      href: `${appBase}/bet-stats`,
+    },
   ];
 
   return (
@@ -1648,8 +1710,9 @@ function BankrollFeatureCards() {
               whileHover={{ y: -4, transition: { duration: 0.2 } }}
               className="group bg-card border border-border/50 rounded-2xl p-6 flex flex-col gap-5 cursor-pointer hover:border-primary/30 hover:shadow-[0_0_40px_-10px_hsl(var(--primary)/0.15)] transition-all duration-300"
             >
-              <div className="pointer-events-none rounded-xl overflow-hidden">
+              <div className="pointer-events-none rounded-xl overflow-hidden relative">
                 {card.art}
+                <div className="absolute top-0 left-0 right-0 h-10 bg-gradient-to-b from-card to-transparent pointer-events-none" />
               </div>
               <div>
                 <div className="text-[10px] font-mono font-bold text-primary tracking-widest uppercase mb-2">
