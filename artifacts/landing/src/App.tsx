@@ -233,62 +233,47 @@ function StepIlluMonitor() {
 }
 
 function StepIlluAlert() {
-  const cyan  = "hsl(186,100%,50%)";
-  const green = "#4ade80";
-  const nodes = [
-    { x: 70,  top: "Sharp book",    sub: "LINE MOVES",  time: "t = 0",      color: cyan,  highlight: false, dim: false },
-    { x: 210, top: "SharpTracker",  sub: "DETECTS",     time: "t = 400 ms", color: green, highlight: false, dim: false },
-    { x: 350, top: "Your phone",    sub: "ALERT ✓",     time: "t < 1s",     color: green, highlight: true,  dim: false },
-    { x: 490, top: "Rec books",     sub: "ADJUST",      time: "t = 30–90s", color: "rgba(255,255,255,0.3)", highlight: false, dim: true },
-  ];
+  const cyan = "hsl(186,100%,50%)";
   return (
-    <svg viewBox="0 0 560 320" className="w-full" style={{ background: "#0c0c14" }}>
+    <svg viewBox="0 0 560 300" className="w-full" style={{ background: "#0c0c14" }}>
 
-      {/* Timeline line */}
-      <line x1="70" y1="120" x2="490" y2="120" stroke="rgba(255,255,255,0.08)" strokeWidth="2"/>
+      {/* ── Alert card ── */}
+      <rect x="20" y="18" width="520" height="170" rx="10" fill="#17171f" stroke="rgba(0,255,255,0.22)" strokeWidth="1.5"/>
+      {/* Cyan top accent stripe */}
+      <rect x="20" y="18" width="520" height="5" rx="10" fill={cyan} opacity="0.8"/>
 
-      {nodes.map((n, i) => (
-        <g key={i}>
-          {/* Label box above the line */}
-          <rect x={n.x - 55} y="38" width="110" height="52" rx="7"
-            fill={n.highlight ? "rgba(74,222,128,0.12)" : n.dim ? "rgba(255,255,255,0.03)" : "rgba(0,255,255,0.07)"}
-            stroke={n.highlight ? "rgba(74,222,128,0.4)" : n.dim ? "rgba(255,255,255,0.09)" : "rgba(0,255,255,0.2)"}
-            strokeWidth="1"/>
-          <text x={n.x} y="58" fontSize="10" fill={n.dim ? "rgba(255,255,255,0.28)" : "rgba(255,255,255,0.5)"}
-            textAnchor="middle" fontFamily="monospace">{n.top}</text>
-          <text x={n.x} y="76" fontSize="14" fill={n.color}
-            textAnchor="middle" fontFamily="monospace" fontWeight="bold">{n.sub}</text>
-          {/* Connector */}
-          <line x1={n.x} y1="90" x2={n.x} y2="109"
-            stroke={n.dim ? "rgba(255,255,255,0.15)" : n.color}
-            strokeWidth="1.5" strokeDasharray="3,2" opacity="0.7"/>
-          {/* Circle */}
-          {n.highlight
-            ? <circle cx={n.x} cy="120" r="13" fill={green} stroke="#0c0c14" strokeWidth="2.5"/>
-            : <circle cx={n.x} cy="120" r="9"  fill={n.dim ? "rgba(255,255,255,0.18)" : n.color}/>
-          }
-          {n.highlight && <text x={n.x} y="125" fontSize="13" textAnchor="middle">🔔</text>}
-          {/* Time label below */}
-          <text x={n.x} y="145" fontSize="11"
-            fill={n.highlight ? green : n.dim ? "rgba(255,255,255,0.2)" : "rgba(255,255,255,0.38)"}
-            textAnchor="middle" fontFamily="monospace">{n.time}</text>
-        </g>
-      ))}
+      {/* Header row */}
+      <text x="40" y="50" fontSize="13" fill={cyan} fontFamily="monospace" fontWeight="bold">⚡  SHARP ODDS DROP</text>
+      <text x="40" y="68" fontSize="13" fill="rgba(255,255,255,0.5)" fontFamily="monospace">MAN CITY vs ARSENAL</text>
 
-      {/* Edge caption */}
-      <text x="280" y="170" fontSize="11" fill="rgba(255,255,255,0.22)"
-        textAnchor="middle" fontFamily="monospace">← your edge: 30+ seconds before others can act →</text>
+      {/* Odds line — big and bold */}
+      <text x="40" y="106" fontSize="26" fill="white" fontFamily="monospace" fontWeight="bold">2.10  →  1.84</text>
+      <rect x="350" y="86" width="90" height="30" rx="6" fill="rgba(0,255,255,0.12)" stroke="rgba(0,255,255,0.35)" strokeWidth="1"/>
+      <text x="395" y="106" fontSize="16" fill={cyan} textAnchor="middle" fontFamily="monospace" fontWeight="bold">−12.4%</text>
 
-      {/* Notification card */}
-      <rect x="24" y="186" width="512" height="114" rx="9" fill="#17171f" stroke="rgba(0,255,255,0.18)" strokeWidth="1.5"/>
-      <rect x="24" y="186" width="512" height="4" rx="9" fill={cyan} opacity="0.7"/>
-      <text x="42" y="212" fontSize="11" fill={cyan} fontFamily="monospace" fontWeight="bold">⚡ SHARP ODDS DROP — MAN CITY vs ARSENAL</text>
-      <text x="42" y="234" fontSize="15" fill="rgba(255,255,255,0.85)" fontFamily="sans-serif">1X2 Home Win: 2.10 → 1.84  (−12.4%)</text>
-      <text x="42" y="254" fontSize="10" fill="rgba(255,255,255,0.38)" fontFamily="monospace">Premier League · Sharp move · Kickoff in 2h 14m</text>
-      <rect x="42" y="268" width="102" height="24" rx="5" fill={cyan}/>
-      <text x="93" y="284" fontSize="11" fill="#000" textAnchor="middle" fontFamily="monospace" fontWeight="bold">BET NOW →</text>
-      <rect x="156" y="268" width="102" height="24" rx="5" fill="rgba(255,255,255,0.06)" stroke="rgba(255,255,255,0.1)" strokeWidth="1"/>
-      <text x="207" y="284" fontSize="11" fill="rgba(255,255,255,0.45)" textAnchor="middle" fontFamily="monospace">+ LOG BET</text>
+      {/* Match details */}
+      <text x="40" y="130" fontSize="11" fill="rgba(255,255,255,0.38)" fontFamily="monospace">Premier League  ·  Sharp move  ·  Kickoff in 2h 14m</text>
+
+      {/* Buttons */}
+      <rect x="40" y="148" width="110" height="28" rx="6" fill={cyan}/>
+      <text x="95" y="166" fontSize="12" fill="#000" textAnchor="middle" fontFamily="monospace" fontWeight="bold">BET NOW →</text>
+      <rect x="164" y="148" width="110" height="28" rx="6" fill="rgba(255,255,255,0.07)" stroke="rgba(255,255,255,0.12)" strokeWidth="1"/>
+      <text x="219" y="166" fontSize="12" fill="rgba(255,255,255,0.45)" textAnchor="middle" fontFamily="monospace">+ LOG BET</text>
+
+      {/* ── Timing comparison ── */}
+      {/* You badge */}
+      <rect x="20" y="204" width="248" height="78" rx="10" fill="rgba(74,222,128,0.07)" stroke="rgba(74,222,128,0.3)" strokeWidth="1.5"/>
+      <circle cx="46" cy="230" r="8" fill="#4ade80"/>
+      <text x="64" y="235" fontSize="13" fill="white" fontFamily="monospace" fontWeight="bold">You</text>
+      <text x="36" y="262" fontSize="28" fill="#4ade80" fontFamily="monospace" fontWeight="bold">&lt; 1s</text>
+      <text x="36" y="278" fontSize="10" fill="rgba(255,255,255,0.3)" fontFamily="monospace">from line move to your phone</text>
+
+      {/* Everyone else badge */}
+      <rect x="292" y="204" width="248" height="78" rx="10" fill="rgba(255,255,255,0.03)" stroke="rgba(255,255,255,0.1)" strokeWidth="1.5"/>
+      <circle cx="318" cy="230" r="8" fill="rgba(255,255,255,0.25)"/>
+      <text x="336" y="235" fontSize="13" fill="rgba(255,255,255,0.4)" fontFamily="monospace" fontWeight="bold">Everyone else</text>
+      <text x="308" y="262" fontSize="28" fill="rgba(255,255,255,0.35)" fontFamily="monospace" fontWeight="bold">30–90s</text>
+      <text x="308" y="278" fontSize="10" fill="rgba(255,255,255,0.2)" fontFamily="monospace">until rec books catch up</text>
     </svg>
   );
 }
