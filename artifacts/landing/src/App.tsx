@@ -178,7 +178,10 @@ function Navbar() {
           </button>
 
           <button onClick={() => { closePanel(); navigate("/why"); }} className="hover:text-primary transition-colors">Why SharpTracker?</button>
-          <button onClick={() => { closePanel(); navigate("/pricing"); }} className="hover:text-primary transition-colors">Pricing</button>
+          <button onClick={() => { closePanel(); navigate("/pricing"); }} className="hover:text-primary transition-colors flex items-center gap-2">
+            Pricing
+            <span className="text-[10px] font-bold text-green-400 bg-green-400/10 border border-green-400/20 px-1.5 py-0.5 rounded leading-none">14 days free</span>
+          </button>
         </div>
 
         <div className="flex items-center gap-4">
@@ -1555,8 +1558,8 @@ function AppContent() {
     <div className="min-h-[100dvh] bg-background text-foreground font-sans selection:bg-primary/30 selection:text-primary">
       <Navbar />
       <main>
-        <Hero />
         <MarqueeBand />
+        <Hero />
         <FeaturesGrid />
         <EVComparisonSection />
         <BankrollFeatureCards />
