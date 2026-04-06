@@ -774,7 +774,7 @@ function ProfitCalculatorSection() {
                       </div>
                     </div>
                     <p className="text-xs text-muted-foreground leading-relaxed">
-                      This is a simulation and does not guarantee results. Based on average edge per qualifying odds drop using flat stake sizing.
+                      Data may not reflect actual results. Illustrative purposes only. Past performance does not guarantee future results.
                     </p>
                   </div>
                 </>
@@ -864,8 +864,37 @@ function Footer() {
             </ul>
           </div>
         </div>
-        <div className="font-mono text-xs text-muted-foreground text-center">
-          &copy; {new Date().getFullYear()} SharpTracker. All rights reserved. Not a gambling site.
+        <div className="font-mono text-xs text-muted-foreground text-center space-y-3">
+          <p>&copy; {new Date().getFullYear()} SharpTracker. All rights reserved.</p>
+
+          <p className="max-w-3xl mx-auto leading-relaxed">
+            SharpTracker is a data and analytics service. This site is strictly for educational and informational purposes only and does not involve real-money betting or facilitate wagering of any kind.
+            References to "sharp bookmakers" are general in nature and do not constitute endorsement of any specific operator.
+            "Pinnacle" is a registered trademark of the Pinnacle group of companies.
+          </p>
+
+          <p className="max-w-3xl mx-auto leading-relaxed">
+            Gambling involves risk. Only bet what you can afford to lose. This service is intended for adults aged 18 and over.
+            If you or someone you know has a gambling problem, help is available — visit{" "}
+            <a
+              href="https://www.begambleaware.org"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-primary hover:underline"
+            >
+              BeGambleAware.org
+            </a>{" "}
+            or contact the{" "}
+            <a
+              href="https://www.gamblersanonymous.org"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-primary hover:underline"
+            >
+              Gamblers Anonymous
+            </a>{" "}
+            helpline in your country.
+          </p>
         </div>
         </motion.div>
       </div>
