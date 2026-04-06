@@ -971,9 +971,9 @@ const TIMEFRAME_OPTIONS = [
 ];
 // Profit ranges in € for a €1 000 bankroll — scales linearly with bankroll
 const PROFIT_TABLE: Record<string, Record<string, [number, number]>> = {
-  light:  { "2w": [10, 40],   "1m": [20, 80],   "3m": [60, 240],   "6m": [120, 480]  },
-  medium: { "2w": [20, 80],   "1m": [40, 160],  "3m": [120, 500],  "6m": [250, 900]  },
-  heavy:  { "2w": [40, 150],  "1m": [80, 300],  "3m": [250, 1200], "6m": [500, 2500] },
+  light:  { "2w": [15, 60],   "1m": [30, 120],  "3m": [90, 360],   "6m": [180, 720]  },
+  medium: { "2w": [30, 120],  "1m": [60, 240],  "3m": [180, 750],  "6m": [375, 1350] },
+  heavy:  { "2w": [60, 225],  "1m": [120, 450], "3m": [375, 1800], "6m": [750, 3750] },
 };
 
 function ProfitCalculatorSection() {
