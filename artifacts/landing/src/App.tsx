@@ -24,6 +24,8 @@ import {
 import WhyPage from "./WhyPage";
 import PricingPage from "./PricingPage";
 import SignUpPage from "./SignUpPage";
+import TermsPage from "./TermsPage";
+import PrivacyPage from "./PrivacyPage";
 
 import NotFound from "@/pages/not-found";
 
@@ -895,8 +897,8 @@ function Footer() {
           <div>
             <h4 className="font-sans font-bold mb-4 text-foreground">Legal</h4>
             <ul className="space-y-2 font-mono text-sm text-muted-foreground">
-              <li><a href="#" className="hover:text-primary">Terms of Service</a></li>
-              <li><a href="#" className="hover:text-primary">Privacy Policy</a></li>
+              <li><Link href="/terms" className="hover:text-primary">Terms of Service</Link></li>
+              <li><Link href="/privacy" className="hover:text-primary">Privacy Policy</Link></li>
               <li><a href="#" className="hover:text-primary">Contact</a></li>
             </ul>
           </div>
@@ -1781,6 +1783,8 @@ function Router() {
       <Route path="/features/bankroll" component={BankrollPage} />
       <Route path="/pricing" component={PricingPage} />
       <Route path="/signup" component={SignUpPage} />
+      <Route path="/terms" component={TermsPage} />
+      <Route path="/privacy" component={PrivacyPage} />
       <Route component={NotFound} />
     </Switch>
   );
