@@ -250,13 +250,28 @@ function Navbar() {
 }
 
 const HERO_STATS = [
-  { value: "€2.6B", label: "earned annually by private bettors using this strategy" },
-  { value: "< 1s",  label: "average alert delivery time after a line moves" },
-  { value: "6",     label: "sports covered — soccer, basketball, tennis, hockey, NFL & baseball" },
+  { value: "€2.6B", label: "Made every year by private bettors who follow sharp money" },
+  { value: "< 1s",  label: "From the moment a line moves to the moment you get alerted" },
+  { value: "10K+",  label: "Sharp odds drops tracked and logged every single day" },
 ];
+
+const API_BASE = "https://84e61830-7611-4d35-8623-77d057b02e4e-00-30ovvqhxka0d5.kirk.replit.dev";
 
 function Hero() {
   const [, navigate] = useLocation();
+  const [liveCount, setLiveCount] = useState<number | null>(null);
+
+  useEffect(() => {
+    const load = () =>
+      fetch(`${API_BASE}/api/odds/summary`)
+        .then(r => r.json())
+        .then(d => { if (typeof d.totalEvents === "number") setLiveCount(d.totalEvents); })
+        .catch(() => {});
+    load();
+    const id = setInterval(load, 60_000);
+    return () => clearInterval(id);
+  }, []);
+
   return (
     <section className="relative min-h-[100dvh] flex flex-col overflow-hidden bg-background">
       {/* Grid Background */}
@@ -266,19 +281,21 @@ function Hero() {
       <div className="absolute top-1/4 left-1/2 -translate-x-1/2 w-[700px] h-[400px] bg-primary/8 rounded-full blur-[140px] pointer-events-none" />
       <div className="absolute bottom-0 left-1/4 w-1/2 h-1/3 bg-blue-900/15 rounded-full blur-[100px] pointer-events-none" />
 
-      {/* Main content — vertically centred in the upper portion */}
+      {/* Main content */}
       <div className="flex-1 flex items-center justify-center pt-24 pb-16">
         <div className="container mx-auto px-6 relative z-10 flex flex-col items-center text-center max-w-4xl">
 
-          {/* Eyebrow badge */}
+          {/* Live markets badge */}
           <motion.div
             initial={{ opacity: 0, y: 16 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5 }}
-            className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-primary/10 border border-primary/25 text-primary text-xs font-mono mb-8"
+            className="inline-flex items-center gap-2.5 px-4 py-2 rounded-full bg-green-950/60 border border-green-500/25 text-green-400 text-sm font-mono mb-8"
           >
-            <span className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse" />
-            Real-time sharp odds tracking · 6 sports
+            <span className="w-2 h-2 rounded-full bg-green-400 animate-pulse shrink-0" />
+            {liveCount !== null
+              ? <>Monitoring <span className="font-bold text-green-300">{liveCount.toLocaleString()}</span> live markets right now</>
+              : "Connecting to live markets…"}
           </motion.div>
 
           {/* Headline */}
@@ -300,17 +317,17 @@ function Hero() {
             >You move first.</span>
           </motion.h1>
 
-          {/* Subtitle */}
+          {/* Subtitle — simple, direct */}
           <motion.p
             initial={{ opacity: 0, y: 24 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5, delay: 0.18 }}
-            className="text-lg md:text-xl text-foreground/60 font-sans leading-relaxed mb-10 max-w-2xl"
+            className="text-xl md:text-2xl text-foreground/70 font-sans leading-relaxed mb-10 max-w-2xl"
           >
-            Get alerted the second sharp bookmakers move their lines — and place your bet while everyone else is still catching up. The gap between the move and the market reaction is where your edge lives.
+            Sharp bookmakers move first. We alert you the moment they do — so you can bet at the better price before anyone else reacts.
           </motion.p>
 
-          {/* Stat chips */}
+          {/* Stat cards */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -318,9 +335,9 @@ function Hero() {
             className="flex flex-col sm:flex-row gap-4 justify-center mb-10 w-full max-w-3xl"
           >
             {HERO_STATS.map((s, i) => (
-              <div key={i} className="flex-1 bg-card border border-border/60 rounded-xl px-5 py-4 text-left">
-                <div className="text-2xl font-bold font-sans text-primary mb-1">{s.value}</div>
-                <div className="text-xs font-sans text-foreground/50 leading-snug">{s.label}</div>
+              <div key={i} className="flex-1 bg-card border border-border/60 rounded-xl px-5 py-5 text-left">
+                <div className="text-3xl font-bold font-sans text-primary mb-2">{s.value}</div>
+                <div className="text-sm font-sans text-foreground/70 leading-snug">{s.label}</div>
               </div>
             ))}
           </motion.div>
