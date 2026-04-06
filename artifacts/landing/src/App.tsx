@@ -586,15 +586,15 @@ function FeaturesGrid() {
 }
 
 const USAGE_OPTIONS = [
-  { value: "light",  label: "Light (2–5 hours / week)",   weeklyRate: 0.024 },
-  { value: "medium", label: "Medium (5–10 hours / week)",  weeklyRate: 0.042 },
-  { value: "heavy",  label: "Heavy (10–20 hours / week)",  weeklyRate: 0.065 },
+  { value: "light",  label: "Light (2–5 hours / week)",  roiMin: 8,  roiMax: 14 },
+  { value: "medium", label: "Medium (5–10 hours / week)", roiMin: 18, roiMax: 26 },
+  { value: "heavy",  label: "Heavy (10–20 hours / week)", roiMin: 32, roiMax: 42 },
 ];
 const TIMEFRAME_OPTIONS = [
-  { value: "2w",  label: "2 weeks",  weeks: 2  },
-  { value: "1m",  label: "1 month",  weeks: 4  },
-  { value: "3m",  label: "3 months", weeks: 13 },
-  { value: "6m",  label: "6 months", weeks: 26 },
+  { value: "2w", label: "2 weeks",  weeks: 2,  scale: 0.30 },
+  { value: "1m", label: "1 month",  weeks: 4,  scale: 0.55 },
+  { value: "3m", label: "3 months", weeks: 13, scale: 1.00 },
+  { value: "6m", label: "6 months", weeks: 26, scale: 1.70 },
 ];
 
 function ProfitCalculatorSection() {
@@ -614,8 +614,10 @@ function ProfitCalculatorSection() {
       return (rng >>> 0) / 4294967296;
     };
 
-    // Target ROI always lands 30–50%
-    const targetROI   = 30 + rand() * 20;
+    // Target ROI scales with usage level and timeframe
+    const roiMin = u.roiMin * tf.scale;
+    const roiMax = u.roiMax * tf.scale;
+    const targetROI   = roiMin + rand() * (roiMax - roiMin);
     const targetFinal = bankroll * (1 + targetROI / 100);
 
     const days        = tf.weeks * 7;
