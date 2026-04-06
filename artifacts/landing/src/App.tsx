@@ -1870,6 +1870,151 @@ function MultiSportSection() {
   );
 }
 
+// ─── Testimonials ────────────────────────────────────────────────────────────
+
+const TESTIMONIALS = [
+  {
+    name: "Marcus W.",
+    location: "Stockholm, Sweden",
+    initials: "MW",
+    color: "hsl(186,100%,40%)",
+    quote: "I've been following sharp money on soccer for two years, but manually. SharpTracker completely changed my process. I now catch 3–4 high-value drops a day I would have missed entirely. My CLV has gone from roughly neutral to consistently positive. It's the only tool I use every single day.",
+    profit: "€42,000",
+    stat2label: "Duration",
+    stat2: "14 Months",
+  },
+  {
+    name: "Jake O'Brien",
+    location: "Dublin, Ireland",
+    initials: "JO",
+    color: "#a78bfa",
+    quote: "The speed is what got me. I used to watch Pinnacle manually on two screens and still felt like I was always a step behind. With SharpTracker I get the alert on my phone before I even have the tab open. I've gone from scratching a small edge to running a 7.4% yield on tennis — and I credit the alert speed entirely.",
+    profit: "€18,500",
+    stat2label: "Bets",
+    stat2: "892",
+  },
+  {
+    name: "Sofia Reyes",
+    location: "Barcelona, Spain",
+    initials: "SR",
+    color: "#f472b6",
+    quote: "What I love is the filtering. I only care about NBA and Euroleague, and I only want to see drops above 8%. SharpTracker gives me exactly that — no noise, just the signals I asked for. I log every bet directly from the feed and review my CLV weekly. My betting is finally disciplined.",
+    profit: "€8,900",
+    stat2label: "Yield",
+    stat2: "6.2%",
+  },
+  {
+    name: "Thomas B.",
+    location: "Munich, Germany",
+    initials: "TB",
+    color: "#fb923c",
+    quote: "I came from a trading background and was skeptical about sports betting. But the logic is solid — if the sharpest bookmaker moves a line, there's information in that move. SharpTracker makes it easy to act on that information before everyone else does. Eight months in and I've outperformed every other investment in my portfolio.",
+    profit: "€31,200",
+    stat2label: "Duration",
+    stat2: "8 Months",
+  },
+  {
+    name: "Luca Ferrari",
+    location: "Milan, Italy",
+    initials: "LF",
+    color: "#4ade80",
+    quote: "I specialise in Asian handicap markets on Serie A and Champions League. SharpTracker's coverage of those markets is excellent — I see drops I've never seen on any other tool. The bet tracker keeps my records spotless, and seeing my CLV score per bet has made me a much more selective bettor.",
+    profit: "€12,600",
+    stat2label: "Bets",
+    stat2: "1 248",
+  },
+  {
+    name: "Emma Clarke",
+    location: "London, United Kingdom",
+    initials: "EC",
+    color: "#fbbf24",
+    quote: "I was a recreational bettor losing money every month, mostly from betting on instinct. A friend showed me this and explained how sharp money works. Within three months I understood line movement, started tracking CLV, and turned a losing habit into a profitable one. The learning curve is not steep — the platform does the hard work.",
+    profit: "€4,200",
+    stat2label: "Duration",
+    stat2: "3 Months",
+  },
+];
+
+function TestimonialsSection() {
+  return (
+    <section className="py-24 bg-background border-t border-border/20">
+      <div className="container mx-auto px-6 max-w-6xl">
+        {/* Header */}
+        <motion.div
+          className="text-center mb-16"
+          initial={{ opacity: 0, y: 20 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true, amount: 0.3 }}
+          transition={{ duration: 0.5 }}
+        >
+          <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full border border-primary/30 bg-primary/5 mb-5">
+            <span className="text-[10px] font-mono text-primary uppercase tracking-widest">Real users. Real results.</span>
+          </div>
+          <h2 className="text-3xl md:text-5xl font-bold font-sans tracking-tight mb-4">
+            Hear what others<br className="hidden sm:block" /> are saying.
+          </h2>
+          <p className="text-foreground/55 font-sans text-lg max-w-xl mx-auto">
+            Sharp bettors from across Europe and beyond — all using SharpTracker to catch moves before the market adjusts.
+          </p>
+        </motion.div>
+
+        {/* Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+          {TESTIMONIALS.map((t, i) => (
+            <motion.div
+              key={i}
+              initial={{ opacity: 0, y: 24 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true, amount: 0.15 }}
+              transition={{ duration: 0.45, delay: (i % 3) * 0.08 }}
+              className="flex flex-col bg-card border border-border/50 rounded-2xl overflow-hidden hover:border-border transition-colors"
+            >
+              {/* Top bar */}
+              <div className="flex items-center justify-between px-5 pt-5 pb-4">
+                {/* Quote mark */}
+                <svg width="24" height="18" viewBox="0 0 24 18" fill="none">
+                  <path d="M0 18V10.8C0 4.8 3.6 1.2 10.8 0l1.2 2.4C8.4 3.6 6.6 5.4 6 8.4H10.8V18H0ZM13.2 18V10.8C13.2 4.8 16.8 1.2 24 0l1.2 2.4C21.6 3.6 19.8 5.4 19.2 8.4H24V18H13.2Z" fill="currentColor" className="text-primary/40"/>
+                </svg>
+                {/* Name + avatar */}
+                <div className="flex items-center gap-2.5">
+                  <div
+                    className="w-8 h-8 rounded-full flex items-center justify-center text-[11px] font-bold font-mono text-black shrink-0"
+                    style={{ background: t.color }}
+                  >
+                    {t.initials}
+                  </div>
+                  <div className="text-right">
+                    <p className="text-sm font-sans font-semibold text-foreground leading-none">{t.name}</p>
+                    <p className="text-[10px] font-mono text-muted-foreground mt-0.5 leading-none">{t.location}</p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Quote */}
+              <div className="px-5 pb-5 flex-1">
+                <p className="text-sm font-sans text-foreground/70 leading-relaxed">{t.quote}</p>
+              </div>
+
+              {/* Stats bar */}
+              <div className="flex items-stretch border-t border-border/40">
+                <div className="flex-1 px-5 py-3.5">
+                  <p className="text-[9px] font-mono text-muted-foreground uppercase tracking-widest mb-1">Profit</p>
+                  <p className="text-sm font-bold font-mono text-green-400">{t.profit}</p>
+                </div>
+                <div className="w-px bg-border/40" />
+                <div className="flex-1 px-5 py-3.5">
+                  <p className="text-[9px] font-mono text-muted-foreground uppercase tracking-widest mb-1">{t.stat2label}</p>
+                  <p className="text-sm font-bold font-mono text-foreground/80">{t.stat2}</p>
+                </div>
+              </div>
+            </motion.div>
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+}
+
 const FAQ_ITEMS = [
   {
     q: "What exactly is SharpTracker?",
@@ -2054,6 +2199,7 @@ function AppContent() {
         <BankrollFeatureCards />
         <AlertConfigSection />
         <ProfitCalculatorSection />
+        <TestimonialsSection />
         <FAQSection />
         <CTASection />
       </main>
