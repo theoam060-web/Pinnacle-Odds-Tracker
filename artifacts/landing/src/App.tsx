@@ -338,7 +338,7 @@ function TerminalSection() {
           className="mb-16 md:mb-24 text-center max-w-3xl mx-auto"
         >
           <h2 className="text-3xl md:text-5xl font-bold font-sans tracking-tight mb-6">Observe the Matrix.</h2>
-          <p className="text-muted-foreground text-lg">
+          <p className="text-muted-foreground text-xl">
             Stop refreshing sportsbooks. Our terminal ingests thousands of WebSocket events per second, surfacing meaningful price discovery instantly.
           </p>
         </motion.div>
@@ -556,7 +556,7 @@ function FeaturesGrid() {
               >Your rules.</span>
             </span>
           </h2>
-          <p className="text-foreground/60 font-sans text-base">Tell SharpTracker exactly what matters to you. It watches the markets around the clock and alerts you the moment something moves.</p>
+          <p className="text-foreground/60 font-sans text-lg">Tell SharpTracker exactly what matters to you. It watches the markets around the clock and alerts you the moment something moves.</p>
         </motion.div>
 
         {/* Tabbed layout */}
@@ -583,7 +583,7 @@ function FeaturesGrid() {
                 <p className={`text-sm font-sans font-semibold leading-tight ${active === i ? "text-foreground" : "text-foreground/60"}`}>
                   {step.title}
                 </p>
-                <p className={`text-xs font-sans mt-1 leading-snug hidden lg:block ${active === i ? "text-foreground/60" : "text-foreground/35"}`}>
+                <p className={`text-sm font-sans mt-1 leading-snug hidden lg:block ${active === i ? "text-foreground/60" : "text-foreground/35"}`}>
                   {step.description}
                 </p>
               </button>
@@ -614,7 +614,7 @@ function FeaturesGrid() {
             </div>
 
             {/* Description shown below image on mobile */}
-            <p className="lg:hidden mt-4 text-sm font-sans text-foreground/60 leading-relaxed">
+            <p className="lg:hidden mt-4 text-base font-sans text-foreground/60 leading-relaxed">
               {STEPS[active].description}
             </p>
           </motion.div>
@@ -706,7 +706,7 @@ function ProfitCalculatorSection() {
         >
           <span className="text-xs font-mono tracking-widest text-primary uppercase">Tools</span>
           <h2 className="text-3xl md:text-5xl font-bold font-sans tracking-tight mt-3 mb-4">Profit Calculator.</h2>
-          <p className="text-foreground/65 text-lg max-w-xl mx-auto">
+          <p className="text-foreground/65 text-xl max-w-xl mx-auto">
             See what SharpTracker could do for your bankroll based on how you plan to use it.
           </p>
         </motion.div>
@@ -880,7 +880,7 @@ function Footer() {
               <Activity className="w-6 h-6 text-primary" />
               <span className="font-sans font-bold text-xl tracking-tight text-foreground">SharpTracker</span>
             </div>
-            <p className="text-muted-foreground text-sm max-w-sm mx-auto md:mx-0">
+            <p className="text-muted-foreground text-base max-w-sm mx-auto md:mx-0">
               Professional odds tracking and CLV analysis terminal.
             </p>
           </div>
@@ -1139,7 +1139,7 @@ function EVComparisonSection() {
           <h2 className="text-3xl md:text-5xl font-bold font-sans tracking-tight mb-4">
             The edge compounds over time.
           </h2>
-          <p className="text-muted-foreground text-lg">
+          <p className="text-muted-foreground text-xl">
             Playing +EV doesn't mean winning every bet. It means the math works in your favour across hundreds of bets — while the average bettor bleeds slowly.
           </p>
         </motion.div>
@@ -1219,21 +1219,21 @@ function EVComparisonSection() {
               <Tooltip content={<CustomTooltip />} cursor={{ stroke: "rgba(255,255,255,0.08)", strokeWidth: 1 }} />
               <ReferenceLine y={0} stroke="rgba(255,255,255,0.12)" strokeDasharray="4 4" />
               <Area
-                type="monotone"
+                type="linear"
                 dataKey="avg"
                 name="Average bettor"
                 stroke="#FF4D4D"
-                strokeWidth={2.5}
+                strokeWidth={2}
                 fill="url(#gradAvg)"
                 dot={false}
                 activeDot={{ r: 4, fill: "#FF4D4D" }}
               />
               <Area
-                type="monotone"
+                type="linear"
                 dataKey="sharp"
                 name="SharpTracker"
                 stroke="#00FFFF"
-                strokeWidth={2.5}
+                strokeWidth={2}
                 fill="url(#gradSharp)"
                 dot={false}
                 activeDot={{ r: 4, fill: "#00FFFF" }}
@@ -1277,7 +1277,7 @@ function FeatureStripSection() {
           className="text-center mb-10"
         >
           <h2 className="text-2xl md:text-3xl font-bold font-sans tracking-tight mb-2">Everything you need. Nothing you don't.</h2>
-          <p className="text-foreground/55 text-base font-sans">Six tools built for serious bettors — each one focused, fast, and actionable.</p>
+          <p className="text-foreground/55 text-lg font-sans">Six tools built for serious bettors — each one focused, fast, and actionable.</p>
         </motion.div>
 
         <div className="grid grid-cols-2 md:grid-cols-3 gap-3 max-w-3xl mx-auto">
@@ -1484,7 +1484,7 @@ function BankrollFeatureCards() {
           <h2 className="text-3xl md:text-5xl font-bold font-sans tracking-tight mb-4">
             Follow your edge. Watch your bankroll grow.
           </h2>
-          <p className="text-muted-foreground text-lg">
+          <p className="text-muted-foreground text-xl">
             Every metric that matters — tracked automatically. No spreadsheets, no guesswork.
           </p>
         </motion.div>
@@ -1625,7 +1625,7 @@ function FAQSection() {
             FAQ
           </div>
           <h2 className="text-3xl md:text-4xl font-bold font-sans tracking-tight mb-3">Common questions, honest answers.</h2>
-          <p className="text-foreground/60 font-sans text-base">Everything you need to know before getting started.</p>
+          <p className="text-foreground/60 font-sans text-lg">Everything you need to know before getting started.</p>
         </motion.div>
 
         <div className="space-y-2">
@@ -1657,7 +1657,7 @@ function FAQSection() {
                     transition={{ duration: 0.22 }}
                     className="overflow-hidden"
                   >
-                    <p className="px-6 pb-5 text-sm font-sans text-foreground/65 leading-relaxed">{item.a}</p>
+                    <p className="px-6 pb-5 text-base font-sans text-foreground/65 leading-relaxed">{item.a}</p>
                   </motion.div>
                 )}
               </AnimatePresence>
@@ -1728,7 +1728,7 @@ function SharpDataSection() {
           </div>
           <div>
             <h2 className="text-2xl md:text-4xl font-bold font-sans mb-4 text-foreground">Powered by Sharp Bookmaker Data.</h2>
-            <p className="text-muted-foreground text-lg leading-relaxed max-w-3xl">
+            <p className="text-muted-foreground text-xl leading-relaxed max-w-3xl">
               We track only the sharpest bookmakers — the true market makers where professional money flows. While other services blend data from slow recreational books, SharpTracker isolates the signal from the noise. When the sharp money moves, you see it first.
             </p>
           </div>
