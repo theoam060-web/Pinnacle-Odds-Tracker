@@ -106,103 +106,94 @@ function StepIlluMarkets() {
 
 function StepIlluMinDrop() {
   const drops = [
-    { pct: 2.1,  pass: false },
-    { pct: 4.8,  pass: false },
-    { pct: 8.3,  pass: true  },
-    { pct: 1.5,  pass: false },
-    { pct: 11.2, pass: true  },
-    { pct: 3.0,  pass: false },
-    { pct: 9.7,  pass: true  },
-    { pct: 0.8,  pass: false },
-    { pct: 6.2,  pass: false },
-    { pct: 13.5, pass: true  },
+    { pct: 3,  pass: false },
+    { pct: 6,  pass: false },
+    { pct: 10, pass: true  },
+    { pct: 4,  pass: false },
+    { pct: 13, pass: true  },
   ];
-  const minDrop   = 7;   // %
-  const barMax    = 16;  // % — tallest possible bar
-  const baseline  = 275; // y of the chart floor
-  const chartH    = 140; // px from floor to top
-  const threshY   = baseline - (minDrop / barMax) * chartH; // 214
-  const barW      = 36;
-  const slotW     = 55;
-  const startX    = 38;
-  const cyan      = "hsl(186,100%,50%)";
-  const cyanDim   = "rgba(0,255,255,0.22)";
-  const cyanStroke= "rgba(0,255,255,0.55)";
-  const gray      = "rgba(255,255,255,0.08)";
-  const grayStroke= "rgba(255,255,255,0.13)";
-  // Slider: 0–20%, knob at 7%
-  const sliderX   = 30;
-  const sliderW   = 490;
-  const knobX     = sliderX + (minDrop / 20) * sliderW; // 201.5
+  // Layout constants — all derived so bars + line are always consistent
+  const minDrop  = 7;
+  const barMax   = 15;
+  const baseline = 300;
+  const chartH   = 165;
+  const threshY  = Math.round(baseline - (minDrop / barMax) * chartH); // 223
+  const barW     = 72;
+  const slotW    = 102;
+  const startX   = 30;
+  const cyan     = "hsl(186,100%,50%)";
+  // Slider knob: 0–20% range, knob at 7%
+  const sliderX  = 24;
+  const sliderW  = 450;
+  const knobX    = Math.round(sliderX + (minDrop / 20) * sliderW); // 182
   return (
-    <svg viewBox="0 0 620 370" className="w-full" style={{ background: "#0c0c14" }}>
+    <svg viewBox="0 0 560 360" className="w-full" style={{ background: "#0c0c14" }}>
       {/* Window card */}
-      <rect x="10" y="10" width="600" height="350" rx="12" fill="#111118" stroke="rgba(255,255,255,0.08)" strokeWidth="1"/>
+      <rect x="8" y="8" width="544" height="344" rx="12" fill="#111118" stroke="rgba(255,255,255,0.07)" strokeWidth="1"/>
       {/* Title bar */}
-      <rect x="10" y="10" width="600" height="36" rx="12" fill="#151520"/>
-      <rect x="10" y="34"  width="600" height="12" fill="#151520"/>
-      <circle cx="30" cy="28" r="6" fill="#ef4444" opacity="0.8"/>
-      <circle cx="48" cy="28" r="6" fill="#eab308" opacity="0.8"/>
-      <circle cx="66" cy="28" r="6" fill="#22c55e" opacity="0.8"/>
-      <text x="86" y="32" fontSize="11" fill="rgba(255,255,255,0.3)" fontFamily="monospace">SharpTracker — Set Your Bar</text>
+      <rect x="8" y="8" width="544" height="36" rx="12" fill="#151520"/>
+      <rect x="8" y="32" width="544" height="12" fill="#151520"/>
+      <circle cx="28" cy="26" r="6" fill="#ef4444" opacity="0.75"/>
+      <circle cx="46" cy="26" r="6" fill="#eab308" opacity="0.75"/>
+      <circle cx="64" cy="26" r="6" fill="#22c55e" opacity="0.75"/>
+      <text x="82" y="30" fontSize="11" fill="rgba(255,255,255,0.28)" fontFamily="monospace">SharpTracker — Set Your Bar</text>
 
-      {/* Section heading */}
-      <text x="30" y="72" fontSize="13" fill="white" fontFamily="monospace" fontWeight="bold" letterSpacing="0.5">MINIMUM DROP — SET YOUR BAR</text>
+      {/* ── Slider section ── */}
+      <text x="24" y="68" fontSize="11" fill="rgba(255,255,255,0.45)" fontFamily="monospace">Minimum drop to trigger alert</text>
 
-      {/* Slider label */}
-      <text x="30" y="96" fontSize="9.5" fill="rgba(255,255,255,0.35)" fontFamily="monospace">Minimum line drop to trigger alert</text>
+      {/* Track */}
+      <rect x={sliderX} y="80" width={sliderW} height="10" rx="5" fill="rgba(255,255,255,0.07)"/>
+      {/* Fill */}
+      <rect x={sliderX} y="80" width={knobX - sliderX} height="10" rx="5" fill={cyan} opacity="0.9"/>
+      {/* Knob */}
+      <circle cx={knobX} cy="85" r="14" fill={cyan} stroke="#111118" strokeWidth="3"/>
+      {/* Big value badge */}
+      <rect x="488" y="72" width="58" height="28" rx="6" fill="rgba(0,255,255,0.12)" stroke="rgba(0,255,255,0.35)" strokeWidth="1"/>
+      <text x="517" y="91" fontSize="17" fill={cyan} fontFamily="monospace" fontWeight="bold" textAnchor="middle">7%</text>
+      {/* Range labels */}
+      <text x={sliderX} y="107" fontSize="9" fill="rgba(255,255,255,0.2)" fontFamily="monospace">0%</text>
+      <text x={sliderX + sliderW - 16} y="107" fontSize="9" fill="rgba(255,255,255,0.2)" fontFamily="monospace">20%</text>
 
-      {/* Slider track */}
-      <rect x={sliderX} y="106" width={sliderW} height="7" rx="3.5" fill="rgba(255,255,255,0.08)"/>
-      {/* Slider fill */}
-      <rect x={sliderX} y="106" width={knobX - sliderX} height="7" rx="3.5" fill={cyan} opacity="0.85"/>
-      {/* Slider knob */}
-      <circle cx={knobX} cy="109.5" r="11" fill={cyan} stroke="#0c0c14" strokeWidth="2.5"/>
-      {/* Slider value */}
-      <text x="536" y="114" fontSize="15" fill={cyan} fontFamily="monospace" fontWeight="bold">7%</text>
-      {/* Slider range labels */}
-      <text x={sliderX} y="130" fontSize="8.5" fill="rgba(255,255,255,0.2)" fontFamily="monospace">0%</text>
-      <text x={sliderX + sliderW - 20} y="130" fontSize="8.5" fill="rgba(255,255,255,0.2)" fontFamily="monospace">20%</text>
-
-      {/* Min-drop dashed line */}
-      <line x1="18" y1={threshY} x2="602" y2={threshY}
-        stroke={cyan} strokeWidth="1.5" strokeDasharray="7,4" opacity="0.65"/>
-      <text x="18" y={threshY - 5} fontSize="8.5" fill={cyan} fontFamily="monospace" fontWeight="bold">min. drop: −7%</text>
+      {/* ── Bar chart ── */}
+      {/* Min-drop line */}
+      <line x1="16" y1={threshY} x2="546" y2={threshY}
+        stroke={cyan} strokeWidth="2" strokeDasharray="8,5" opacity="0.7"/>
+      {/* Line label — right-aligned so it doesn't overlap bars */}
+      <text x="540" y={threshY - 6} fontSize="10" fill={cyan} fontFamily="monospace" fontWeight="bold" textAnchor="end">← min. drop: 7%</text>
 
       {/* Bars */}
       {drops.map((d, i) => {
-        const barH = (d.pct / barMax) * chartH;
+        const barH = Math.round((d.pct / barMax) * chartH);
         const x    = startX + i * slotW;
         const yTop = baseline - barH;
         return (
           <g key={i}>
-            <rect x={x} y={yTop} width={barW} height={barH} rx="4"
-              fill={d.pass ? cyanDim  : gray}
-              stroke={d.pass ? cyanStroke : grayStroke}
-              strokeWidth="1"/>
-            <text x={x + barW / 2} y={baseline + 14} fontSize="7.5"
-              fill={d.pass ? cyan : "rgba(255,255,255,0.28)"}
+            {/* Bar body */}
+            <rect x={x} y={yTop} width={barW} height={barH} rx="6"
+              fill={d.pass ? "rgba(0,255,255,0.2)"  : "rgba(255,255,255,0.07)"}
+              stroke={d.pass ? "rgba(0,255,255,0.6)" : "rgba(255,255,255,0.12)"}
+              strokeWidth="1.5"/>
+            {/* Percentage label below bar */}
+            <text x={x + barW / 2} y={baseline + 18} fontSize="11"
+              fill={d.pass ? cyan : "rgba(255,255,255,0.3)"}
               textAnchor="middle" fontFamily="monospace" fontWeight={d.pass ? "bold" : "normal"}>
               −{d.pct}%
             </text>
-            {/* Bell icon above passing bars */}
-            {d.pass && (
-              <text x={x + barW / 2} y={yTop - 7} fontSize="12"
-                textAnchor="middle" fontFamily="monospace">🔔</text>
-            )}
+            {/* ALERT badge above passing bars */}
+            {d.pass && <>
+              <rect x={x - 4} y={yTop - 28} width={barW + 8} height="22" rx="5"
+                fill="rgba(0,255,255,0.15)" stroke="rgba(0,255,255,0.4)" strokeWidth="1"/>
+              <text x={x + barW / 2} y={yTop - 12} fontSize="10"
+                fill={cyan} textAnchor="middle" fontFamily="monospace" fontWeight="bold">ALERT ✓</text>
+            </>}
           </g>
         );
       })}
 
-      {/* Legend */}
-      <rect x="18"  y="307" width="156" height="24" rx="5" fill="rgba(255,255,255,0.05)"/>
-      <text x="96"  y="323" fontSize="8.5" fill="rgba(255,255,255,0.35)" textAnchor="middle" fontFamily="monospace">filtered out (below bar)</text>
-
-      <rect x="184" y="307" width="130" height="24" rx="5"
-        fill="rgba(0,255,255,0.07)" stroke="rgba(0,255,255,0.25)" strokeWidth="1"/>
-      <text x="249" y="323" fontSize="8.5" fill={cyan} textAnchor="middle" fontFamily="monospace" fontWeight="bold">alert triggered ✓</text>
-
-      <text x="330" y="323" fontSize="8.5" fill="rgba(255,255,255,0.2)" fontFamily="monospace">— 4 alerts from 10 moves</text>
+      {/* Bottom caption */}
+      <text x="280" y="338" fontSize="10" fill="rgba(255,255,255,0.22)" fontFamily="monospace" textAnchor="middle">
+        Drops below the line are ignored. Drops above it trigger an alert.
+      </text>
     </svg>
   );
 }
