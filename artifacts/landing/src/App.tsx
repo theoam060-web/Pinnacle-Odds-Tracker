@@ -830,13 +830,10 @@ function CTASection() {
         <p className="text-xl text-muted-foreground mb-10">
           Join the sharpest bettors leveraging real-time sharp market data to print CLV.
         </p>
-        <div className="flex flex-col sm:flex-row gap-4 justify-center">
-          <button className="bg-primary text-primary-foreground px-8 py-4 rounded-md font-mono font-bold tracking-wide text-lg hover:bg-primary/90 transition-colors shadow-[0_0_30px_hsl(var(--primary)/0.3)]" data-testid="btn-footer-signup">
-            Start 7-Day Free Trial
+        <div className="flex justify-center">
+          <button className="bg-primary text-primary-foreground px-10 py-4 rounded-md font-mono font-bold tracking-wide text-lg hover:bg-primary/90 transition-colors shadow-[0_0_30px_hsl(var(--primary)/0.3)]" data-testid="btn-footer-signup">
+            Start 14-Day Free Trial
           </button>
-          <div className="font-mono text-sm text-muted-foreground flex items-center justify-center gap-2 mt-4 sm:mt-0">
-            $49/mo after. Cancel anytime.
-          </div>
         </div>
       </motion.div>
     </section>
@@ -1011,12 +1008,12 @@ function AlertConfigSection() {
             className="flex-shrink-0 relative"
           >
             <div className="absolute inset-0 bg-primary/10 rounded-full blur-[80px] scale-75 translate-y-8" />
-            <div className="relative w-[260px] md:w-[300px]">
+            <div className="relative w-[300px] md:w-[380px]">
               <img
                 src={`${import.meta.env.BASE_URL}screenshots/app-mobile.png`}
                 alt="SharpTracker mobile app"
-                className="w-full h-auto rounded-[2rem] shadow-[0_0_80px_-10px_hsl(var(--primary)/0.4)] border border-primary/10"
-                style={{ transform: "perspective(1000px) rotateY(-8deg) rotateX(2deg)" }}
+                className="w-full h-auto rounded-[2rem] shadow-[0_0_100px_-10px_hsl(var(--primary)/0.5)] border border-primary/15"
+                style={{ transform: "perspective(1200px) rotateY(-6deg) rotateX(1deg)", imageRendering: "crisp-edges" }}
               />
             </div>
           </motion.div>
@@ -1572,7 +1569,7 @@ const FAQ_ITEMS = [
   },
   {
     q: "Is there a free trial?",
-    a: "Yes — every new account gets a 14-day free trial with full access. No credit card required to start. You'll only be asked to choose a plan when your trial ends."
+    a: "Yes — every new account starts with a full 14-day free trial. No credit card required. You get complete access to every feature from day one. After 14 days you can choose a plan, or simply stop — no charge either way."
   },
   {
     q: "Can I cancel anytime?",
