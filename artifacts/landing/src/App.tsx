@@ -1437,165 +1437,178 @@ function FeatureStripSection() {
 
 function BankrollFeatureCards() {
   const appBase = "https://84e61830-7611-4d35-8623-77d057b02e4e-00-30ovvqhxka0d5.kirk.replit.dev";
+  const cyan  = "hsl(186,100%,50%)";
+  const green = "#4ade80";
+  const red   = "#f87171";
+  const dim   = "rgba(255,255,255,0.25)";
 
-  const BetLoggerArt = () => (
-    <div className="w-full bg-[#0a0a0f] rounded-xl border border-white/8 p-3 font-mono text-[10px] overflow-hidden">
-      <div className="flex items-center gap-2 mb-3 pb-2 border-b border-white/6">
-        <span className="text-primary font-bold tracking-widest uppercase text-[9px]">Bet Log</span>
-        <span className="ml-auto text-white/20">April 2026</span>
-      </div>
-      {[
-        { match: "Lakers vs Celtics", market: "ML", odds: "+155", stake: "2u", result: "+3.1u", win: true },
-        { match: "Man Utd vs Arsenal", market: "AH -0.5", odds: "-108", stake: "1u", result: "-1u", win: false },
-        { match: "Djokovic vs Alcaraz", market: "ML", odds: "+122", stake: "1.5u", result: "+1.8u", win: true },
-        { match: "Bruins vs Rangers", market: "Puck -1.5", odds: "+170", stake: "1u", result: "+1.7u", win: true },
-        { match: "Chiefs vs Ravens", market: "Spread -3", odds: "-110", stake: "2u", result: "-2u", win: false },
-      ].map((row, i) => (
-        <div key={i} className={`flex items-center gap-2 py-1.5 border-b border-white/4 last:border-0 ${i === 1 || i === 4 ? "opacity-60" : ""}`}>
-          <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${row.win ? "bg-emerald-400" : "bg-red-500"}`} />
-          <span className="text-white/60 truncate flex-1">{row.match}</span>
-          <span className="text-white/30 shrink-0">{row.market}</span>
-          <span className="text-white/40 shrink-0">{row.odds}</span>
-          <span className={`shrink-0 font-bold ${row.win ? "text-emerald-400" : "text-red-400"}`}>{row.result}</span>
-        </div>
-      ))}
-      <div className="flex justify-between mt-3 pt-2 border-t border-white/6 text-[9px]">
-        <span className="text-white/30">5 bets logged</span>
-        <span className="text-emerald-400 font-bold">Net: +3.6u</span>
-      </div>
-    </div>
+  const WinRateArt = () => (
+    <svg viewBox="0 0 480 170" className="w-full" style={{ background: "#0a0a0f" }}>
+      <text x="240" y="58" fontSize="56" fill={green} fontFamily="monospace" fontWeight="bold" textAnchor="middle">55%</text>
+      <text x="240" y="78" fontSize="11" fill={dim} fontFamily="monospace" textAnchor="middle">win rate</text>
+      <rect x="36" y="96" width="264" height="22" rx="4" fill={green} opacity="0.75"/>
+      <rect x="300" y="96" width="144" height="22" rx="4" fill={red} opacity="0.55"/>
+      <text x="168" y="112" fontSize="12" fill="#000" fontFamily="monospace" fontWeight="bold" textAnchor="middle">55 wins</text>
+      <text x="372" y="112" fontSize="12" fill="#000" fontFamily="monospace" fontWeight="bold" textAnchor="middle">45 losses</text>
+      <text x="240" y="150" fontSize="11" fill="rgba(255,255,255,0.18)" fontFamily="monospace" textAnchor="middle">out of 100 settled bets</text>
+    </svg>
   );
 
-  const CalendarArt = () => {
-    const days = ["M","T","W","T","F","S","S"];
-    const cells = [
-      null, null, { v: +2.1, w: true }, { v: -1.0, w: false }, { v: +3.5, w: true }, { v: 0, w: null }, { v: 0, w: null },
-      { v: +1.8, w: true }, { v: +0.5, w: true }, { v: -2.3, w: false }, { v: 0, w: null }, { v: +4.1, w: true }, { v: -1.5, w: false }, { v: 0, w: null },
-      { v: +0.9, w: true }, { v: -0.5, w: false }, { v: +2.8, w: true }, { v: +1.2, w: true }, { v: -3.1, w: false }, { v: 0, w: null }, { v: 0, w: null },
-      { v: +3.3, w: true }, { v: +0.7, w: true }, { v: -1.8, w: false }, { v: +2.4, w: true }, { v: 0, w: null }, { v: 0, w: null }, { v: 0, w: null },
-    ];
+  const PLArt = () => {
+    const bars = [3, -1, 5, 2, -2, 7, 4];
+    const maxH = 54;
+    const maxV = 7;
+    const bw = 44;
+    const gap = 20;
+    const baseY = 108;
     return (
-      <div className="w-full bg-[#0a0a0f] rounded-xl border border-white/8 p-3 font-mono text-[10px]">
-        <div className="flex items-center gap-2 mb-3 pb-2 border-b border-white/6">
-          <span className="text-primary font-bold tracking-widest uppercase text-[9px]">Daily P&amp;L</span>
-          <span className="ml-auto text-white/20">April 2026</span>
-        </div>
-        <div className="grid grid-cols-7 gap-1 mb-1">
-          {days.map((d, i) => (
-            <div key={i} className="text-center text-white/20 text-[8px] pb-1">{d}</div>
-          ))}
-        </div>
-        <div className="grid grid-cols-7 gap-1">
-          {cells.map((c, i) => (
-            <div
-              key={i}
-              className={`h-6 rounded text-[8px] flex items-center justify-center font-bold
-                ${!c ? "bg-transparent" :
-                  c.w === null ? "bg-white/4 text-white/10" :
-                  c.w ? "bg-emerald-500/25 text-emerald-400" : "bg-red-500/20 text-red-400"}`}
-            >
-              {c && c.w !== null ? (c.w ? `+${c.v}` : c.v) : ""}
-            </div>
-          ))}
-        </div>
-        <div className="flex justify-between mt-3 pt-2 border-t border-white/6 text-[9px]">
-          <span className="flex items-center gap-1"><span className="w-1.5 h-1.5 rounded-full bg-emerald-400 inline-block"/> 15 profitable</span>
-          <span className="flex items-center gap-1"><span className="w-1.5 h-1.5 rounded-full bg-red-500 inline-block"/> 6 losing</span>
-        </div>
-      </div>
+      <svg viewBox="0 0 480 170" className="w-full" style={{ background: "#0a0a0f" }}>
+        <text x="36" y="24" fontSize="10" fill={dim} fontFamily="monospace">Profit / loss each week (units)</text>
+        {bars.map((v, i) => {
+          const h = (Math.abs(v) / maxV) * maxH;
+          const x = 36 + i * (bw + gap);
+          return (
+            <rect key={i} x={x} y={v >= 0 ? baseY - h : baseY} width={bw} height={h}
+              rx="3" fill={v >= 0 ? green : red} opacity={v >= 0 ? 0.7 : 0.5}/>
+          );
+        })}
+        <line x1="36" y1={baseY} x2="444" y2={baseY} stroke="rgba(255,255,255,0.07)" strokeWidth="1"/>
+        <text x="240" y="150" fontSize="20" fill={green} fontFamily="monospace" fontWeight="bold" textAnchor="middle">+18 units this month</text>
+      </svg>
     );
   };
 
-  const CLVArt = () => (
-    <div className="w-full bg-[#0a0a0f] rounded-xl border border-white/8 p-3 font-mono text-[10px] overflow-hidden">
-      <div className="flex items-center gap-2 mb-3 pb-2 border-b border-white/6">
-        <span className="text-primary font-bold tracking-widest uppercase text-[9px]">CLV Tracker</span>
-        <span className="ml-auto text-emerald-400 text-[9px]">+EV ✓</span>
-      </div>
-      {[
-        { match: "Celtics ML", placed: "-108", close: "-116", clv: "+0.7%" },
-        { match: "Over 225.5", placed: "-112", close: "-122", clv: "+0.9%" },
-        { match: "Chiefs -3",  placed: "+102", close: "+108", clv: "+0.5%" },
-        { match: "Djokovic ML",placed: "-110", close: "-120", clv: "+0.8%" },
-      ].map((row, i) => (
-        <div key={i} className="grid grid-cols-[1fr_auto_auto_auto] gap-x-3 items-center py-1.5 border-b border-white/4 last:border-0">
-          <span className="text-white/60 truncate">{row.match}</span>
-          <span className="text-white/30">Placed {row.placed}</span>
-          <span className="text-white/30">Close {row.close}</span>
-          <span className="text-emerald-400 font-bold">{row.clv}</span>
-        </div>
-      ))}
-      <div className="flex justify-between mt-3 pt-2 border-t border-white/6 text-[9px]">
-        <span className="text-white/30">Avg CLV this month</span>
-        <span className="text-emerald-400 font-bold">+0.73% per bet</span>
-      </div>
-    </div>
+  const ROIArt = () => (
+    <svg viewBox="0 0 480 160" className="w-full" style={{ background: "#0a0a0f" }}>
+      <rect x="36" y="28" width="172" height="84" rx="8" fill="rgba(255,255,255,0.04)" stroke="rgba(255,255,255,0.09)" strokeWidth="1"/>
+      <text x="122" y="58" fontSize="11" fill={dim} fontFamily="monospace" textAnchor="middle">You stake</text>
+      <text x="122" y="94" fontSize="30" fill="white" fontFamily="monospace" fontWeight="bold" textAnchor="middle">$1 000</text>
+      <text x="240" y="74" fontSize="28" fill={cyan} fontFamily="monospace" textAnchor="middle">→</text>
+      <rect x="272" y="28" width="172" height="84" rx="8" fill="rgba(0,255,255,0.07)" stroke="rgba(0,255,255,0.2)" strokeWidth="1"/>
+      <text x="358" y="58" fontSize="11" fill={cyan} fontFamily="monospace" textAnchor="middle">You get back</text>
+      <text x="358" y="94" fontSize="30" fill={green} fontFamily="monospace" fontWeight="bold" textAnchor="middle">$1 063</text>
+      <text x="240" y="140" fontSize="12" fill="rgba(255,255,255,0.22)" fontFamily="monospace" textAnchor="middle">+6.3% ROI — $63 profit for every $1,000 placed</text>
+    </svg>
   );
 
-  const AutoSettleArt = () => (
-    <div className="w-full bg-[#0a0a0f] rounded-xl border border-white/8 p-3 font-mono text-[10px] overflow-hidden">
-      <div className="flex items-center gap-2 mb-3 pb-2 border-b border-white/6">
-        <span className="text-primary font-bold tracking-widest uppercase text-[9px]">Auto-settle</span>
-        <span className="ml-auto flex items-center gap-1">
-          <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse inline-block"/>
-          <span className="text-emerald-400 text-[9px]">LIVE</span>
-        </span>
-      </div>
-      {[
-        { match: "Lakers -5.5", time: "2h ago", result: "WON", outcome: "+1.9u", color: "emerald" },
-        { match: "Man City ML", time: "4h ago", result: "LOST", outcome: "-1u", color: "red" },
-        { match: "Djokovic ML", time: "6h ago", result: "WON", outcome: "+1.8u", color: "emerald" },
-        { match: "Hawks +7.5", time: "9h ago", result: "PUSH", outcome: "0u", color: "yellow" },
-        { match: "O/U 214.5",  time: "11h ago", result: "WON", outcome: "+2.2u", color: "emerald" },
-      ].map((row, i) => (
-        <div key={i} className="flex items-center gap-2 py-1.5 border-b border-white/4 last:border-0">
-          <div className="flex-1 min-w-0">
-            <div className="text-white/60 truncate">{row.match}</div>
-            <div className="text-white/20 text-[8px]">{row.time}</div>
-          </div>
-          <span className={`px-2 py-0.5 rounded text-[8px] font-bold shrink-0
-            ${row.color === "emerald" ? "bg-emerald-500/15 text-emerald-400" :
-              row.color === "red" ? "bg-red-500/15 text-red-400" :
-              "bg-yellow-500/15 text-yellow-400"}`}>
-            {row.result}
-          </span>
-          <span className={`font-bold shrink-0 w-10 text-right
-            ${row.color === "emerald" ? "text-emerald-400" :
-              row.color === "red" ? "text-red-400" : "text-yellow-400"}`}>
-            {row.outcome}
-          </span>
-        </div>
-      ))}
-    </div>
+  const CLVArt = () => (
+    <svg viewBox="0 0 480 168" className="w-full" style={{ background: "#0a0a0f" }}>
+      <text x="240" y="26" fontSize="11" fill={dim} fontFamily="monospace" textAnchor="middle">Celtics Moneyline · NBA</text>
+      <rect x="36" y="36" width="178" height="88" rx="8" fill="rgba(74,222,128,0.08)" stroke="rgba(74,222,128,0.28)" strokeWidth="1.5"/>
+      <text x="125" y="66" fontSize="12" fill={green} fontFamily="monospace" textAnchor="middle">Your price</text>
+      <text x="125" y="108" fontSize="42" fill={green} fontFamily="monospace" fontWeight="bold" textAnchor="middle">2.10</text>
+      <rect x="266" y="36" width="178" height="88" rx="8" fill="rgba(255,255,255,0.03)" stroke="rgba(255,255,255,0.08)" strokeWidth="1"/>
+      <text x="355" y="66" fontSize="12" fill="rgba(255,255,255,0.38)" fontFamily="monospace" textAnchor="middle">Market closed at</text>
+      <text x="355" y="108" fontSize="42" fill="rgba(255,255,255,0.3)" fontFamily="monospace" fontWeight="bold" textAnchor="middle">1.84</text>
+      <text x="240" y="148" fontSize="13" fill={green} fontFamily="monospace" textAnchor="middle">You got a better price — that's a +CLV bet ✓</text>
+    </svg>
   );
+
+  const CalendarArt = () => {
+    const days = ["Mon","Tue","Wed","Thu","Fri","Sat","Sun"];
+    const week = [
+      { v: +2.1, w: true }, { v: -1.0, w: false }, { v: +3.5, w: true },
+      { v: +1.8, w: true }, { v: -2.3, w: false }, null, null,
+    ];
+    return (
+      <svg viewBox="0 0 480 162" className="w-full" style={{ background: "#0a0a0f" }}>
+        {days.map((d, i) => {
+          const x = 18 + i * 64;
+          const cell = week[i];
+          return (
+            <g key={i}>
+              <text x={x + 28} y={24} fontSize="10" fill="rgba(255,255,255,0.22)" fontFamily="monospace" textAnchor="middle">{d}</text>
+              {cell ? (
+                <>
+                  <rect x={x} y={32} width={56} height={80} rx="6"
+                    fill={cell.w ? "rgba(74,222,128,0.11)" : "rgba(248,113,113,0.11)"}
+                    stroke={cell.w ? "rgba(74,222,128,0.28)" : "rgba(248,113,113,0.22)"}
+                    strokeWidth="1.2"/>
+                  <text x={x+28} y={76} fontSize="22" fill={cell.w ? green : red}
+                    fontFamily="monospace" fontWeight="bold" textAnchor="middle">
+                    {cell.w ? `+${cell.v}` : `${cell.v}`}
+                  </text>
+                  <text x={x+28} y={100} fontSize="9" fill="rgba(255,255,255,0.18)"
+                    fontFamily="monospace" textAnchor="middle">units</text>
+                </>
+              ) : (
+                <rect x={x} y={32} width={56} height={80} rx="6" fill="rgba(255,255,255,0.02)"/>
+              )}
+            </g>
+          );
+        })}
+        <text x="240" y="148" fontSize="11" fill="rgba(255,255,255,0.17)" fontFamily="monospace" textAnchor="middle">April 1–7  ·  Net this week: +4.1 units</text>
+      </svg>
+    );
+  };
+
+  const BetLogArt = () => {
+    const bets = [
+      { match: "Lakers vs Celtics",    type: "Moneyline",  odds: "+155", result: "+3.1u", win: true  },
+      { match: "Man Utd vs Arsenal",   type: "Asian HDP",  odds: "-108", result: "-1.0u", win: false },
+      { match: "Djokovic vs Alcaraz",  type: "Moneyline",  odds: "+122", result: "+1.8u", win: true  },
+    ];
+    return (
+      <svg viewBox="0 0 480 168" className="w-full" style={{ background: "#0a0a0f" }}>
+        <rect x="18" y="8" width="444" height="152" rx="8" fill="rgba(255,255,255,0.02)" stroke="rgba(255,255,255,0.06)" strokeWidth="1"/>
+        <text x="34" y="32" fontSize="10" fill={cyan} fontFamily="monospace" fontWeight="bold" opacity="0.7">BET LOG — APRIL 2026</text>
+        {bets.map((b, i) => {
+          const y = 50 + i * 40;
+          return (
+            <g key={i}>
+              <circle cx="34" cy={y + 8} r="6" fill={b.win ? green : red} opacity="0.85"/>
+              <text x="50" y={y + 12} fontSize="14" fill="rgba(255,255,255,0.78)" fontFamily="monospace">{b.match}</text>
+              <text x="50" y={y + 27} fontSize="10" fill="rgba(255,255,255,0.3)" fontFamily="monospace">{b.type} · {b.odds}</text>
+              <text x="452" y={y + 15} fontSize="16" fill={b.win ? green : red} fontFamily="monospace" fontWeight="bold" textAnchor="end">{b.result}</text>
+              {i < bets.length - 1 && <line x1="34" y1={y+36} x2="450" y2={y+36} stroke="rgba(255,255,255,0.04)" strokeWidth="1"/>}
+            </g>
+          );
+        })}
+      </svg>
+    );
+  };
 
   const cards = [
     {
-      tag: "Bet Logger",
-      title: "Log every bet. Miss nothing.",
-      desc: "Record each wager with stake, odds, market and sport. Your full history in one place — filterable, sortable, exportable.",
-      art: <BetLoggerArt />,
-      href: `${appBase}/bet-tracker`,
-    },
-    {
-      tag: "Daily Calendar",
-      title: "Your P&L, day by day.",
-      desc: "A color-coded calendar shows winning and losing days at a glance. Spot patterns, streaks, and tilt cycles before they cost you.",
-      art: <CalendarArt />,
+      tag: "Win Rate",
+      title: "How often do you win?",
+      desc: "Out of every 100 settled bets, how many did you win? SharpTracker counts your wins, losses, and pushes automatically.",
+      art: <WinRateArt />,
       href: `${appBase}/bet-stats`,
     },
     {
-      tag: "CLV & +EV",
-      title: "Did you beat the closing line?",
-      desc: "Automatically compare your entry odds to where the market closed. Sustained positive CLV is the strongest predictor of long-term profit.",
+      tag: "Profit & Loss",
+      title: "Are you up or down overall?",
+      desc: "Your total profit or loss in units across all your bets. Green means ahead, red means behind — updated the moment each result comes in.",
+      art: <PLArt />,
+      href: `${appBase}/bet-stats`,
+    },
+    {
+      tag: "Return on Investment",
+      title: "How much do you make per $100?",
+      desc: "For every $100 you stake, ROI tells you how much profit you made. A positive ROI means your betting is paying off over time.",
+      art: <ROIArt />,
+      href: `${appBase}/bet-stats`,
+    },
+    {
+      tag: "Did You Beat the Market?",
+      title: "Did you get a good price?",
+      desc: "When a game kicks off, the odds stop moving. We compare the price you got to where they ended up — getting a consistently better price is a strong sign you're betting smart.",
       art: <CLVArt />,
       href: `${appBase}/bet-stats`,
     },
     {
-      tag: "Auto-settle",
-      title: "Results logged automatically.",
-      desc: "Bets are resolved and settled the moment results come in. No manual updates, no spreadsheet maintenance — your bankroll stays accurate in real time.",
-      art: <AutoSettleArt />,
+      tag: "Daily Calendar",
+      title: "See every day at a glance.",
+      desc: "Green days made money, red days lost it. One look at the calendar and you know exactly when you run hot — and when it's time to step back.",
+      art: <CalendarArt />,
+      href: `${appBase}/bet-stats`,
+    },
+    {
+      tag: "Bet Log",
+      title: "Every bet saved automatically.",
+      desc: "Log each bet with the match, market, odds, and stake. SharpTracker saves your full history so you can sort, filter, and review any wager you've ever placed.",
+      art: <BetLogArt />,
       href: `${appBase}/bet-tracker`,
     },
   ];
@@ -1617,7 +1630,7 @@ function BankrollFeatureCards() {
             Follow your edge. Watch your bankroll grow.
           </h2>
           <p className="text-muted-foreground text-xl">
-            Every metric that matters — tracked automatically. No spreadsheets, no guesswork.
+            Every number that matters — tracked for you. No spreadsheets needed.
           </p>
         </motion.div>
 
@@ -1635,17 +1648,17 @@ function BankrollFeatureCards() {
               whileHover={{ y: -4, transition: { duration: 0.2 } }}
               className="group bg-card border border-border/50 rounded-2xl p-6 flex flex-col gap-5 cursor-pointer hover:border-primary/30 hover:shadow-[0_0_40px_-10px_hsl(var(--primary)/0.15)] transition-all duration-300"
             >
-              <div className="pointer-events-none">
+              <div className="pointer-events-none rounded-xl overflow-hidden">
                 {card.art}
               </div>
               <div>
-                <div className="inline-flex items-center gap-1.5 text-[10px] font-mono font-bold text-primary tracking-widest uppercase mb-2">
+                <div className="text-[10px] font-mono font-bold text-primary tracking-widest uppercase mb-2">
                   {card.tag}
                 </div>
-                <h3 className="text-lg font-bold font-sans text-foreground mb-2 group-hover:text-primary transition-colors">
+                <h3 className="text-xl font-bold font-sans text-foreground mb-2 group-hover:text-primary transition-colors">
                   {card.title}
                 </h3>
-                <p className="text-sm text-muted-foreground leading-relaxed">
+                <p className="text-base text-foreground/72 leading-relaxed">
                   {card.desc}
                 </p>
               </div>
