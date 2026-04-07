@@ -4,12 +4,14 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Slider } from "@/components/ui/slider";
-import { Checkbox } from "@/components/ui/checkbox";
 import { Switch } from "@/components/ui/switch";
 import { Separator } from "@/components/ui/separator";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Trash2, BellRing, BarChart2 } from "lucide-react";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Check, ChevronsUpDown, Plus, Trash2, BellRing, BarChart2, X } from "lucide-react";
 import {
   useAlertStore,
   AlertConfig,
@@ -20,7 +22,125 @@ import {
   NOVIG_METHOD_LABELS,
   NovigMethod,
   BOOKMAKER_OPTIONS,
+  BookmakerOption,
 } from "@/lib/alert-context";
+
+function BookmakerLogo({ domain, size = 16 }: { domain: string; size?: number }) {
+  const [ok, setOk] = useState(true);
+  const src = `https://www.google.com/s2/favicons?domain=${domain}&sz=${size * 2}`;
+  if (!ok) return <span className="inline-block rounded-sm bg-muted" style={{ width: size, height: size }} />;
+  return (
+    <img
+      src={src}
+      alt=""
+      width={size}
+      height={size}
+      className="rounded-sm object-contain"
+      onError={() => setOk(false)}
+      style={{ imageRendering: "crisp-edges" }}
+    />
+  );
+}
+
+function BookmakerMultiSelect({
+  selected,
+  onChange,
+}: {
+  selected: string[];
+  onChange: (keys: string[]) => void;
+}) {
+  const [open, setOpen] = useState(false);
+
+  const toggle = (key: string) => {
+    onChange(
+      selected.includes(key) ? selected.filter((k) => k !== key) : [...selected, key]
+    );
+  };
+
+  const grouped: Record<string, BookmakerOption[]> = {};
+  for (const bm of BOOKMAKER_OPTIONS) {
+    const g = bm.region.split("/")[0];
+    if (!grouped[g]) grouped[g] = [];
+    grouped[g].push(bm);
+  }
+
+  return (
+    <div className="space-y-3">
+      <Popover open={open} onOpenChange={setOpen}>
+        <PopoverTrigger asChild>
+          <Button
+            variant="outline"
+            role="combobox"
+            aria-expanded={open}
+            className="w-full justify-between text-sm font-normal h-9"
+          >
+            <span className="text-muted-foreground">
+              {selected.length === 0
+                ? "Select bookmakers…"
+                : `${selected.length} bookmaker${selected.length > 1 ? "s" : ""} selected`}
+            </span>
+            <ChevronsUpDown className="ml-2 h-3.5 w-3.5 shrink-0 opacity-50" />
+          </Button>
+        </PopoverTrigger>
+        <PopoverContent className="w-[340px] p-0" align="start" side="bottom">
+          <Command>
+            <CommandInput placeholder="Sök spelbolag…" className="h-9" />
+            <CommandList className="max-h-[280px]">
+              <CommandEmpty>Inga matchningar.</CommandEmpty>
+              {Object.entries(grouped).map(([region, bms]) => (
+                <CommandGroup key={region} heading={region}>
+                  {bms.map((bm) => {
+                    const isSelected = selected.includes(bm.key);
+                    return (
+                      <CommandItem
+                        key={bm.key}
+                        value={`${bm.title} ${bm.region}`}
+                        onSelect={() => toggle(bm.key)}
+                        className="flex items-center gap-2.5 cursor-pointer"
+                      >
+                        <BookmakerLogo domain={bm.domain} size={14} />
+                        <span className="flex-1 text-xs">{bm.title}</span>
+                        <span className="text-[10px] text-muted-foreground/60 mr-1">{bm.region}</span>
+                        <Check
+                          className={`h-3.5 w-3.5 shrink-0 ${isSelected ? "opacity-100 text-primary" : "opacity-0"}`}
+                        />
+                      </CommandItem>
+                    );
+                  })}
+                </CommandGroup>
+              ))}
+            </CommandList>
+          </Command>
+        </PopoverContent>
+      </Popover>
+
+      {selected.length > 0 && (
+        <div className="flex flex-wrap gap-1.5">
+          {selected.map((key) => {
+            const bm = BOOKMAKER_OPTIONS.find((b) => b.key === key);
+            if (!bm) return null;
+            return (
+              <span
+                key={key}
+                className="inline-flex items-center gap-1.5 rounded-full border border-border bg-muted/40 px-2.5 py-0.5 text-[11px]"
+              >
+                <BookmakerLogo domain={bm.domain} size={12} />
+                {bm.title}
+                <button
+                  type="button"
+                  onClick={() => toggle(key)}
+                  className="ml-0.5 rounded-full text-muted-foreground hover:text-foreground transition-colors"
+                >
+                  <X className="h-2.5 w-2.5" />
+                </button>
+              </span>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+}
 
 function toggleItem(list: string[], item: string): string[] {
   return list.includes(item) ? list.filter(x => x !== item) : [...list, item];
@@ -270,28 +390,12 @@ export default function AlertConfigurationsPage() {
           Select bookmakers to compare against sharp odds in the live feed. Requires an <span className="font-mono text-primary">ODDS_API_KEY</span> environment variable from{" "}
           <a href="https://the-odds-api.com" target="_blank" rel="noopener noreferrer" className="underline hover:text-foreground transition-colors">the-odds-api.com</a>.
         </p>
-        <div className="grid grid-cols-2 sm:grid-cols-3 gap-x-6 gap-y-2">
-          {BOOKMAKER_OPTIONS.map(bm => (
-            <div key={bm.key} className="flex items-center gap-2">
-              <Checkbox
-                id={`bm-${bm.key}`}
-                checked={comparisonBookmakers.includes(bm.key)}
-                onCheckedChange={() => {
-                  const next = comparisonBookmakers.includes(bm.key)
-                    ? comparisonBookmakers.filter(k => k !== bm.key)
-                    : [...comparisonBookmakers, bm.key];
-                  setComparisonBookmakers(next);
-                }}
-              />
-              <Label htmlFor={`bm-${bm.key}`} className="text-xs cursor-pointer flex items-center gap-1.5">
-                {bm.title}
-                <span className="text-[9px] text-muted-foreground/60">{bm.region}</span>
-              </Label>
-            </div>
-          ))}
-        </div>
+        <BookmakerMultiSelect
+          selected={comparisonBookmakers}
+          onChange={setComparisonBookmakers}
+        />
         {comparisonBookmakers.length === 0 && (
-          <p className="text-[11px] text-amber-400 mt-2">No bookmakers selected — comparison will be disabled.</p>
+          <p className="text-[11px] text-amber-400 mt-2">Inga spelbolag valda — jämförelse inaktiverad.</p>
         )}
       </div>
 

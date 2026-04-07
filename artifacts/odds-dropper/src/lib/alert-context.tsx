@@ -77,21 +77,43 @@ export interface BookmakerOption {
   key: string;
   title: string;
   region: string;
+  domain: string;
 }
 
 export const BOOKMAKER_OPTIONS: BookmakerOption[] = [
-  { key: "bet365", title: "Bet365", region: "EU/UK" },
-  { key: "williamhill", title: "William Hill", region: "UK" },
-  { key: "unibet_eu", title: "Unibet", region: "EU" },
-  { key: "betsson", title: "Betsson", region: "EU" },
-  { key: "bwin", title: "Bwin", region: "EU" },
-  { key: "comeon", title: "ComeOn", region: "EU" },
-  { key: "ladbrokes_au", title: "Ladbrokes", region: "UK" },
-  { key: "coral", title: "Coral", region: "UK" },
-  { key: "betway", title: "Betway", region: "EU" },
-  { key: "draftkings", title: "DraftKings", region: "US" },
-  { key: "fanduel", title: "FanDuel", region: "US" },
-  { key: "betmgm", title: "BetMGM", region: "US" },
+  { key: "bet365",         title: "Bet365",        region: "EU/UK", domain: "bet365.com" },
+  { key: "williamhill",    title: "William Hill",   region: "UK",    domain: "williamhill.com" },
+  { key: "unibet_eu",      title: "Unibet",         region: "EU",    domain: "unibet.com" },
+  { key: "betsson",        title: "Betsson",        region: "EU",    domain: "betsson.com" },
+  { key: "bwin",           title: "Bwin",           region: "EU",    domain: "bwin.com" },
+  { key: "comeon",         title: "ComeOn",         region: "EU",    domain: "comeon.com" },
+  { key: "betway",         title: "Betway",         region: "EU",    domain: "betway.com" },
+  { key: "betclic",        title: "Betclic",        region: "EU",    domain: "betclic.com" },
+  { key: "nordicbet",      title: "Nordicbet",      region: "EU",    domain: "nordicbet.com" },
+  { key: "coolbet",        title: "Coolbet",        region: "EU",    domain: "coolbet.com" },
+  { key: "mrgreen",        title: "Mr Green",       region: "EU",    domain: "mrgreen.com" },
+  { key: "marathonbet",    title: "Marathonbet",    region: "EU",    domain: "marathonbet.com" },
+  { key: "betfair",        title: "Betfair",        region: "UK/EU", domain: "betfair.com" },
+  { key: "smarkets",       title: "Smarkets",       region: "UK",    domain: "smarkets.com" },
+  { key: "matchbook",      title: "Matchbook",      region: "UK",    domain: "matchbook.com" },
+  { key: "ladbrokes_au",   title: "Ladbrokes",      region: "UK",    domain: "ladbrokes.com" },
+  { key: "coral",          title: "Coral",          region: "UK",    domain: "coral.co.uk" },
+  { key: "paddypower",     title: "Paddy Power",    region: "UK/IE", domain: "paddypower.com" },
+  { key: "skybet",         title: "Sky Bet",        region: "UK",    domain: "skybet.com" },
+  { key: "888sport",       title: "888sport",       region: "UK/EU", domain: "888sport.com" },
+  { key: "draftkings",     title: "DraftKings",     region: "US",    domain: "draftkings.com" },
+  { key: "fanduel",        title: "FanDuel",        region: "US",    domain: "fanduel.com" },
+  { key: "betmgm",         title: "BetMGM",         region: "US",    domain: "betmgm.com" },
+  { key: "caesars",        title: "Caesars",        region: "US",    domain: "caesars.com" },
+  { key: "betrivers",      title: "BetRivers",      region: "US",    domain: "betrivers.com" },
+  { key: "pointsbet",      title: "PointsBet",      region: "US",    domain: "pointsbet.com" },
+  { key: "barstool",       title: "Barstool",       region: "US",    domain: "barstoolsports.com" },
+  { key: "foxbet",         title: "FOX Bet",        region: "US",    domain: "foxbet.com" },
+  { key: "bovada",         title: "Bovada",         region: "US",    domain: "bovada.lv" },
+  { key: "mybookie",       title: "MyBookie",       region: "US",    domain: "mybookie.ag" },
+  { key: "betonlineag",    title: "BetOnline",      region: "US",    domain: "betonline.ag" },
+  { key: "tab",            title: "TAB",            region: "AU",    domain: "tab.com.au" },
+  { key: "pointsbetau",    title: "PointsBet AU",   region: "AU",    domain: "pointsbet.com.au" },
 ];
 
 export const DEFAULT_COMPARISON_BOOKMAKERS = ["bet365", "williamhill", "unibet_eu", "bwin"];
