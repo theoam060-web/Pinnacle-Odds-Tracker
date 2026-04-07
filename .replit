@@ -33,6 +33,7 @@ POLL_INTERVAL_MS = "1000"
 MIN_DROP_PERCENT = "0.5"
 PINNACLE_SPORT_NAMES = "soccer,basketball,tennis,hockey,football,baseball,handball,volleyball"
 PINNACLE_MARKET_TYPES = "moneyline,spread,total"
+VAPID_EMAIL = "mailto:alerts@sharptracker.io"
 
 [userenv.development]
 VITE_DEV_BYPASS_AUTH = "true"

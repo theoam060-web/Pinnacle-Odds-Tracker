@@ -11,7 +11,8 @@ import { Badge } from "@/components/ui/badge";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Check, ChevronsUpDown, Plus, Trash2, BellRing, BarChart2, X } from "lucide-react";
+import { Check, ChevronsUpDown, Plus, Trash2, BellRing, BarChart2, X, Bell, BellOff, BellDot, Smartphone } from "lucide-react";
+import { usePushNotifications } from "@/lib/usePushNotifications";
 import {
   useAlertStore,
   AlertConfig,
@@ -331,6 +332,9 @@ export default function AlertConfigurationsPage() {
   const { configs, novigMethod, setNovigMethod, addConfig, comparisonBookmakers, setComparisonBookmakers } = useAlertStore();
   const [selectedId, setSelectedId] = useState<string>(() => configs[0]?.id ?? "");
   const prevCountRef = useRef<number>(configs.length);
+  const push = usePushNotifications();
+  const [testSent, setTestSent] = useState(false);
+  const [testError, setTestError] = useState<string | null>(null);
 
   useEffect(() => {
     if (configs.length > prevCountRef.current) {
@@ -397,6 +401,78 @@ export default function AlertConfigurationsPage() {
         {comparisonBookmakers.length === 0 && (
           <p className="text-[11px] text-amber-400 mt-2">Inga spelbolag valda — jämförelse inaktiverad.</p>
         )}
+      </div>
+
+      {/* Push Notifications */}
+      <div className="bg-card border rounded-lg p-4 mb-6">
+        <div className="flex items-center gap-2 mb-1">
+          <Smartphone className="w-4 h-4 text-primary" />
+          <Label className="text-sm font-semibold">Mobile Push Notifications</Label>
+          {push.isSubscribed && (
+            <Badge variant="outline" className="text-[9px] h-4 px-1.5 text-green-400 border-green-400/30">Active</Badge>
+          )}
+        </div>
+        <p className="text-[11px] text-muted-foreground mb-4">
+          Get instant alerts on your phone — even when SharpTracker is closed. Install the app via your browser's
+          &ldquo;Add to Home Screen&rdquo; option for the best experience.
+        </p>
+
+        {push.permission === "unsupported" ? (
+          <p className="text-[11px] text-amber-400">Push notifications are not supported in this browser.</p>
+        ) : push.permission === "denied" ? (
+          <p className="text-[11px] text-amber-400">
+            Notifications are blocked by your browser. Reset permissions in your browser settings and reload.
+          </p>
+        ) : (
+          <div className="flex items-center gap-3 flex-wrap">
+            {!push.isSubscribed ? (
+              <Button
+                size="sm"
+                variant="outline"
+                className="h-8 text-xs gap-1.5 border-primary/50 text-primary hover:bg-primary/10"
+                onClick={push.subscribe}
+                disabled={push.isLoading}
+              >
+                <Bell className="w-3.5 h-3.5" />
+                {push.isLoading ? "Enabling…" : "Enable Notifications"}
+              </Button>
+            ) : (
+              <>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="h-8 text-xs gap-1.5 text-muted-foreground"
+                  onClick={push.unsubscribe}
+                  disabled={push.isLoading}
+                >
+                  <BellOff className="w-3.5 h-3.5" />
+                  {push.isLoading ? "Disabling…" : "Disable Notifications"}
+                </Button>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="h-8 text-xs gap-1.5"
+                  disabled={push.isLoading || testSent}
+                  onClick={async () => {
+                    setTestError(null);
+                    setTestSent(false);
+                    try {
+                      await push.sendTestNotification();
+                      setTestSent(true);
+                      setTimeout(() => setTestSent(false), 4000);
+                    } catch (e: unknown) {
+                      setTestError(e instanceof Error ? e.message : "Failed");
+                    }
+                  }}
+                >
+                  <BellDot className="w-3.5 h-3.5" />
+                  {testSent ? "Sent!" : "Send Test Alert"}
+                </Button>
+              </>
+            )}
+          </div>
+        )}
+        {testError && <p className="text-[11px] text-red-400 mt-2">{testError}</p>}
       </div>
 
       <Separator className="mb-6" />

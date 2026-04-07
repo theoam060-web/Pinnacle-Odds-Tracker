@@ -8,6 +8,7 @@ import resultsRouter from "./results";
 import userRouter from "./user";
 import stripeRouter from "./stripe";
 import softOddsRouter from "./soft-odds";
+import pushRouter from "./push";
 
 const router: IRouter = Router();
 
@@ -20,5 +21,6 @@ router.use(resultsRouter);
 router.use(userRouter);
 router.use(stripeRouter);
 router.use(softOddsRouter);
+router.use(pushRouter);
 
 export default router;
