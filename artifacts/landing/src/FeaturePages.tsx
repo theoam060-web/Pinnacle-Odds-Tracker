@@ -35,15 +35,18 @@ export function IconBetTracker({ className = "w-8 h-8" }: { className?: string }
   );
 }
 
-export function IconCLV({ className = "w-8 h-8" }: { className?: string }) {
+export function IconBookmakerComparison({ className = "w-8 h-8" }: { className?: string }) {
   return (
     <svg className={className} viewBox="0 0 48 48" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <rect x="6" y="28" width="8" height="14" rx="1.5" />
-      <rect x="20" y="18" width="8" height="24" rx="1.5" />
-      <rect x="34" y="8" width="8" height="34" rx="1.5" />
-      <polyline points="8,22 24,14 38,6" />
-      <circle cx="38" cy="6" r="3" fill="currentColor" stroke="none" opacity="0.4" />
-      <text x="42" y="10" fontSize="10" fill="currentColor" fontFamily="monospace" stroke="none" opacity="0.9">+</text>
+      <rect x="4" y="10" width="40" height="28" rx="3" />
+      <line x1="4" y1="18" x2="44" y2="18" />
+      <line x1="18" y1="10" x2="18" y2="38" />
+      <line x1="32" y1="10" x2="32" y2="38" />
+      <circle cx="11" cy="14" r="2" fill="currentColor" stroke="none" opacity="0.5" />
+      <polyline points="7,27 10,30 15,23" strokeWidth="1.8" />
+      <line x1="21" y1="23" x2="29" y2="23" strokeWidth="1.5" opacity="0.35" />
+      <line x1="21" y1="30" x2="29" y2="30" strokeWidth="1.5" opacity="0.35" />
+      <polyline points="35,27 38,30 43,23" strokeWidth="1.8" opacity="0.5" />
     </svg>
   );
 }
@@ -108,7 +111,7 @@ export function IconBankroll({ className = "w-8 h-8" }: { className?: string }) 
 export const FEATURE_ICONS: Record<string, React.FC<{ className?: string }>> = {
   "odds-drops": IconOddsDrop,
   "bet-tracker": IconBetTracker,
-  "clv": IconCLV,
+  "bookmaker-comparison": IconBookmakerComparison,
   "stake-calculator": IconStake,
   "daily-calendar": IconCalendar,
   "multi-sport": IconMultiSport,
@@ -1101,50 +1104,158 @@ export function BetTrackerPage() {
       <ContentBlock
         tag="Auto-Grading"
         heading="We Handle the Results."
-        body="After each game ends, SharpTracker automatically grades every pending bet — win, loss, or push. No manual entry, no spreadsheet formulas. Your running P&L updates in real time. You also get a CLV score per bet (see CLV & +EV feature), showing whether your entry price was sharp or recreational."
+        body="After each game ends, SharpTracker automatically grades every pending bet — win, loss, or push. No manual entry, no spreadsheet formulas. Your running P&L updates in real time, and every bet shows whether your entry price was better or worse than where the market closed."
         visual={<IlluBetTable />}
         imageRight
       />
-      <FeatureCTA next="clv" nextLabel="CLV & +EV" />
+      <FeatureCTA next="bookmaker-comparison" nextLabel="Bookmaker Comparison" />
     </div>
   );
 }
 
-export function CLVPage() {
+function IlluBookmakerTable() {
+  const cyan = "hsl(186,100%,50%)";
+  const dim = "rgba(255,255,255,0.28)";
+  const green = "#4ade80";
+  const red = "#f87171";
+  const rows = [
+    { name: "Pinnacle",      odds: "2.05", delta: "—",      check: true,  sharp: true },
+    { name: "Bet365",        odds: "2.00", delta: "−2.4%",  check: true,  sharp: false },
+    { name: "William Hill",  odds: "1.97", delta: "−3.9%",  check: true,  sharp: false },
+    { name: "Unibet",        odds: "2.02", delta: "−1.5%",  check: true,  sharp: false },
+    { name: "Betsson",       odds: "—",    delta: "—",      check: false, sharp: false },
+    { name: "Bwin",          odds: "1.95", delta: "−4.9%",  check: true,  sharp: false },
+  ];
+  return (
+    <svg viewBox="0 0 480 210" className="w-full" style={{ background: "#0a0a0f" }}>
+      <text x="240" y="22" fontSize="10" fill={dim} fontFamily="monospace" textAnchor="middle">Aston Villa vs Man Utd · Match Result · Moneyline</text>
+      {["Bookmaker","Odds","vs Sharp"].map((h,i) => (
+        <text key={h} x={[56,220,370][i]} y="40" fontSize="9" fill="rgba(255,255,255,0.38)" fontFamily="monospace" textAnchor="middle">{h}</text>
+      ))}
+      <line x1="20" y1="46" x2="460" y2="46" stroke="rgba(255,255,255,0.08)" strokeWidth="1"/>
+      {rows.map((r, i) => {
+        const y = 62 + i * 25;
+        return (
+          <g key={r.name}>
+            <rect x="20" y={y - 11} width="440" height="22" rx="3"
+              fill={r.sharp ? "rgba(74,222,128,0.06)" : i % 2 === 0 ? "rgba(255,255,255,0.02)" : "transparent"} />
+            {r.sharp && <rect x="20" y={y - 11} width="3" height="22" rx="1.5" fill={green} />}
+            <text x="56" y={y + 4} fontSize="10" fill={r.sharp ? green : "rgba(255,255,255,0.75)"} fontFamily="monospace" textAnchor="middle">{r.name}</text>
+            <text x="220" y={y + 4} fontSize="11" fill={r.check ? "rgba(255,255,255,0.85)" : "rgba(255,255,255,0.2)"} fontFamily="monospace" textAnchor="middle" fontWeight={r.sharp ? "bold" : "normal"}>{r.odds}</text>
+            {r.check
+              ? <text x="370" y={y + 4} fontSize="10" fill={r.sharp ? green : r.delta.startsWith("−") ? red : green} fontFamily="monospace" textAnchor="middle">{r.sharp ? "Sharp line" : r.delta}</text>
+              : <text x="370" y={y + 4} fontSize="10" fill="rgba(255,255,255,0.2)" fontFamily="monospace" textAnchor="middle">Not available</text>
+            }
+            <text x="452" y={y + 5} fontSize="13" fill={r.check ? green : "rgba(255,255,255,0.2)"} textAnchor="middle">{r.check ? "✓" : "✗"}</text>
+          </g>
+        );
+      })}
+    </svg>
+  );
+}
+
+function IlluOddsSpread() {
+  const cyan = "hsl(186,100%,50%)";
+  const green = "#4ade80";
+  const red = "#f87171";
+  const dim = "rgba(255,255,255,0.28)";
+  const books = [
+    { name: "Pinnacle", odds: 2.05, x: 60 },
+    { name: "Unibet",   odds: 2.02, x: 150 },
+    { name: "Bet365",   odds: 2.00, x: 240 },
+    { name: "Bwin",     odds: 1.97, x: 330 },
+    { name: "WH",       odds: 1.95, x: 420 },
+  ];
+  const minO = 1.90, maxO = 2.10, range = maxO - minO;
+  const barH = (o: number) => Math.round(((o - minO) / range) * 80);
+  return (
+    <svg viewBox="0 0 480 190" className="w-full" style={{ background: "#0a0a0f" }}>
+      <text x="240" y="18" fontSize="10" fill={dim} fontFamily="monospace" textAnchor="middle">Odds spread across bookmakers — same market, same time</text>
+      <line x1="30" y1="150" x2="460" y2="150" stroke="rgba(255,255,255,0.08)" strokeWidth="1"/>
+      {books.map((b, i) => {
+        const h = barH(b.odds);
+        const isSharp = i === 0;
+        return (
+          <g key={b.name}>
+            <rect x={b.x - 25} y={150 - h} width="50" height={h} rx="3"
+              fill={isSharp ? "rgba(74,222,128,0.25)" : "rgba(255,255,255,0.08)"}
+              stroke={isSharp ? green : "rgba(255,255,255,0.15)"} strokeWidth="1" />
+            <text x={b.x} y={150 - h - 6} fontSize="10" fill={isSharp ? green : "rgba(255,255,255,0.65)"} fontFamily="monospace" textAnchor="middle">{b.odds.toFixed(2)}</text>
+            <text x={b.x} y="164" fontSize="9" fill="rgba(255,255,255,0.35)" fontFamily="monospace" textAnchor="middle">{b.name}</text>
+          </g>
+        );
+      })}
+      <line x1="30" y1={150 - barH(2.05)} x2="460" y2={150 - barH(2.05)} stroke={green} strokeWidth="1" strokeDasharray="4,3" opacity="0.5" />
+      <text x="465" y={150 - barH(2.05) + 4} fontSize="8" fill={green} fontFamily="monospace">Sharp</text>
+      <text x="240" y="185" fontSize="9" fill="rgba(255,255,255,0.2)" fontFamily="monospace" textAnchor="middle">The gap between sharp and soft lines is your edge window</text>
+    </svg>
+  );
+}
+
+function IlluBestPriceFinder() {
+  const green = "#4ade80";
+  const dim = "rgba(255,255,255,0.28)";
+  const cyan = "hsl(186,100%,50%)";
+  return (
+    <svg viewBox="0 0 480 180" className="w-full" style={{ background: "#0a0a0f" }}>
+      <text x="240" y="20" fontSize="10" fill={dim} fontFamily="monospace" textAnchor="middle">Step 1 — Alert fires: Sharp line drops 3.2%</text>
+      <rect x="20" y="28" width="440" height="36" rx="6" fill="rgba(74,222,128,0.07)" stroke="rgba(74,222,128,0.25)" strokeWidth="1" />
+      <text x="240" y="51" fontSize="11" fill={green} fontFamily="monospace" textAnchor="middle">▼ Pinnacle: 2.18 → 2.11  (−3.2%)</text>
+      <text x="240" y="80" fontSize="10" fill={dim} fontFamily="monospace" textAnchor="middle">Step 2 — Check availability at your books</text>
+      {[
+        { book: "Bet365", odds: "2.14", avail: true, best: true },
+        { book: "Unibet", odds: "2.11", avail: true, best: false },
+        { book: "Bwin",   odds: "—",   avail: false, best: false },
+      ].map((b, i) => (
+        <g key={b.book}>
+          <rect x={20 + i * 150} y="88" width="136" height="48" rx="5"
+            fill={b.best ? "rgba(74,222,128,0.12)" : "rgba(255,255,255,0.03)"}
+            stroke={b.best ? "rgba(74,222,128,0.4)" : "rgba(255,255,255,0.08)"} strokeWidth="1" />
+          <text x={88 + i * 150} y="108" fontSize="10" fill="rgba(255,255,255,0.5)" fontFamily="monospace" textAnchor="middle">{b.book}</text>
+          <text x={88 + i * 150} y="128" fontSize="14" fill={b.avail ? (b.best ? green : "rgba(255,255,255,0.75)") : "rgba(255,255,255,0.2)"} fontFamily="monospace" fontWeight="bold" textAnchor="middle">{b.odds}</text>
+          {b.best && <text x={88 + i * 150} y="148" fontSize="8" fill={green} fontFamily="monospace" textAnchor="middle">BEST PRICE</text>}
+        </g>
+      ))}
+      <text x="240" y="172" fontSize="9" fill="rgba(255,255,255,0.2)" fontFamily="monospace" textAnchor="middle">Bet365 still hasn't adjusted — the window is open</text>
+    </svg>
+  );
+}
+
+export function BookmakerComparisonPage() {
   return (
     <div className="min-h-screen bg-background text-foreground font-sans">
-      <FeatureNav title="CLV & +EV" />
+      <FeatureNav title="Bookmaker Comparison" />
       <FeatureHero
-        icon={IconCLV}
-        label="Feature — CLV & +EV"
-        title="Beat the Line. Prove Your Edge."
-        subtitle="Closing Line Value is the gold standard metric for separating lucky bettors from skilled ones. If you consistently beat the closing line, you will profit long-term — guaranteed."
+        icon={IconBookmakerComparison}
+        label="Feature — Bookmaker Comparison"
+        title="Find the Best Price. Every Time."
+        subtitle="When sharp money moves a line, not every bookmaker reacts at the same speed. SharpTracker checks 32+ bookmakers in real time so you can see exactly where the best price is — and act before it closes."
       />
       <StatRow stats={[
-        { value: "CLV", label: "Per Bet Tracked" },
-        { value: "+EV", label: "Expected Value Score" },
-        { value: "Long Run", label: "Profitability Signal" },
-        { value: "Real-Time", label: "Closing Line Data" },
+        { value: "32+", label: "Bookmakers Tracked" },
+        { value: "Live", label: "Odds Per Alert" },
+        { value: "EU · UK · US · AU", label: "Regional Coverage" },
+        { value: "1-Click", label: "Compare from Feed" },
       ]} />
       <ContentBlock
-        tag="The Concept"
-        heading="What is Closing Line Value?"
-        body="The closing line is the final odds a sportsbook offers before a game starts. Markets are most efficient at closing time — all public information is priced in. If you consistently get better odds than the closing line, it means you were right more often than the market expected. This is called positive CLV, and it's the best predictor of long-term profit in sports betting."
-        visual={<IlluClosingLine />}
+        tag="Real-Time Availability"
+        heading="See who has it and who doesn't."
+        body="When you spot a sharp odds movement in the live feed, hit Compare. SharpTracker instantly queries The Odds API and shows you every bookmaker that has the event — their current odds, whether they've already moved, and how far off they are from the sharp price. You see the full picture in one table, not five browser tabs."
+        visual={<IlluBookmakerTable />}
         imageRight
       />
       <ContentBlock
-        tag="Why It Matters"
-        heading="Records Don't Lie."
-        body="A bettor who got lucky with a +20% ROI over 200 bets might actually have negative CLV — meaning they got fortunate outcomes but were betting into bad lines. A bettor with +2% CLV over the same sample is demonstrably skilled and will profit over the long run regardless of short-term variance. CLV separates process from outcome."
-        visual={<IlluLuckyVsSkilled />}
+        tag="Sharp vs Soft"
+        heading="The gap is where the value lives."
+        body="Sharp bookmakers like Pinnacle price markets accurately and move fast. Soft bookmakers move slower and often leave better prices up for minutes after the sharp line has shifted. SharpTracker shows the delta between the sharp price and every soft bookmaker — so you can see at a glance which books are still offering value and by how much."
+        visual={<IlluOddsSpread />}
         dark
       />
       <ContentBlock
-        tag="+EV Betting"
-        heading="Expected Value Simplified."
-        body="A bet has positive expected value (+EV) when the price you get is better than the true probability of the outcome. For example, if a team's true win probability is 55% but the odds imply only 50%, that bet is +EV. SharpTracker calculates the no-vig fair odds for every alert, so you can instantly see if a move creates a +EV opportunity at your current book."
-        visual={<IlluExpectedValue />}
+        tag="Your Shortlist"
+        heading="Only the books you actually use."
+        body="In Alert Configurations, you choose exactly which bookmakers to include in your comparison — with search across 32+ options organised by region. Your selection is saved globally, so every Compare popup shows the books you care about, nothing else. No noise, no irrelevant markets."
+        visual={<IlluBestPriceFinder />}
         imageRight
       />
       <FeatureCTA next="stake-calculator" nextLabel="Stake Calculator" />

@@ -13,13 +13,13 @@ import {
   Activity, Bell,
   LineChart as LineChartIcon, Radar,
   TrendingUp, ChevronRight, ChevronLeft, CheckCircle2,
-  Database, TrendingDown, ClipboardList,
-  Calculator, CalendarDays, Wallet, Target
+  Database, TrendingDown, ClipboardList, BarChart2,
+  Calculator, CalendarDays, Wallet
 } from "lucide-react";
 import {
-  IconOddsDrop, IconBetTracker, IconCLV, IconStake,
+  IconOddsDrop, IconBetTracker, IconBookmakerComparison, IconStake,
   IconCalendar, IconMultiSport, IconBankroll,
-  OddsDropPage, BetTrackerPage, CLVPage, StakeCalculatorPage,
+  OddsDropPage, BetTrackerPage, BookmakerComparisonPage, StakeCalculatorPage,
   DailyCalendarPage, MultiSportPage, BankrollPage,
 } from "./FeaturePages";
 import WhyPage from "./WhyPage";
@@ -340,10 +340,10 @@ const FEATURE_ITEMS = [
     desc: "Log every bet and track every unit you've ever placed",
   },
   {
-    route: "clv",
-    Icon: IconCLV,
-    name: "CLV & +EV",
-    desc: "See if your bets beat the closing line every time",
+    route: "bookmaker-comparison",
+    Icon: IconBookmakerComparison,
+    name: "Bookmaker Comparison",
+    desc: "Compare live odds across 32+ bookmakers per alert",
   },
   {
     route: "stake-calculator",
@@ -742,7 +742,7 @@ function TerminalSection() {
                     <Activity className="w-3 h-3 text-primary" /> Live Feed
                   </div>
                   <div className="px-4 py-2 text-muted-foreground flex items-center gap-2 hover:bg-muted/30 cursor-pointer">
-                    <TrendingUp className="w-3 h-3" /> CLV Tracker
+                    <BarChart2 className="w-3 h-3" /> Bk. Compare
                   </div>
                 </div>
                 
@@ -1186,7 +1186,7 @@ function CTASection() {
       >
         <h2 className="text-4xl md:text-6xl font-bold font-sans mb-6">Stop playing with a handicap.</h2>
         <p className="text-xl text-muted-foreground mb-10">
-          Join the sharpest bettors leveraging real-time sharp market data to print CLV.
+          Join the sharpest bettors leveraging real-time sharp market data to find better prices before the market closes.
         </p>
         <div className="flex justify-center">
           <button className="bg-primary text-primary-foreground px-10 py-4 rounded-md font-mono font-bold tracking-wide text-lg hover:bg-primary/90 transition-colors shadow-[0_0_30px_hsl(var(--primary)/0.3)]" data-testid="btn-footer-signup">
@@ -1215,7 +1215,7 @@ function Footer() {
               <span className="font-sans font-bold text-xl tracking-tight text-foreground">SharpTracker</span>
             </div>
             <p className="text-muted-foreground text-base max-w-sm mx-auto md:mx-0">
-              Professional odds tracking and CLV analysis terminal.
+              Professional odds tracking and bookmaker comparison terminal.
             </p>
           </div>
           <div>
@@ -1459,7 +1459,7 @@ function CustomTooltip({ active, payload, label }: any) {
 const FEATURE_TILES = [
   { icon: TrendingDown,   label: "Live Odds Drops",       href: "/features/odds-drops"      },
   { icon: ClipboardList,  label: "Bet Tracker",            href: "/features/bet-tracker"     },
-  { icon: Target,         label: "CLV Analysis",           href: "/features/clv"             },
+  { icon: BarChart2,      label: "Bookmaker Comparison",   href: "/features/bookmaker-comparison" },
   { icon: Calculator,     label: "Stake Calculator",       href: "/features/stake-calculator"},
   { icon: CalendarDays,   label: "Daily Calendar",         href: "/features/daily-calendar"  },
   { icon: Wallet,         label: "Bankroll Management",    href: "/features/bankroll"        },
@@ -1557,21 +1557,38 @@ function BankrollFeatureCards() {
     </svg>
   );
 
-  const CLVArt = () => (
-    <svg viewBox="0 0 480 168" className="w-full" style={{ background: "#0a0a0f" }}>
-      <text x="240" y="22" fontSize="11" fill={dim} fontFamily="monospace" textAnchor="middle">Celtics Moneyline · NBA</text>
-      <rect x="28" y="34" width="168" height="90" rx="8" fill="rgba(74,222,128,0.08)" stroke="rgba(74,222,128,0.28)" strokeWidth="1.5"/>
-      <text x="112" y="62" fontSize="11" fill={green} fontFamily="monospace" textAnchor="middle">Your price</text>
-      <text x="112" y="108" fontSize="44" fill={green} fontFamily="monospace" fontWeight="bold" textAnchor="middle">2.10</text>
-      <text x="240" y="82" fontSize="26" fill="rgba(255,255,255,0.18)" fontFamily="monospace" textAnchor="middle">→</text>
-      <rect x="284" y="34" width="168" height="90" rx="8" fill="rgba(255,255,255,0.03)" stroke="rgba(255,255,255,0.08)" strokeWidth="1"/>
-      <text x="368" y="62" fontSize="11" fill="rgba(255,255,255,0.38)" fontFamily="monospace" textAnchor="middle">Market closed at</text>
-      <text x="368" y="108" fontSize="44" fill="rgba(255,255,255,0.28)" fontFamily="monospace" fontWeight="bold" textAnchor="middle">1.84</text>
-      <rect x="176" y="64" width="54" height="22" rx="4" fill="rgba(74,222,128,0.18)" stroke="rgba(74,222,128,0.4)" strokeWidth="1"/>
-      <text x="203" y="79" fontSize="11" fill={green} fontFamily="monospace" fontWeight="bold" textAnchor="middle">+CLV</text>
-      <text x="240" y="148" fontSize="12" fill="rgba(255,255,255,0.22)" fontFamily="monospace" textAnchor="middle">You got a better price before the market moved ✓</text>
-    </svg>
-  );
+  const BookmakerArt = () => {
+    const rows = [
+      { name: "Pinnacle",  odds: "2.05", delta: "sharp",  ok: true,  sharp: true },
+      { name: "Bet365",    odds: "2.00", delta: "−2.4%",  ok: true,  sharp: false },
+      { name: "Unibet",    odds: "2.02", delta: "−1.5%",  ok: true,  sharp: false },
+      { name: "Betsson",   odds: "—",    delta: "—",      ok: false, sharp: false },
+      { name: "Bwin",      odds: "1.95", delta: "−4.9%",  ok: true,  sharp: false },
+    ];
+    return (
+      <svg viewBox="0 0 480 168" className="w-full" style={{ background: "#0a0a0f" }}>
+        <text x="240" y="18" fontSize="10" fill={dim} fontFamily="monospace" textAnchor="middle">Arsenal vs Chelsea · Match Result · Moneyline</text>
+        {["Bookmaker","Odds","vs Sharp",""].map((h,i) => (
+          <text key={i} x={[60,210,340,445][i]} y="30" fontSize="9" fill="rgba(255,255,255,0.32)" fontFamily="monospace" textAnchor="middle">{h}</text>
+        ))}
+        <line x1="20" y1="35" x2="460" y2="35" stroke="rgba(255,255,255,0.07)" strokeWidth="1"/>
+        {rows.map((r, i) => {
+          const y = 48 + i * 24;
+          return (
+            <g key={r.name}>
+              <rect x="20" y={y - 9} width="440" height="20" rx="2"
+                fill={r.sharp ? "rgba(74,222,128,0.06)" : i%2===0 ? "rgba(255,255,255,0.02)" : "transparent"} />
+              {r.sharp && <rect x="20" y={y - 9} width="3" height="20" rx="1" fill={green} />}
+              <text x="60" y={y + 5} fontSize="9" fill={r.sharp ? green : "rgba(255,255,255,0.7)"} fontFamily="monospace" textAnchor="middle">{r.name}</text>
+              <text x="210" y={y + 5} fontSize="10" fill={r.ok ? "rgba(255,255,255,0.8)" : "rgba(255,255,255,0.2)"} fontFamily="monospace" textAnchor="middle">{r.odds}</text>
+              <text x="340" y={y + 5} fontSize="9" fill={r.sharp ? green : r.delta.startsWith("−") ? "#f87171" : "rgba(255,255,255,0.2)"} fontFamily="monospace" textAnchor="middle">{r.sharp ? "Sharp line" : r.delta}</text>
+              <text x="445" y={y + 6} fontSize="12" fill={r.ok ? green : "rgba(255,255,255,0.18)"} textAnchor="middle">{r.ok ? "✓" : "✗"}</text>
+            </g>
+          );
+        })}
+      </svg>
+    );
+  };
 
   const CalendarArt = () => {
     const days = ["Mon","Tue","Wed","Thu","Fri","Sat","Sun"];
@@ -1707,11 +1724,11 @@ function BankrollFeatureCards() {
       href: `${appBase}/bet-stats`,
     },
     {
-      tag: "Did You Beat the Market?",
-      title: "Did you get a good price?",
-      desc: "When a game kicks off, the prices stop moving. We compare the price you got to where they ended — if you got a better price, that's a great sign you're betting smart.",
-      art: <CLVArt />,
-      href: `${appBase}/bet-stats`,
+      tag: "Bookmaker Comparison",
+      title: "Find the best price instantly.",
+      desc: "When a sharp line moves, not every bookmaker reacts at the same speed. SharpTracker checks 32+ bookmakers so you can see which ones still have the old price — and act before they adjust.",
+      art: <BookmakerArt />,
+      href: `${appBase}/alert-configurations`,
     },
     {
       tag: "Daily Calendar",
@@ -2119,8 +2136,8 @@ const FAQ_ITEMS = [
     a: "No. The app is built to be clear and simple. If you understand what odds are and want to get better prices on your bets, you can use SharpTracker right away. The CLV and bankroll tools are there when you're ready to go deeper."
   },
   {
-    q: "What is CLV and why does it matter?",
-    a: "CLV stands for Closing Line Value. It measures how much better your odds were at the time you bet compared to the final odds before the game starts. Consistently beating the closing line is the strongest indicator that you're a long-term winning bettor."
+    q: "What is bookmaker comparison and how does it work?",
+    a: "When a sharp bookmaker like Pinnacle moves its odds, other bookmakers often lag behind. SharpTracker checks 32+ bookmakers in real time for each alert in your live feed and shows you which ones still have the old price — giving you a window to get better odds before they catch up."
   },
   {
     q: "Which bookmakers does the data come from?",
@@ -2346,7 +2363,7 @@ function Router() {
       <Route path="/why" component={WhyPage} />
       <Route path="/features/odds-drops" component={OddsDropPage} />
       <Route path="/features/bet-tracker" component={BetTrackerPage} />
-      <Route path="/features/clv" component={CLVPage} />
+      <Route path="/features/bookmaker-comparison" component={BookmakerComparisonPage} />
       <Route path="/features/stake-calculator" component={StakeCalculatorPage} />
       <Route path="/features/daily-calendar" component={DailyCalendarPage} />
       <Route path="/features/multi-sport" component={MultiSportPage} />
