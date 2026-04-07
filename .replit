@@ -33,6 +33,7 @@ POLL_INTERVAL_MS = "1000"
 MIN_DROP_PERCENT = "0.5"
 PINNACLE_SPORT_NAMES = "soccer,basketball,tennis,hockey,football,baseball,handball,volleyball"
 PINNACLE_MARKET_TYPES = "moneyline,spread,total"
+ODDS_API_KEY = "b559b8b97cbbe795bed11f87b5fdb669"
 
 [userenv.development]
 VITE_DEV_BYPASS_AUTH = "true"
