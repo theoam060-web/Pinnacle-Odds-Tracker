@@ -85,7 +85,7 @@ export const BOOKMAKER_OPTIONS: BookmakerOption[] = [
   { key: "unibet_eu", title: "Unibet", region: "EU" },
   { key: "betsson", title: "Betsson", region: "EU" },
   { key: "bwin", title: "Bwin", region: "EU" },
-  { key: "betfair", title: "Betfair", region: "UK/EU" },
+  { key: "comeon", title: "ComeOn", region: "EU" },
   { key: "ladbrokes_au", title: "Ladbrokes", region: "UK" },
   { key: "coral", title: "Coral", region: "UK" },
   { key: "betway", title: "Betway", region: "EU" },

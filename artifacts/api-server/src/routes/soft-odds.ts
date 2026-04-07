@@ -112,7 +112,7 @@ function eventMatches(
 ): boolean {
   const targetMs = new Date(commenceTime).getTime();
   const eventMs = new Date(event.commence_time).getTime();
-  if (Math.abs(targetMs - eventMs) > 30 * 60 * 1000) return false;
+  if (Math.abs(targetMs - eventMs) > 5 * 60 * 1000) return false;
 
   const homeMatch =
     fuzzyMatchTeam(event.home_team, homeTeam) ||

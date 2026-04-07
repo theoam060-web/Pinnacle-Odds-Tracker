@@ -315,8 +315,7 @@ function ComparePopover({ row, comparisonBookmakers }: {
           size="sm"
           variant="outline"
           className="h-7 text-xs px-2 gap-1"
-          disabled={comparisonBookmakers.length === 0}
-          title={comparisonBookmakers.length === 0 ? "Configure bookmakers in Settings" : "Compare bookmaker odds"}
+          title="Compare bookmaker odds"
         >
           <Scale className="w-3 h-3" />
           Compare
@@ -331,6 +330,17 @@ function ComparePopover({ row, comparisonBookmakers }: {
             {row.marketType.replace(/_/g, " ")} · {row.selection} · Sharp: <span className="font-mono text-foreground">{formatOdds(row.currentOdds)}</span>
           </p>
         </div>
+
+        {comparisonBookmakers.length === 0 && !loading && !result && !fetchError && (
+          <div className="p-3">
+            <p className="text-xs text-muted-foreground">
+              No bookmakers configured.{" "}
+              <Link href="/alert-configurations">
+                <span className="text-primary underline cursor-pointer">Set up in Settings →</span>
+              </Link>
+            </p>
+          </div>
+        )}
 
         {loading && (
           <div className="py-6 flex flex-col items-center gap-2">
@@ -364,6 +374,7 @@ function ComparePopover({ row, comparisonBookmakers }: {
                   <thead>
                     <tr className="border-b border-border bg-muted/40">
                       <th className="text-left px-3 py-1.5 text-[10px] font-medium text-muted-foreground">Bookmaker</th>
+                      <th className="text-center px-2 py-1.5 text-[10px] font-medium text-muted-foreground">Avail.</th>
                       <th className="text-right px-3 py-1.5 text-[10px] font-medium text-muted-foreground">Odds</th>
                       <th className="text-right px-3 py-1.5 text-[10px] font-medium text-muted-foreground">vs Sharp</th>
                     </tr>
@@ -381,6 +392,9 @@ function ComparePopover({ row, comparisonBookmakers }: {
                         <tr key={bm.key} className="border-b border-border/50 last:border-0 hover:bg-muted/20">
                           <td className="px-3 py-1.5 font-medium text-foreground">
                             {bmTitleMap[bm.key] ?? bm.title}
+                          </td>
+                          <td className="px-2 py-1.5 text-center text-base leading-none">
+                            {bm.available ? "✅" : "❌"}
                           </td>
                           <td className="px-3 py-1.5 text-right font-mono">
                             {bm.available && outcome ? (
@@ -412,17 +426,6 @@ function ComparePopover({ row, comparisonBookmakers }: {
               </Button>
             </div>
           </>
-        )}
-
-        {comparisonBookmakers.length === 0 && !loading && !result && !fetchError && (
-          <div className="p-3">
-            <p className="text-xs text-muted-foreground">
-              No bookmakers configured.{" "}
-              <Link href="/alert-configurations">
-                <span className="text-primary underline cursor-pointer">Set up in Settings →</span>
-              </Link>
-            </p>
-          </div>
         )}
       </PopoverContent>
     </Popover>
