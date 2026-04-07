@@ -13,7 +13,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { ArrowRight, TrendingDown, BookmarkPlus, Pause, Play, ArrowUpDown, Check, BarChart2, Scale } from "lucide-react";
+import { ArrowRight, TrendingDown, BookmarkPlus, Pause, Play, ArrowUpDown, Check, BarChart2, LineChart } from "lucide-react";
 import { formatOdds, formatTime, formatDate } from "@/lib/format";
 import { computeNovig } from "@/lib/novig";
 import { useAlertStore, AlertConfig, BOOKMAKER_OPTIONS } from "@/lib/alert-context";
@@ -317,7 +317,7 @@ function ComparePopover({ row, comparisonBookmakers }: {
           className="h-7 text-xs px-2 gap-1"
           title="Compare bookmaker odds"
         >
-          <Scale className="w-3 h-3" />
+          <BarChart2 className="w-3 h-3" />
           Compare
         </Button>
       </PopoverTrigger>
@@ -819,7 +819,7 @@ export default function FeedPage() {
                             if (!isNaN(matchupId)) setOddsMatchupId(matchupId);
                           }}
                         >
-                          <BarChart2 className="w-3 h-3" />
+                          <LineChart className="w-3 h-3" />
                           Odds
                         </Button>
                         <Button

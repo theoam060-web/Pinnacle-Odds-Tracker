@@ -83,7 +83,8 @@ interface OddsApiOutcome {
   point?: number;
 }
 
-const cache = new Map<string, CacheEntry>();
+const sportCache = new Map<string, CacheEntry>();
+const eventCache = new Map<string, { data: OddsApiEvent; fetchedAt: number }>();
 const CACHE_TTL_MS = 60_000;
 
 function normalizeName(name: string): string {
@@ -131,7 +132,7 @@ async function fetchSportOdds(
   apiKey: string,
 ): Promise<OddsApiEvent[]> {
   const cacheKey = `${sportKey}:${bookmakers.sort().join(",")}:${markets}`;
-  const cached = cache.get(cacheKey);
+  const cached = sportCache.get(cacheKey);
   if (cached && Date.now() - cached.fetchedAt < CACHE_TTL_MS) {
     return cached.data;
   }
@@ -156,8 +157,19 @@ async function fetchSportOdds(
   }
 
   const data: OddsApiEvent[] = await res.json() as OddsApiEvent[];
-  cache.set(cacheKey, { data, fetchedAt: Date.now() });
+  sportCache.set(cacheKey, { data, fetchedAt: Date.now() });
   return data;
+}
+
+function makeEventCacheKey(
+  homeTeam: string,
+  awayTeam: string,
+  commenceTime: string,
+  bookmakers: string[],
+  market: string,
+): string {
+  const t = new Date(commenceTime).getTime();
+  return `${homeTeam.toLowerCase()}|${awayTeam.toLowerCase()}|${t}|${bookmakers.sort().join(",")}|${market}`;
 }
 
 router.get("/soft-odds", async (req, res): Promise<void> => {
@@ -195,18 +207,25 @@ router.get("/soft-odds", async (req, res): Promise<void> => {
   const oddsMarket = MARKET_TYPE_MAP[marketType ?? "moneyline"] ?? "h2h";
   const sportKeys = SPORT_KEY_MAP[sport] ?? SPORT_KEY_MAP["all"] ?? [];
 
+  const evtCacheKey = makeEventCacheKey(homeTeam, awayTeam, commenceTime, bookmakerKeys, oddsMarket);
+  const cachedEvt = eventCache.get(evtCacheKey);
   let matchedEvent: OddsApiEvent | null = null;
 
-  for (const sportKey of sportKeys) {
-    try {
-      const events = await fetchSportOdds(sportKey, bookmakerKeys, oddsMarket, apiKey);
-      const found = events.find(e => eventMatches(e, homeTeam, awayTeam, commenceTime));
-      if (found) {
-        matchedEvent = found;
-        break;
+  if (cachedEvt && Date.now() - cachedEvt.fetchedAt < CACHE_TTL_MS) {
+    matchedEvent = cachedEvt.data;
+  } else {
+    for (const sportKey of sportKeys) {
+      try {
+        const events = await fetchSportOdds(sportKey, bookmakerKeys, oddsMarket, apiKey);
+        const found = events.find(e => eventMatches(e, homeTeam, awayTeam, commenceTime));
+        if (found) {
+          matchedEvent = found;
+          eventCache.set(evtCacheKey, { data: found, fetchedAt: Date.now() });
+          break;
+        }
+      } catch (err) {
+        logger.warn({ err, sportKey }, "The Odds API fetch failed for sport key");
       }
-    } catch (err) {
-      logger.warn({ err, sportKey }, "The Odds API fetch failed for sport key");
     }
   }
 
