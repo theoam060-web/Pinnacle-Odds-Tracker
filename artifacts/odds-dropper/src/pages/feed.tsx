@@ -9,13 +9,14 @@ import { CountdownTimer } from "@/components/countdown-timer";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { ArrowRight, TrendingDown, BookmarkPlus, Pause, Play, ArrowUpDown, Check, BarChart2 } from "lucide-react";
+import { ArrowRight, TrendingDown, BookmarkPlus, Pause, Play, ArrowUpDown, Check, BarChart2, Scale } from "lucide-react";
 import { formatOdds, formatTime, formatDate } from "@/lib/format";
 import { computeNovig } from "@/lib/novig";
-import { useAlertStore, AlertConfig } from "@/lib/alert-context";
+import { useAlertStore, AlertConfig, BOOKMAKER_OPTIONS } from "@/lib/alert-context";
 import { useWsFeed, type WsOddsEventUpdate } from "@/hooks/use-ws-feed";
 
 const SPORT_LABELS: Record<string, string> = {
@@ -237,8 +238,199 @@ function dropIntensityBg(abs: number): string {
   return "";
 }
 
+interface SoftOddsResult {
+  found: boolean;
+  eventTitle?: string;
+  sportTitle?: string;
+  bookmakers: {
+    key: string;
+    title: string;
+    available: boolean;
+    outcomes: { name: string; price: number; delta: number | null } [] | null;
+  }[];
+  message?: string;
+  error?: string;
+}
+
+function ComparePopover({ row, comparisonBookmakers }: {
+  row: FeedRow;
+  comparisonBookmakers: string[];
+}) {
+  const [open, setOpen] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [result, setResult] = useState<SoftOddsResult | null>(null);
+  const [fetchError, setFetchError] = useState<string | null>(null);
+  const hasFetched = useRef(false);
+
+  const API_BASE = import.meta.env.BASE_URL.replace(/\/$/, "");
+
+  async function fetchComparison() {
+    if (hasFetched.current) return;
+    hasFetched.current = true;
+    setLoading(true);
+    setFetchError(null);
+    try {
+      const params = new URLSearchParams({
+        homeTeam: row.homeTeam,
+        awayTeam: row.awayTeam,
+        sport: row.sport,
+        commenceTime: new Date(row.commenceTime as Date).toISOString(),
+        bookmakers: comparisonBookmakers.join(","),
+        marketType: row.marketType,
+        pinnacleOdds: row.currentOdds.toString(),
+      });
+      const res = await fetch(`${API_BASE}/api/soft-odds?${params.toString()}`);
+      const data: SoftOddsResult = await res.json() as SoftOddsResult;
+      if (!res.ok) {
+        setFetchError(data.error ?? `HTTP ${res.status}`);
+      } else {
+        setResult(data);
+      }
+    } catch (err) {
+      setFetchError("Network error");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  function handleOpenChange(next: boolean) {
+    setOpen(next);
+    if (next) fetchComparison();
+  }
+
+  function resetAndOpen() {
+    hasFetched.current = false;
+    setResult(null);
+    setFetchError(null);
+    setOpen(true);
+    fetchComparison();
+  }
+
+  const bmTitleMap = Object.fromEntries(BOOKMAKER_OPTIONS.map(b => [b.key, b.title]));
+
+  return (
+    <Popover open={open} onOpenChange={handleOpenChange}>
+      <PopoverTrigger asChild>
+        <Button
+          size="sm"
+          variant="outline"
+          className="h-7 text-xs px-2 gap-1"
+          disabled={comparisonBookmakers.length === 0}
+          title={comparisonBookmakers.length === 0 ? "Configure bookmakers in Settings" : "Compare bookmaker odds"}
+        >
+          <Scale className="w-3 h-3" />
+          Compare
+        </Button>
+      </PopoverTrigger>
+      <PopoverContent className="w-[340px] p-0" align="end" side="left">
+        <div className="px-3 py-2 border-b border-border">
+          <p className="text-xs font-semibold text-foreground truncate">
+            {row.homeTeam} vs {row.awayTeam}
+          </p>
+          <p className="text-[10px] text-muted-foreground capitalize mt-0.5">
+            {row.marketType.replace(/_/g, " ")} · {row.selection} · Sharp: <span className="font-mono text-foreground">{formatOdds(row.currentOdds)}</span>
+          </p>
+        </div>
+
+        {loading && (
+          <div className="py-6 flex flex-col items-center gap-2">
+            <div className="w-5 h-5 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+            <span className="text-xs text-muted-foreground">Fetching odds…</span>
+          </div>
+        )}
+
+        {fetchError && !loading && (
+          <div className="p-3">
+            <p className="text-xs text-destructive mb-2">{fetchError}</p>
+            {fetchError.includes("ODDS_API_KEY") ? (
+              <p className="text-[10px] text-muted-foreground">
+                Add your API key from <a href="https://the-odds-api.com" target="_blank" rel="noopener noreferrer" className="underline text-primary">the-odds-api.com</a> as <span className="font-mono">ODDS_API_KEY</span>.
+              </p>
+            ) : (
+              <Button size="sm" variant="outline" className="h-6 text-xs" onClick={resetAndOpen}>Retry</Button>
+            )}
+          </div>
+        )}
+
+        {result && !loading && (
+          <>
+            {!result.found ? (
+              <div className="p-3">
+                <p className="text-xs text-muted-foreground">{result.message ?? "Event not found in The Odds API."}</p>
+              </div>
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="w-full text-xs">
+                  <thead>
+                    <tr className="border-b border-border bg-muted/40">
+                      <th className="text-left px-3 py-1.5 text-[10px] font-medium text-muted-foreground">Bookmaker</th>
+                      <th className="text-right px-3 py-1.5 text-[10px] font-medium text-muted-foreground">Odds</th>
+                      <th className="text-right px-3 py-1.5 text-[10px] font-medium text-muted-foreground">vs Sharp</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {result.bookmakers.map(bm => {
+                      const outcome = bm.available && bm.outcomes
+                        ? bm.outcomes.find(o =>
+                            o.name.toLowerCase().includes(row.selection.toLowerCase()) ||
+                            row.selection.toLowerCase().includes(o.name.toLowerCase())
+                          ) ?? bm.outcomes[0]
+                        : null;
+
+                      return (
+                        <tr key={bm.key} className="border-b border-border/50 last:border-0 hover:bg-muted/20">
+                          <td className="px-3 py-1.5 font-medium text-foreground">
+                            {bmTitleMap[bm.key] ?? bm.title}
+                          </td>
+                          <td className="px-3 py-1.5 text-right font-mono">
+                            {bm.available && outcome ? (
+                              <span className="text-foreground">{outcome.price.toFixed(2)}</span>
+                            ) : (
+                              <span className="text-muted-foreground/40">—</span>
+                            )}
+                          </td>
+                          <td className="px-3 py-1.5 text-right font-mono">
+                            {bm.available && outcome && outcome.delta != null ? (
+                              <span className={outcome.delta >= 0 ? "text-green-400" : "text-red-400"}>
+                                {outcome.delta >= 0 ? "+" : ""}{outcome.delta.toFixed(1)}%
+                              </span>
+                            ) : (
+                              <span className="text-muted-foreground/40">—</span>
+                            )}
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            )}
+            <div className="px-3 py-1.5 border-t border-border/50 flex items-center justify-between">
+              <span className="text-[9px] text-muted-foreground/50">via The Odds API</span>
+              <Button size="sm" variant="ghost" className="h-5 text-[10px] px-1.5 text-muted-foreground" onClick={resetAndOpen}>
+                Refresh
+              </Button>
+            </div>
+          </>
+        )}
+
+        {comparisonBookmakers.length === 0 && !loading && !result && !fetchError && (
+          <div className="p-3">
+            <p className="text-xs text-muted-foreground">
+              No bookmakers configured.{" "}
+              <Link href="/alert-configurations">
+                <span className="text-primary underline cursor-pointer">Set up in Settings →</span>
+              </Link>
+            </p>
+          </div>
+        )}
+      </PopoverContent>
+    </Popover>
+  );
+}
+
 export default function FeedPage() {
-  const { configs, novigMethod } = useAlertStore();
+  const { configs, novigMethod, comparisonBookmakers } = useAlertStore();
   const [logBetRow, setLogBetRow] = useState<(FeedRow & { novigOdds: number }) | null>(null);
   const [oddsMatchupId, setOddsMatchupId] = useState<number | null>(null);
   const [sortBy, setSortBy] = useState<SortOption>("newest");
@@ -500,7 +692,7 @@ export default function FeedPage() {
               <TableHead className="w-[130px]">Bet type</TableHead>
               <TableHead className="w-[160px] text-center">Odds movement</TableHead>
               <TableHead className="w-[130px] text-right">Drop / Trend</TableHead>
-              <TableHead className="w-[80px] text-center">Action</TableHead>
+              <TableHead className="w-[160px] text-center">Action</TableHead>
             </TableRow>
           </TableHeader>
 
@@ -614,7 +806,7 @@ export default function FeedPage() {
                     </TableCell>
 
                     <TableCell className="text-center">
-                      <div className="flex items-center justify-center gap-1">
+                      <div className="flex items-center justify-center gap-1 flex-wrap">
                         <Button
                           size="sm"
                           variant="outline"
@@ -639,6 +831,7 @@ export default function FeedPage() {
                           <BookmarkPlus className="w-3 h-3" />
                           Log
                         </Button>
+                        <ComparePopover row={row} comparisonBookmakers={comparisonBookmakers} />
                       </div>
                     </TableCell>
                   </TableRow>

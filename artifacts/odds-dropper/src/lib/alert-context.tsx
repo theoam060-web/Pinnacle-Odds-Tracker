@@ -73,6 +73,29 @@ export interface AlertConfig {
   markets: string[];
 }
 
+export interface BookmakerOption {
+  key: string;
+  title: string;
+  region: string;
+}
+
+export const BOOKMAKER_OPTIONS: BookmakerOption[] = [
+  { key: "bet365", title: "Bet365", region: "EU/UK" },
+  { key: "williamhill", title: "William Hill", region: "UK" },
+  { key: "unibet_eu", title: "Unibet", region: "EU" },
+  { key: "betsson", title: "Betsson", region: "EU" },
+  { key: "bwin", title: "Bwin", region: "EU" },
+  { key: "betfair", title: "Betfair", region: "UK/EU" },
+  { key: "ladbrokes_au", title: "Ladbrokes", region: "UK" },
+  { key: "coral", title: "Coral", region: "UK" },
+  { key: "betway", title: "Betway", region: "EU" },
+  { key: "draftkings", title: "DraftKings", region: "US" },
+  { key: "fanduel", title: "FanDuel", region: "US" },
+  { key: "betmgm", title: "BetMGM", region: "US" },
+];
+
+export const DEFAULT_COMPARISON_BOOKMAKERS = ["bet365", "williamhill", "unibet_eu", "bwin"];
+
 export const DEFAULT_ALERT_CONFIG: Omit<AlertConfig, "id" | "name"> = {
   enabled: true,
   sport: "soccer",
@@ -93,12 +116,14 @@ interface AlertStore {
   configs: AlertConfig[];
   novigMethod: NovigMethod;
   soundEnabled: boolean;
+  comparisonBookmakers: string[];
 }
 
 const DEFAULT_STORE: AlertStore = {
   configs: [makeConfig("1", "Config 1")],
   novigMethod: "power",
   soundEnabled: true,
+  comparisonBookmakers: DEFAULT_COMPARISON_BOOKMAKERS,
 };
 
 const STORAGE_KEY = "pt:alerts:v1";
@@ -127,9 +152,11 @@ interface AlertContextValue {
   configs: AlertConfig[];
   novigMethod: NovigMethod;
   soundEnabled: boolean;
+  comparisonBookmakers: string[];
   setConfigs: (configs: AlertConfig[]) => void;
   setNovigMethod: (method: NovigMethod) => void;
   setSoundEnabled: (enabled: boolean) => void;
+  setComparisonBookmakers: (keys: string[]) => void;
   addConfig: () => void;
   removeConfig: (id: string) => void;
   updateConfig: (id: string, patch: Partial<AlertConfig>) => void;
@@ -160,6 +187,10 @@ export function AlertStoreProvider({ children }: { children: ReactNode }) {
     setStore(s => ({ ...s, soundEnabled }));
   }
 
+  function setComparisonBookmakers(comparisonBookmakers: string[]) {
+    setStore(s => ({ ...s, comparisonBookmakers }));
+  }
+
   function addConfig() {
     setStore(s => {
       if (s.configs.length >= 9) return s;
@@ -188,9 +219,11 @@ export function AlertStoreProvider({ children }: { children: ReactNode }) {
       configs: store.configs,
       novigMethod: store.novigMethod,
       soundEnabled: store.soundEnabled,
+      comparisonBookmakers: store.comparisonBookmakers ?? DEFAULT_COMPARISON_BOOKMAKERS,
       setConfigs,
       setNovigMethod,
       setSoundEnabled,
+      setComparisonBookmakers,
       addConfig,
       removeConfig,
       updateConfig,

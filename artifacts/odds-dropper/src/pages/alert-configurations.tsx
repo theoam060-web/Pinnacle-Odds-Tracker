@@ -9,7 +9,7 @@ import { Switch } from "@/components/ui/switch";
 import { Separator } from "@/components/ui/separator";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Trash2, BellRing } from "lucide-react";
+import { Plus, Trash2, BellRing, BarChart2 } from "lucide-react";
 import {
   useAlertStore,
   AlertConfig,
@@ -19,6 +19,7 @@ import {
   SPORT_DEFAULTS,
   NOVIG_METHOD_LABELS,
   NovigMethod,
+  BOOKMAKER_OPTIONS,
 } from "@/lib/alert-context";
 
 function toggleItem(list: string[], item: string): string[] {
@@ -207,7 +208,7 @@ function ConfigDetail({ config }: { config: AlertConfig }) {
 }
 
 export default function AlertConfigurationsPage() {
-  const { configs, novigMethod, setNovigMethod, addConfig } = useAlertStore();
+  const { configs, novigMethod, setNovigMethod, addConfig, comparisonBookmakers, setComparisonBookmakers } = useAlertStore();
   const [selectedId, setSelectedId] = useState<string>(() => configs[0]?.id ?? "");
   const prevCountRef = useRef<number>(configs.length);
 
@@ -257,6 +258,41 @@ export default function AlertConfigurationsPage() {
             </SelectContent>
           </Select>
         </div>
+      </div>
+
+      {/* Bookmaker Comparison section */}
+      <div className="bg-card border rounded-lg p-4 mb-6">
+        <div className="flex items-center gap-2 mb-3">
+          <BarChart2 className="w-4 h-4 text-primary" />
+          <Label className="text-sm font-semibold">Bookmaker Comparison</Label>
+        </div>
+        <p className="text-[11px] text-muted-foreground mb-3">
+          Select bookmakers to compare against sharp odds in the live feed. Requires an <span className="font-mono text-primary">ODDS_API_KEY</span> environment variable from{" "}
+          <a href="https://the-odds-api.com" target="_blank" rel="noopener noreferrer" className="underline hover:text-foreground transition-colors">the-odds-api.com</a>.
+        </p>
+        <div className="grid grid-cols-2 sm:grid-cols-3 gap-x-6 gap-y-2">
+          {BOOKMAKER_OPTIONS.map(bm => (
+            <div key={bm.key} className="flex items-center gap-2">
+              <Checkbox
+                id={`bm-${bm.key}`}
+                checked={comparisonBookmakers.includes(bm.key)}
+                onCheckedChange={() => {
+                  const next = comparisonBookmakers.includes(bm.key)
+                    ? comparisonBookmakers.filter(k => k !== bm.key)
+                    : [...comparisonBookmakers, bm.key];
+                  setComparisonBookmakers(next);
+                }}
+              />
+              <Label htmlFor={`bm-${bm.key}`} className="text-xs cursor-pointer flex items-center gap-1.5">
+                {bm.title}
+                <span className="text-[9px] text-muted-foreground/60">{bm.region}</span>
+              </Label>
+            </div>
+          ))}
+        </div>
+        {comparisonBookmakers.length === 0 && (
+          <p className="text-[11px] text-amber-400 mt-2">No bookmakers selected — comparison will be disabled.</p>
+        )}
       </div>
 
       <Separator className="mb-6" />
