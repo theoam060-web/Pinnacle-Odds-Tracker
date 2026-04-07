@@ -35,3 +35,9 @@ id = "FZtMoZfTLRgg8pynSy7EK"
 uri = "file://exports/sharptracker-logo-transparent.svg"
 type = "image"
 title = "SharpTracker Logo — transparent bakgrund"
+
+[[outputs]]
+id = "w6wTUFnj28L_DBeESo4TC"
+uri = "file://.canvas/assets/push-notification-mockup.png"
+type = "image"
+title = "SharpTracker — Push Notification Design"
