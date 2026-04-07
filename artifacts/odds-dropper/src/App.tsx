@@ -49,9 +49,14 @@ function Router() {
   );
 }
 
-/** Gate: redirect to landing sign-in if not authenticated */
+/** Gate: redirect to landing sign-in if not authenticated.
+ *  Set VITE_DEV_BYPASS_AUTH=true in development to skip auth (for local preview).
+ *  Remove / set to false before publishing. */
 function AuthGate({ children }: { children: React.ReactNode }) {
+  const bypassAuth = import.meta.env.VITE_DEV_BYPASS_AUTH === "true";
   const { isLoaded, isSignedIn } = useUser();
+
+  if (bypassAuth) return <>{children}</>;
 
   if (!isLoaded) {
     return (
