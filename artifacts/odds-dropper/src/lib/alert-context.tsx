@@ -23,7 +23,6 @@ export const MARKET_TYPE_OPTIONS = [
 ];
 
 export const SPORT_OPTIONS = [
-  { slug: "all",               label: "🌍 All Sports" },
   { slug: "soccer",            label: "⚽ Football" },
   { slug: "basketball",        label: "🏀 Basketball" },
   { slug: "tennis",            label: "🎾 Tennis" },
