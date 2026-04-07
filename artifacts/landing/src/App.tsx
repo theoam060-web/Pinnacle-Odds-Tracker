@@ -1240,8 +1240,7 @@ function Footer() {
 
           <p className="max-w-3xl mx-auto leading-relaxed">
             SharpTracker is a data and analytics service. This site is strictly for educational and informational purposes only and does not involve real-money betting or facilitate wagering of any kind.
-            References to "sharp bookmakers" are general in nature and do not constitute endorsement of any specific operator.
-            "Pinnacle" is a registered trademark of the Pinnacle group of companies.
+            References to "sharp bookmakers" refer to high-volume, limit-friendly operators whose pricing reflects professional market consensus. No specific operator is endorsed by name.
           </p>
 
           <p className="max-w-3xl mx-auto leading-relaxed">
