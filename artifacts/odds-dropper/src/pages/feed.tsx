@@ -639,30 +639,38 @@ export default function FeedPage() {
   // ---------------------------------------------------------------------------
   // WebSocket real-time stream
   // ---------------------------------------------------------------------------
-  // WS event buffer — accumulate rows, flush at most every 200ms
+  // WS event buffer — drained one row at a time by flushWsBuffer
   const wsBufferRef = useRef<FeedRow[]>([]);
   const wsFlushTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
+  // Flush exactly ONE row from the buffer at a time so drops always
+  // appear individually regardless of how many arrived together.
   const flushWsBuffer = useCallback(() => {
     wsFlushTimerRef.current = null;
-    const buffered = wsBufferRef.current;
-    if (buffered.length === 0) return;
-    wsBufferRef.current = [];
+    if (wsBufferRef.current.length === 0) return;
+
+    // Pop the first (newest) row
+    const [next, ...rest] = wsBufferRef.current;
+    wsBufferRef.current = rest;
+
     if (pausedRef.current) {
-      pendingWsRowsRef.current = [...buffered, ...pendingWsRowsRef.current];
-      setPendingCount(prev => prev + buffered.length);
+      pendingWsRowsRef.current = [next, ...pendingWsRowsRef.current];
+      setPendingCount(prev => prev + 1);
     } else {
-      setShownRows(prev => [...buffered, ...prev].slice(0, MAX_FEED_ROWS));
+      setShownRows(prev => [next, ...prev].slice(0, MAX_FEED_ROWS));
+    }
+
+    // If more rows are waiting, schedule the next one after a short visible gap
+    if (rest.length > 0) {
+      wsFlushTimerRef.current = setTimeout(flushWsBuffer, 600);
     }
   }, []);
 
   const handleOddsUpdate = useCallback((event: WsOddsEventUpdate) => {
     const newEntries = wsEventToRows(event, configsRef.current, lastShownRef);
     if (newEntries.length === 0) return;
-    // Add directly to buffer and flush immediately — no artificial delay.
-    // Drops are already staggered on the server side (350ms apart) so
-    // each one arrives individually and should appear in the feed right away.
-    wsBufferRef.current = [...newEntries, ...wsBufferRef.current];
+    // Append to buffer — flushWsBuffer will drain them one at a time
+    wsBufferRef.current = [...wsBufferRef.current, ...newEntries];
     if (!wsFlushTimerRef.current) {
       wsFlushTimerRef.current = setTimeout(flushWsBuffer, 0);
     }

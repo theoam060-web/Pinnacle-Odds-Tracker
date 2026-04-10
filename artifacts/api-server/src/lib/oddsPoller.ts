@@ -475,16 +475,45 @@ async function pollOnce(minDropPercent: number, state: PollerState): Promise<voi
     });
     logger.info({ count: legacyEvents.length, marketTypeFilter }, "Persisting legacy events");
     const allDrops = await persistLegacyEvents(legacyEvents, now, minDropPercent);
-    // Cap at 20 drops per poll — show the biggest movers first.
-    // Then stagger by 100ms so they trickle into the feed one by one.
-    const drops = allDrops
+
+    // --- Per-match deduplication + 5-minute cooldown ---
+    // Key: "homeTeam|awayTeam|sport"  Value: last broadcast timestamp (ms)
+    const nowMs = Date.now();
+    const MATCH_COOLDOWN_MS = 5 * 60 * 1000;
+
+    // Group drops by match, keep only the biggest mover per match
+    const bestPerMatch = new Map<string, OddsDropEvent>();
+    for (const drop of allDrops) {
+      const key = `${drop.homeTeam}|${drop.awayTeam}|${drop.sport}`;
+      const existing = bestPerMatch.get(key);
+      if (!existing || drop.changePercent < existing.changePercent) {
+        bestPerMatch.set(key, drop);
+      }
+    }
+
+    // Apply 5-minute per-match cooldown, then take top 20 biggest movers
+    const eligible = [...bestPerMatch.entries()]
+      .filter(([key]) => {
+        const last = matchBroadcastCooldown.get(key) ?? 0;
+        return nowMs - last >= MATCH_COOLDOWN_MS;
+      })
+      .map(([, drop]) => drop)
       .sort((a, b) => a.changePercent - b.changePercent)
       .slice(0, 20);
-    if (allDrops.length > 0) {
-      logger.info({ total: allDrops.length, broadcasting: drops.length }, "Broadcasting staggered drops");
+
+    // Update cooldown for matches we are about to broadcast
+    for (const drop of eligible) {
+      const key = `${drop.homeTeam}|${drop.awayTeam}|${drop.sport}`;
+      matchBroadcastCooldown.set(key, nowMs);
     }
-    const STAGGER_MS = 100;
-    drops.forEach((drop, i) => {
+
+    if (eligible.length > 0) {
+      logger.info({ total: allDrops.length, matches: bestPerMatch.size, broadcasting: eligible.length }, "Broadcasting staggered drops");
+    }
+
+    // Stagger at 800ms so each drop visibly appears one at a time in the feed
+    const STAGGER_MS = 800;
+    eligible.forEach((drop, i) => {
       setTimeout(() => broadcastOddsDrop(drop), i * STAGGER_MS);
     });
   } catch (err) {
@@ -508,6 +537,8 @@ async function maybeActivateFallback(state: PollerState): Promise<void> {
 
 let pollerTimer: ReturnType<typeof setTimeout> | null = null;
 const pollerState: PollerState = { consecutiveEmpty: 0, hasSeededFallback: false };
+// Per-match broadcast cooldown — key: "homeTeam|awayTeam|sport", value: last broadcast ms
+const matchBroadcastCooldown = new Map<string, number>();
 
 export function startOddsPoller(_apiKey: string, intervalMs: number, minDropPercent: number): void {
   logger.info({ intervalMs, minDropPercent }, "Starting Pinnacle full-market poller");
