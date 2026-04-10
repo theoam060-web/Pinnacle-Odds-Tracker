@@ -19,20 +19,69 @@ const SPORT_KEY_MAP: Record<string, string[]> = {
     "soccer_turkey_super_league",
     "soccer_brazil_campeonato",
     "soccer_argentina_primera_division",
+    "soccer_sweden_allsvenskan",
+    "soccer_sweden_superettan",
+    "soccer_norway_eliteserien",
+    "soccer_denmark_superliga",
+    "soccer_finland_veikkausliiga",
+    "soccer_austria_bundesliga",
+    "soccer_switzerland_superleague",
+    "soccer_belgium_first_div",
+    "soccer_scotland_premiership",
+    "soccer_greece_super_league",
+    "soccer_czech_republic_liga",
+    "soccer_poland_ekstraklasa",
+    "soccer_russia_premier_league",
+    "soccer_usa_mls",
   ],
-  basketball: ["basketball_nba", "basketball_euroleague", "basketball_nba_preseason"],
-  hockey: ["icehockey_nhl"],
+  basketball: [
+    "basketball_nba",
+    "basketball_euroleague",
+    "basketball_nba_preseason",
+    "basketball_ncaab",
+    "basketball_nbl",
+    "basketball_eurocup",
+    "basketball_spain_acb",
+    "basketball_france_pro_a",
+    "basketball_italy_lega_basket",
+    "basketball_germany_bbl",
+    "basketball_turkey_bsl",
+    "basketball_russia_vbl",
+    "basketball_greece_basket_league",
+    "basketball_japan_b_league",
+    "basketball_australia_nbl",
+    "basketball_cba",
+  ],
+  hockey: [
+    "icehockey_nhl",
+    "icehockey_sweden_hockey_league",
+    "icehockey_sweden_allsvenskan",
+    "icehockey_finland_liiga",
+    "icehockey_ahl",
+    "icehockey_russia_khl",
+    "icehockey_czech_extraliga",
+    "icehockey_slovakia_extraliga",
+    "icehockey_switzerland_nla",
+    "icehockey_germany_del",
+    "icehockey_austria_ahl",
+  ],
   american_football: ["americanfootball_nfl", "americanfootball_ncaaf"],
-  baseball: ["baseball_mlb"],
+  baseball: ["baseball_mlb", "baseball_npb", "baseball_kbo"],
   tennis: [],
   mma: ["mma_mixed_martial_arts"],
   boxing: ["boxing_boxing"],
+  volleyball: [],
+  handball: [],
   all: [
     "soccer_epl",
     "soccer_spain_la_liga",
     "soccer_germany_bundesliga",
+    "soccer_france_ligue_one",
+    "soccer_italy_serie_a",
     "basketball_nba",
+    "basketball_euroleague",
     "icehockey_nhl",
+    "icehockey_sweden_hockey_league",
     "americanfootball_nfl",
     "baseball_mlb",
   ],
@@ -87,6 +136,11 @@ const sportCache = new Map<string, CacheEntry>();
 const eventCache = new Map<string, { data: OddsApiEvent; fetchedAt: number }>();
 const CACHE_TTL_MS = 60_000;
 
+// Leagues The Odds API is known to cover (for user-facing messages)
+const COVERED_SPORTS = new Set([
+  "soccer", "basketball", "hockey", "american_football", "baseball", "mma", "boxing",
+]);
+
 function normalizeName(name: string): string {
   return name
     .toLowerCase()
@@ -99,6 +153,8 @@ function fuzzyMatchTeam(a: string, b: string): boolean {
   const na = normalizeName(a);
   const nb = normalizeName(b);
   if (na === nb) return true;
+  // One is a substring of the other
+  if (na.includes(nb) || nb.includes(na)) return true;
   const wordsA = na.split(" ");
   const wordsB = nb.split(" ");
   const shared = wordsA.filter(w => w.length > 2 && wordsB.includes(w));
@@ -113,7 +169,9 @@ function eventMatches(
 ): boolean {
   const targetMs = new Date(commenceTime).getTime();
   const eventMs = new Date(event.commence_time).getTime();
-  if (Math.abs(targetMs - eventMs) > 5 * 60 * 1000) return false;
+  // Allow up to 3 hours difference — Pinnacle and The Odds API may store
+  // kickoff times with different timezone offsets or rounding.
+  if (Math.abs(targetMs - eventMs) > 3 * 60 * 60 * 1000) return false;
 
   const homeMatch =
     fuzzyMatchTeam(event.home_team, homeTeam) ||
@@ -139,7 +197,7 @@ async function fetchSportOdds(
 
   const params = new URLSearchParams({
     apiKey,
-    regions: "eu,uk,us",
+    regions: "eu,uk,us,au",
     markets,
     bookmakers: bookmakers.join(","),
     oddsFormat: "decimal",
@@ -149,7 +207,8 @@ async function fetchSportOdds(
   const res = await fetch(url);
 
   if (!res.ok) {
-    if (res.status === 422) {
+    // 422 = invalid sport key — just return empty silently
+    if (res.status === 422 || res.status === 404) {
       return [];
     }
     const text = await res.text();
@@ -207,6 +266,17 @@ router.get("/soft-odds", async (req, res): Promise<void> => {
   const oddsMarket = MARKET_TYPE_MAP[marketType ?? "moneyline"] ?? "h2h";
   const sportKeys = SPORT_KEY_MAP[sport] ?? SPORT_KEY_MAP["all"] ?? [];
 
+  // If this sport has no league keys at all, tell the user immediately
+  if (sportKeys.length === 0) {
+    res.json({
+      found: false,
+      bookmakers: bookmakerKeys.map(key => ({ key, title: key, available: false, outcomes: null })),
+      message: `The Odds API does not cover ${sport} odds comparison. Supported sports: soccer, basketball, hockey, baseball, american football.`,
+      notCovered: true,
+    });
+    return;
+  }
+
   const evtCacheKey = makeEventCacheKey(homeTeam, awayTeam, commenceTime, bookmakerKeys, oddsMarket);
   const cachedEvt = eventCache.get(evtCacheKey);
   let matchedEvent: OddsApiEvent | null = null;
@@ -230,15 +300,14 @@ router.get("/soft-odds", async (req, res): Promise<void> => {
   }
 
   if (!matchedEvent) {
+    const isCovered = COVERED_SPORTS.has(sport);
     res.json({
       found: false,
-      bookmakers: bookmakerKeys.map(key => ({
-        key,
-        title: key,
-        available: false,
-        outcomes: null,
-      })),
-      message: "Event not found in The Odds API for the configured bookmakers.",
+      bookmakers: bookmakerKeys.map(key => ({ key, title: key, available: false, outcomes: null })),
+      message: isCovered
+        ? `Match not found in The Odds API. This league may not be covered, or the event has already started/finished.`
+        : `The Odds API does not cover ${sport}. Supported: soccer, basketball, hockey, baseball.`,
+      notCovered: !isCovered,
     });
     return;
   }

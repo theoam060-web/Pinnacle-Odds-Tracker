@@ -373,60 +373,67 @@ function ComparePopover({ row, comparisonBookmakers }: {
         {result && !loading && (
           <>
             {!result.found ? (
-              <div className="p-3">
-                <p className="text-xs text-muted-foreground">{result.message ?? "Event not found in The Odds API."}</p>
+              <div className="p-3 space-y-1.5">
+                <p className="text-xs text-muted-foreground">{result.message ?? "Match not found in The Odds API."}</p>
+                {!result.notCovered && (
+                  <p className="text-[10px] text-muted-foreground/60">The match may not be covered by The Odds API, or it has already started.</p>
+                )}
               </div>
-            ) : (
-              <div className="overflow-x-auto">
-                <table className="w-full text-xs">
-                  <thead>
-                    <tr className="border-b border-border bg-muted/40">
-                      <th className="text-left px-3 py-1.5 text-[10px] font-medium text-muted-foreground">Bookmaker</th>
-                      <th className="text-center px-2 py-1.5 text-[10px] font-medium text-muted-foreground">Avail.</th>
-                      <th className="text-right px-3 py-1.5 text-[10px] font-medium text-muted-foreground">Odds</th>
-                      <th className="text-right px-3 py-1.5 text-[10px] font-medium text-muted-foreground">vs Sharp</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {result.bookmakers.map(bm => {
-                      const outcome = bm.available && bm.outcomes
-                        ? bm.outcomes.find(o =>
-                            o.name.toLowerCase().includes(row.selection.toLowerCase()) ||
-                            row.selection.toLowerCase().includes(o.name.toLowerCase())
-                          ) ?? bm.outcomes[0]
-                        : null;
+            ) : (() => {
+              const allUnavailable = result.bookmakers.every((bm: { available: boolean }) => !bm.available);
+              return (
+                <div className="overflow-x-auto">
+                  {allUnavailable && (
+                    <div className="px-3 py-2 border-b border-border/50 bg-muted/20">
+                      <p className="text-[10px] text-muted-foreground/80">None of your bookmakers offer this match or market.</p>
+                    </div>
+                  )}
+                  <table className="w-full text-xs">
+                    <thead>
+                      <tr className="border-b border-border bg-muted/40">
+                        <th className="text-left px-3 py-1.5 text-[10px] font-medium text-muted-foreground">Bookmaker</th>
+                        <th className="text-right px-3 py-1.5 text-[10px] font-medium text-muted-foreground">Odds</th>
+                        <th className="text-right px-3 py-1.5 text-[10px] font-medium text-muted-foreground">vs Sharp</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {result.bookmakers.map((bm: { key: string; title: string; available: boolean; outcomes: Array<{ name: string; price: number; delta: number | null }> | null }) => {
+                        const outcome = bm.available && bm.outcomes
+                          ? bm.outcomes.find((o: { name: string }) =>
+                              o.name.toLowerCase().includes(row.selection.toLowerCase()) ||
+                              row.selection.toLowerCase().includes(o.name.toLowerCase())
+                            ) ?? bm.outcomes[0]
+                          : null;
 
-                      return (
-                        <tr key={bm.key} className="border-b border-border/50 last:border-0 hover:bg-muted/20">
-                          <td className="px-3 py-1.5 font-medium text-foreground">
-                            {bmTitleMap[bm.key] ?? bm.title}
-                          </td>
-                          <td className="px-2 py-1.5 text-center text-base leading-none">
-                            {bm.available ? "✅" : "❌"}
-                          </td>
-                          <td className="px-3 py-1.5 text-right font-mono">
-                            {bm.available && outcome ? (
-                              <span className="text-foreground">{outcome.price.toFixed(2)}</span>
-                            ) : (
-                              <span className="text-muted-foreground/40">—</span>
-                            )}
-                          </td>
-                          <td className="px-3 py-1.5 text-right font-mono">
-                            {bm.available && outcome && outcome.delta != null ? (
-                              <span className={outcome.delta >= 0 ? "text-green-400" : "text-red-400"}>
-                                {outcome.delta >= 0 ? "+" : ""}{outcome.delta.toFixed(1)}%
-                              </span>
-                            ) : (
-                              <span className="text-muted-foreground/40">—</span>
-                            )}
-                          </td>
-                        </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
-              </div>
-            )}
+                        return (
+                          <tr key={bm.key} className="border-b border-border/50 last:border-0 hover:bg-muted/20">
+                            <td className="px-3 py-1.5 font-medium text-foreground">
+                              {bmTitleMap[bm.key] ?? bm.title}
+                            </td>
+                            <td className="px-3 py-1.5 text-right font-mono">
+                              {bm.available && outcome ? (
+                                <span className="text-foreground">{outcome.price.toFixed(2)}</span>
+                              ) : (
+                                <span className="text-[10px] text-muted-foreground/50 italic">Not offered</span>
+                              )}
+                            </td>
+                            <td className="px-3 py-1.5 text-right font-mono">
+                              {bm.available && outcome && outcome.delta != null ? (
+                                <span className={outcome.delta >= 0 ? "text-green-400" : "text-red-400"}>
+                                  {outcome.delta >= 0 ? "+" : ""}{outcome.delta.toFixed(1)}%
+                                </span>
+                              ) : (
+                                <span className="text-muted-foreground/40">—</span>
+                              )}
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              );
+            })()}
             <div className="px-3 py-1.5 border-t border-border/50 flex items-center justify-between">
               <span className="text-[9px] text-muted-foreground/50">via The Odds API</span>
               <Button size="sm" variant="ghost" className="h-5 text-[10px] px-1.5 text-muted-foreground" onClick={resetAndOpen}>
