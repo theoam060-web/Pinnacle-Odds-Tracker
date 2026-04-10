@@ -659,9 +659,12 @@ export default function FeedPage() {
   const handleOddsUpdate = useCallback((event: WsOddsEventUpdate) => {
     const newEntries = wsEventToRows(event, configsRef.current, lastShownRef);
     if (newEntries.length === 0) return;
+    // Add directly to buffer and flush immediately — no artificial delay.
+    // Drops are already staggered on the server side (350ms apart) so
+    // each one arrives individually and should appear in the feed right away.
     wsBufferRef.current = [...newEntries, ...wsBufferRef.current];
     if (!wsFlushTimerRef.current) {
-      wsFlushTimerRef.current = setTimeout(flushWsBuffer, 200);
+      wsFlushTimerRef.current = setTimeout(flushWsBuffer, 0);
     }
   }, [flushWsBuffer]);
 

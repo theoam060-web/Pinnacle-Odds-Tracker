@@ -270,7 +270,8 @@ async function persistLegacyEvents(
   events: LegacyEventShape[],
   now: Date,
   minDropPercent: number,
-): Promise<void> {
+): Promise<OddsDropEvent[]> {
+  const collectedDrops: OddsDropEvent[] = [];
   for (const shape of events) {
     const [existing] = await db
       .select()
@@ -377,7 +378,7 @@ async function persistLegacyEvents(
           direction: "drop",
           detectedAt: now.toISOString(),
         };
-        broadcastOddsDrop(drop);
+        collectedDrops.push(drop);
         sendTelegramDrop(drop).catch((err) => logger.warn({ err }, "Telegram send failed"));
       }
     }
@@ -408,6 +409,7 @@ async function persistLegacyEvents(
       }).onConflictDoNothing();
     }
   }
+  return collectedDrops;
 }
 
 // ---------------------------------------------------------------------------
@@ -478,7 +480,13 @@ async function pollOnce(minDropPercent: number, state: PollerState): Promise<voi
       return events;
     });
     logger.info({ count: legacyEvents.length, marketTypeFilter }, "Persisting legacy events");
-    await persistLegacyEvents(legacyEvents, now, minDropPercent);
+    const drops = await persistLegacyEvents(legacyEvents, now, minDropPercent);
+    // Stagger drop broadcasts so they trickle into the feed one by one
+    // instead of arriving in bulk with identical timestamps.
+    const STAGGER_MS = 350;
+    drops.forEach((drop, i) => {
+      setTimeout(() => broadcastOddsDrop(drop), i * STAGGER_MS);
+    });
   } catch (err) {
     logger.warn({ err }, "Failed to persist legacy events");
   }
