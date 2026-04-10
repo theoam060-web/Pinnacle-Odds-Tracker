@@ -631,7 +631,7 @@ function Hero() {
             transition={{ duration: 0.5, delay: 0.18 }}
             className="text-xl md:text-2xl text-foreground/70 font-sans leading-relaxed mb-10 max-w-2xl"
           >
-            Place bets that are mathematically in your favour. Our real-time alerts are driven by the world's sharpest bookmaker — the global benchmark every market follows.
+            Always bet at the right price. We watch the world's sharpest bookmaker 24/7 and alert you the moment the odds drop.
           </motion.p>
 
           {/* Stat cards */}
