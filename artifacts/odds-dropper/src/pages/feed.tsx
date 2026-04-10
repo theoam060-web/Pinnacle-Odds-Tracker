@@ -1,4 +1,5 @@
-import { useRef, useState, useEffect, useMemo, useCallback } from "react";
+import { useRef, useState, useEffect, useMemo, useCallback, memo } from "react";
+import { subscribeToGlobalTick } from "@/lib/globalTick";
 import { Link } from "wouter";
 import { useGetOddsDrops, useGetOddsSummary, getGetOddsDropsQueryKey } from "@workspace/api-client-react";
 import { Layout } from "@/components/layout";
@@ -16,7 +17,7 @@ import {
 import { ArrowRight, TrendingDown, BookmarkPlus, Pause, Play, ArrowUpDown, Check, BarChart2, LineChart } from "lucide-react";
 import { formatOdds, formatTime, formatDate } from "@/lib/format";
 import { computeNovig } from "@/lib/novig";
-import { useAlertStore, AlertConfig, BOOKMAKER_OPTIONS } from "@/lib/alert-context";
+import { useAlertStore, AlertConfig, BOOKMAKER_OPTIONS, type NovigMethod } from "@/lib/alert-context";
 import { useWsFeed, type WsOddsEventUpdate } from "@/hooks/use-ws-feed";
 
 const SPORT_LABELS: Record<string, string> = {
@@ -71,18 +72,25 @@ function calcAlertAge(dropAt: Date | string): string {
 }
 
 function LiveAlertAge({ dropAt }: { dropAt: Date | string | null }) {
-  const [label, setLabel] = useState(() => dropAt ? calcAlertAge(dropAt) : "");
+  const spanRef = useRef<HTMLSpanElement>(null);
 
   useEffect(() => {
     if (!dropAt) return;
-    setLabel(calcAlertAge(dropAt));
-    const id = setInterval(() => setLabel(calcAlertAge(dropAt)), 1000);
-    return () => clearInterval(id);
+    const el = spanRef.current;
+    if (!el) return;
+    const update = () => {
+      const text = calcAlertAge(dropAt);
+      if (el.textContent !== text) el.textContent = text;
+    };
+    update();
+    return subscribeToGlobalTick(update);
   }, [dropAt]);
 
   if (!dropAt) return <span className="text-[11px] text-muted-foreground/40">—</span>;
   return (
-    <span className="text-[11px] font-mono text-amber-400 tabular-nums">{label}</span>
+    <span ref={spanRef} className="text-[11px] font-mono text-amber-400 tabular-nums">
+      {dropAt ? calcAlertAge(dropAt) : ""}
+    </span>
   );
 }
 
@@ -432,6 +440,120 @@ function ComparePopover({ row, comparisonBookmakers }: {
   );
 }
 
+interface FeedTableRowProps {
+  row: FeedRow;
+  novigMethod: NovigMethod;
+  comparisonBookmakers: string[];
+  onLogBet: (row: FeedRow & { novigOdds: number }) => void;
+  onOddsModal: (id: number) => void;
+}
+
+const FeedTableRow = memo(function FeedTableRow({
+  row,
+  novigMethod,
+  comparisonBookmakers,
+  onLogBet,
+  onOddsModal,
+}: FeedTableRowProps) {
+  const dropAbs = Math.abs(row.changePercent);
+  const novig = useMemo(() => computeNovig(row.allCurrentOdds, row.lineIndex), [row.allCurrentOdds, row.lineIndex]);
+
+  return (
+    <TableRow className={`hover:bg-muted/20 ${dropIntensityBg(dropAbs)}`}>
+      <TableCell>
+        <Link href={`/event/${row.eventId}`}>
+          <div className="cursor-pointer group">
+            <div className="text-[10px] text-muted-foreground font-mono mb-0.5">
+              {formatTime(row.commenceTime)} · {formatDate(row.commenceTime)}
+            </div>
+            <div className="text-sm font-medium text-foreground group-hover:text-primary transition-colors leading-tight">
+              {row.homeTeam} <span className="text-muted-foreground text-xs">vs</span> {row.awayTeam}
+            </div>
+            <div className="mt-0.5">
+              <Badge variant="outline" className="text-[9px] font-normal border-muted-foreground/20 px-1 py-0 h-4">
+                {row.leagueName}
+              </Badge>
+            </div>
+          </div>
+        </Link>
+      </TableCell>
+
+      <TableCell className="text-center">
+        <CountdownTimer commenceTime={row.commenceTime} />
+      </TableCell>
+
+      <TableCell className="text-center">
+        <LiveAlertAge dropAt={row.newDropAt} />
+      </TableCell>
+
+      <TableCell>
+        <span className="text-xs text-muted-foreground">
+          {SPORT_LABELS[row.sport] ?? row.sport}
+        </span>
+      </TableCell>
+
+      <TableCell>
+        <span className="text-xs font-medium text-foreground capitalize">{row.selection}</span>
+        <div className="text-[10px] text-muted-foreground capitalize mt-0.5">
+          {row.marketType.replace(/_/g, " ")}
+        </div>
+      </TableCell>
+
+      <TableCell className="text-center">
+        <div className="flex flex-col items-center gap-0.5">
+          <div className="flex items-center justify-center gap-1 font-mono">
+            <span className="text-muted-foreground text-sm line-through">{formatOdds(row.openingOdds)}</span>
+            <ArrowRight className="w-3 h-3 text-muted-foreground/40 shrink-0" />
+            <span className="text-foreground text-sm font-bold">{formatOdds(row.currentOdds)}</span>
+          </div>
+          <span className="text-xs font-mono text-emerald-400 tabular-nums font-semibold">
+            NV {formatOdds(novig[novigMethod])}
+          </span>
+        </div>
+      </TableCell>
+
+      <TableCell className="text-right">
+        <div className="flex flex-col items-end gap-1.5">
+          <span className="text-sm font-mono font-bold text-green-400">{dropAbs.toFixed(2)}%</span>
+          <OddsSparkline
+            eventId={row.eventId}
+            selection={row.selection}
+            openingOdds={row.openingOdds}
+            currentOdds={row.currentOdds}
+          />
+        </div>
+      </TableCell>
+
+      <TableCell className="text-center">
+        <div className="flex items-center justify-center gap-1 flex-wrap">
+          <Button
+            size="sm"
+            variant="outline"
+            className="h-7 text-xs px-2 gap-1"
+            onClick={() => {
+              const matchupId = parseInt(row.eventId.split("-")[1]);
+              if (!isNaN(matchupId)) onOddsModal(matchupId);
+            }}
+          >
+            <LineChart className="w-3 h-3" />
+            Odds
+          </Button>
+          <Button
+            size="sm"
+            variant="outline"
+            className="h-7 text-xs px-2 gap-1"
+            onClick={() => onLogBet({ ...row, novigOdds: novig[novigMethod] })}
+          >
+            <BookmarkPlus className="w-3 h-3" />
+            Log
+          </Button>
+          <ComparePopover row={row} comparisonBookmakers={comparisonBookmakers} />
+        </div>
+      </TableCell>
+    </TableRow>
+  );
+});
+
 export default function FeedPage() {
   const { configs, novigMethod, comparisonBookmakers } = useAlertStore();
   const [logBetRow, setLogBetRow] = useState<(FeedRow & { novigOdds: number }) | null>(null);
@@ -517,19 +639,31 @@ export default function FeedPage() {
   // ---------------------------------------------------------------------------
   // WebSocket real-time stream
   // ---------------------------------------------------------------------------
-  const handleOddsUpdate = useCallback((event: WsOddsEventUpdate) => {
-    // Build new rows using always-current refs (no stale closure)
-    const newEntries = wsEventToRows(event, configsRef.current, lastShownRef);
-    if (newEntries.length === 0) return;
+  // WS event buffer — accumulate rows, flush at most every 200ms
+  const wsBufferRef = useRef<FeedRow[]>([]);
+  const wsFlushTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
+  const flushWsBuffer = useCallback(() => {
+    wsFlushTimerRef.current = null;
+    const buffered = wsBufferRef.current;
+    if (buffered.length === 0) return;
+    wsBufferRef.current = [];
     if (pausedRef.current) {
-      // Queue while paused — flush on resume
-      pendingWsRowsRef.current = [...newEntries, ...pendingWsRowsRef.current];
-      setPendingCount(prev => prev + newEntries.length);
+      pendingWsRowsRef.current = [...buffered, ...pendingWsRowsRef.current];
+      setPendingCount(prev => prev + buffered.length);
     } else {
-      setShownRows(prev => [...newEntries, ...prev].slice(0, MAX_FEED_ROWS));
+      setShownRows(prev => [...buffered, ...prev].slice(0, MAX_FEED_ROWS));
     }
   }, []);
+
+  const handleOddsUpdate = useCallback((event: WsOddsEventUpdate) => {
+    const newEntries = wsEventToRows(event, configsRef.current, lastShownRef);
+    if (newEntries.length === 0) return;
+    wsBufferRef.current = [...newEntries, ...wsBufferRef.current];
+    if (!wsFlushTimerRef.current) {
+      wsFlushTimerRef.current = setTimeout(flushWsBuffer, 200);
+    }
+  }, [flushWsBuffer]);
 
 
   // WebSocket drives real-time feed updates; layout handles chimes via SSE separately
@@ -730,116 +864,16 @@ export default function FeedPage() {
                 </TableCell>
               </TableRow>
             ) : (
-              displayRows.map((row, i) => {
-                const dropAbs = Math.abs(row.changePercent);
-
-                return (
-                  <TableRow
-                    key={`${row.eventId}-${row.selection}-${i}`}
-                    className={`hover:bg-muted/20 ${dropIntensityBg(dropAbs)}`}
-                  >
-                    <TableCell>
-                      <Link href={`/event/${row.eventId}`}>
-                        <div className="cursor-pointer group">
-                          <div className="text-[10px] text-muted-foreground font-mono mb-0.5">
-                            {formatTime(row.commenceTime)} · {formatDate(row.commenceTime)}
-                          </div>
-                          <div className="text-sm font-medium text-foreground group-hover:text-primary transition-colors leading-tight">
-                            {row.homeTeam} <span className="text-muted-foreground text-xs">vs</span> {row.awayTeam}
-                          </div>
-                          <div className="mt-0.5">
-                            <Badge variant="outline" className="text-[9px] font-normal border-muted-foreground/20 px-1 py-0 h-4">
-                              {row.leagueName}
-                            </Badge>
-                          </div>
-                        </div>
-                      </Link>
-                    </TableCell>
-
-                    <TableCell className="text-center">
-                      <CountdownTimer commenceTime={row.commenceTime} />
-                    </TableCell>
-
-                    <TableCell className="text-center">
-                      <LiveAlertAge dropAt={row.newDropAt} />
-                    </TableCell>
-
-                    <TableCell>
-                      <span className="text-xs text-muted-foreground">
-                        {SPORT_LABELS[row.sport] ?? row.sport}
-                      </span>
-                    </TableCell>
-
-                    <TableCell>
-                      <span className="text-xs font-medium text-foreground capitalize">{row.selection}</span>
-                      <div className="text-[10px] text-muted-foreground capitalize mt-0.5">
-                        {row.marketType.replace(/_/g, " ")}
-                      </div>
-                    </TableCell>
-
-                    <TableCell className="text-center">
-                      <div className="flex flex-col items-center gap-0.5">
-                        <div className="flex items-center justify-center gap-1 font-mono">
-                          <span className="text-muted-foreground text-sm line-through">
-                            {formatOdds(row.openingOdds)}
-                          </span>
-                          <ArrowRight className="w-3 h-3 text-muted-foreground/40 shrink-0" />
-                          <span className="text-foreground text-sm font-bold">
-                            {formatOdds(row.currentOdds)}
-                          </span>
-                        </div>
-                        <span className="text-xs font-mono text-emerald-400 tabular-nums font-semibold">
-                          NV {formatOdds(computeNovig(row.allCurrentOdds, row.lineIndex)[novigMethod])}
-                        </span>
-                      </div>
-                    </TableCell>
-
-                    <TableCell className="text-right">
-                      <div className="flex flex-col items-end gap-1.5">
-                        <span className="text-sm font-mono font-bold text-green-400">
-                          {dropAbs.toFixed(2)}%
-                        </span>
-                        <OddsSparkline
-                          eventId={row.eventId}
-                          selection={row.selection}
-                          openingOdds={row.openingOdds}
-                          currentOdds={row.currentOdds}
-                        />
-                      </div>
-                    </TableCell>
-
-                    <TableCell className="text-center">
-                      <div className="flex items-center justify-center gap-1 flex-wrap">
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          className="h-7 text-xs px-2 gap-1"
-                          onClick={() => {
-                            const matchupId = parseInt(row.eventId.split("-")[1]);
-                            if (!isNaN(matchupId)) setOddsMatchupId(matchupId);
-                          }}
-                        >
-                          <LineChart className="w-3 h-3" />
-                          Odds
-                        </Button>
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          className="h-7 text-xs px-2 gap-1"
-                          onClick={() => {
-                            const novig = computeNovig(row.allCurrentOdds, row.lineIndex);
-                            setLogBetRow({ ...row, novigOdds: novig[novigMethod] });
-                          }}
-                        >
-                          <BookmarkPlus className="w-3 h-3" />
-                          Log
-                        </Button>
-                        <ComparePopover row={row} comparisonBookmakers={comparisonBookmakers} />
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                );
-              })
+              displayRows.map((row, i) => (
+                <FeedTableRow
+                  key={`${row.eventId}-${row.selection}-${i}`}
+                  row={row}
+                  novigMethod={novigMethod}
+                  comparisonBookmakers={comparisonBookmakers}
+                  onLogBet={setLogBetRow}
+                  onOddsModal={setOddsMatchupId}
+                />
+              ))
             )}
           </TableBody>
         </Table>

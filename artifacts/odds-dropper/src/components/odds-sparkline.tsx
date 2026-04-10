@@ -1,4 +1,4 @@
-import { LineChart, Line, ResponsiveContainer, YAxis, CartesianGrid } from "recharts";
+import { memo } from "react";
 import { useLocation } from "wouter";
 
 interface Props {
@@ -8,15 +8,39 @@ interface Props {
   openingOdds: number;
 }
 
-export function OddsSparkline({ eventId, selection, currentOdds, openingOdds }: Props) {
+/**
+ * Lightweight pure-SVG sparkline — no Recharts, no ResizeObserver overhead.
+ * Renders 2 points (opening → current) as a step-line chart.
+ */
+export const OddsSparkline = memo(function OddsSparkline({
+  eventId,
+  currentOdds,
+  openingOdds,
+}: Props) {
   const [, navigate] = useLocation();
-
   const isDrop = currentOdds < openingOdds;
+  const stroke = isDrop ? "#38bdf8" : "#94a3b8";
 
-  const points = [
-    { t: "open", odds: openingOdds },
-    { t: "now", odds: currentOdds },
-  ];
+  const W = 150;
+  const H = 72;
+  const pad = 8;
+  const iW = W - pad * 2;
+  const iH = H - pad * 2;
+
+  const lo = Math.min(openingOdds, currentOdds);
+  const hi = Math.max(openingOdds, currentOdds);
+  const range = hi - lo || 1;
+
+  const toY = (v: number) => pad + iH - ((v - lo) / range) * iH;
+
+  const x1 = pad;
+  const x2 = pad + iW / 2;
+  const x3 = pad + iW;
+  const y1 = toY(openingOdds);
+  const y2 = toY(currentOdds);
+
+  // Step-after: horizontal then vertical
+  const d = `M ${x1} ${y1} H ${x2} V ${y2} H ${x3}`;
 
   return (
     <div
@@ -25,26 +49,24 @@ export function OddsSparkline({ eventId, selection, currentOdds, openingOdds }: 
       title="Click for full chart"
     >
       <div className="w-[150px] h-[72px] opacity-85 group-hover:opacity-100 transition-opacity rounded overflow-hidden bg-[#0c0e14] border border-white/8">
-        <ResponsiveContainer width="100%" height="100%">
-          <LineChart data={points} margin={{ top: 6, right: 6, left: 6, bottom: 6 }}>
-            <CartesianGrid
-              strokeDasharray="2 4"
+        <svg width={W} height={H} viewBox={`0 0 ${W} ${H}`}>
+          {/* subtle horizontal grid lines */}
+          {[0.25, 0.5, 0.75].map((t) => (
+            <line
+              key={t}
+              x1={pad}
+              x2={W - pad}
+              y1={pad + iH * (1 - t)}
+              y2={pad + iH * (1 - t)}
               stroke="rgba(255,255,255,0.04)"
-              vertical={false}
+              strokeDasharray="2 4"
             />
-            <YAxis domain={["auto", "auto"]} hide />
-            <Line
-              type="stepAfter"
-              dataKey="odds"
-              stroke={isDrop ? "#38bdf8" : "#94a3b8"}
-              strokeWidth={2}
-              dot={false}
-              isAnimationActive={false}
-              connectNulls
-            />
-          </LineChart>
-        </ResponsiveContainer>
+          ))}
+          <path d={d} stroke={stroke} strokeWidth={2} fill="none" />
+          {/* endpoint dot */}
+          <circle cx={x3} cy={y2} r={3} fill={stroke} />
+        </svg>
       </div>
     </div>
   );
-}
+});
