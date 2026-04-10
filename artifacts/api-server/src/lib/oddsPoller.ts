@@ -281,8 +281,6 @@ async function persistLegacyEvents(
     const updatedLines: OddsLine[] = shape.lines.map((newLine) => {
       if (!existing) return newLine;
       const existingLines = existing.lines as OddsLine[];
-      // Match by designation prefix (before first space) so spread/total lines still match
-      // when the line number changes (e.g. "home -1.5" → "home -2")
       const newDesignation = newLine.selection.split(" ")[0];
       const existingLine =
         existingLines.find((l) => l.selection === newLine.selection) ??
@@ -300,19 +298,15 @@ async function persistLegacyEvents(
     const biggestDrop = getBiggestDrop(updatedLines);
     const biggestRise = getBiggestRise(updatedLines);
     const prevBiggestDrop = existing?.biggestDrop ?? 0;
-    // Bug 2 fix: persist the running minimum — biggestDrop in DB should never move back toward 0.
-    // The current poll's biggestDrop is used for alert comparison, but we store the historical worst.
     const persistedBiggestDrop = Math.min(prevBiggestDrop, biggestDrop);
-    // Bug 1 fix: re-alert if the drop exceeds the threshold AND either:
-    //   (a) it's a new all-time low (deeper than previously persisted), OR
-    //   (b) the last alert was more than RE_ALERT_COOLDOWN_MS ago (persistent drop re-alert)
-    const RE_ALERT_COOLDOWN_MS = 20 * 60 * 1000; // 20 minutes
+
+    // Alert when opening→current drop exceeds threshold AND cooldown has passed.
+    // 3-minute cooldown prevents spam while still showing active drops regularly.
+    const RE_ALERT_COOLDOWN_MS = 3 * 60 * 1000;
     const lastAlertAge = existing?.newDropAt
       ? Date.now() - new Date(existing.newDropAt).getTime()
       : Infinity;
-    const isNewDrop =
-      biggestDrop < -minDropPercent &&
-      (biggestDrop < prevBiggestDrop || lastAlertAge > RE_ALERT_COOLDOWN_MS);
+    const isNewDrop = biggestDrop < -minDropPercent && lastAlertAge > RE_ALERT_COOLDOWN_MS;
     const newDropAt = isNewDrop ? now : (existing?.newDropAt ?? null);
 
     const hasLineChanges =
@@ -480,10 +474,16 @@ async function pollOnce(minDropPercent: number, state: PollerState): Promise<voi
       return events;
     });
     logger.info({ count: legacyEvents.length, marketTypeFilter }, "Persisting legacy events");
-    const drops = await persistLegacyEvents(legacyEvents, now, minDropPercent);
-    // Stagger drop broadcasts so they trickle into the feed one by one
-    // instead of arriving in bulk with identical timestamps.
-    const STAGGER_MS = 350;
+    const allDrops = await persistLegacyEvents(legacyEvents, now, minDropPercent);
+    // Cap at 20 drops per poll — show the biggest movers first.
+    // Then stagger by 100ms so they trickle into the feed one by one.
+    const drops = allDrops
+      .sort((a, b) => a.changePercent - b.changePercent)
+      .slice(0, 20);
+    if (allDrops.length > 0) {
+      logger.info({ total: allDrops.length, broadcasting: drops.length }, "Broadcasting staggered drops");
+    }
+    const STAGGER_MS = 100;
     drops.forEach((drop, i) => {
       setTimeout(() => broadcastOddsDrop(drop), i * STAGGER_MS);
     });
