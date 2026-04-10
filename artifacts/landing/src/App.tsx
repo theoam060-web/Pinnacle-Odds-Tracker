@@ -27,6 +27,7 @@ import PricingPage from "./PricingPage";
 import SuccessPage from "./SuccessPage";
 import TermsPage from "./TermsPage";
 import PrivacyPage from "./PrivacyPage";
+import ChatWidget from "./ChatWidget";
 
 import NotFound from "@/pages/not-found";
 
@@ -2392,6 +2393,7 @@ function ClerkProviderWithRoutes() {
         <TooltipProvider>
           <ScrollToTop />
           <Router />
+          <ChatWidget />
           <Toaster />
         </TooltipProvider>
       </QueryClientProvider>
