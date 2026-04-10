@@ -7,14 +7,14 @@ import { QueryClient, QueryClientProvider, useQueryClient } from "@tanstack/reac
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { motion, useScroll, useTransform, AnimatePresence } from "framer-motion";
-import { useEffect, useState, useRef } from "react";
+import React, { useEffect, useState, useRef, useContext } from "react";
 import { ClerkProvider, SignIn, SignUp, Show, useClerk, useUser } from "@clerk/react";
 import { 
   Activity, Bell,
   LineChart as LineChartIcon, Radar,
   TrendingUp, ChevronRight, ChevronLeft, CheckCircle2,
   Database, TrendingDown, ClipboardList, BarChart2,
-  Calculator, CalendarDays, Wallet
+  Calculator, CalendarDays, Wallet, Smartphone
 } from "lucide-react";
 import {
   IconOddsDrop, IconBetTracker, IconBookmakerComparison, IconStake,
@@ -30,6 +30,7 @@ import PrivacyPage from "./PrivacyPage";
 import ChatWidget from "./ChatWidget";
 
 import NotFound from "@/pages/not-found";
+import InstallAppModal from "./InstallAppModal";
 
 const queryClient = new QueryClient();
 
@@ -1274,6 +1275,7 @@ function Footer() {
 }
 
 function AlertConfigSection() {
+  const openInstall = useContext(InstallModalContext);
   return (
     <section id="alerts" className="py-28 bg-card border-y border-border/20 overflow-hidden relative">
       <div className="absolute inset-0 pointer-events-none">
@@ -1330,28 +1332,15 @@ function AlertConfigSection() {
 
             {/* CTA button */}
             <div className="flex flex-col sm:flex-row gap-3 justify-center lg:justify-start pt-2">
-              <motion.a
-                href="#"
+              <motion.button
+                onClick={openInstall}
                 whileHover={{ scale: 1.03 }}
                 whileTap={{ scale: 0.97 }}
                 className="inline-flex items-center justify-center gap-3 bg-primary text-primary-foreground font-bold font-sans text-base px-8 py-4 rounded-xl shadow-[0_0_40px_-8px_hsl(var(--primary)/0.6)] hover:shadow-[0_0_60px_-8px_hsl(var(--primary)/0.8)] transition-shadow"
               >
-                <svg className="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
-                  <path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.8-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M13 3.5c.73-.83 1.94-1.46 2.94-1.5.13 1.17-.34 2.35-1.04 3.19-.69.85-1.83 1.51-2.95 1.42-.15-1.15.41-2.35 1.05-3.11z"/>
-                </svg>
-                Download App
-              </motion.a>
-              <motion.a
-                href="#"
-                whileHover={{ scale: 1.03 }}
-                whileTap={{ scale: 0.97 }}
-                className="inline-flex items-center justify-center gap-3 bg-secondary border border-border text-foreground font-bold font-sans text-base px-8 py-4 rounded-xl hover:border-primary/30 transition-colors"
-              >
-                <svg className="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
-                  <path d="M3 18.5v-13c0-.83.94-1.3 1.6-.8l10 6.5c.6.39.6 1.21 0 1.6l-10 6.5c-.66.5-1.6.03-1.6-.8z"/>
-                </svg>
-                Google Play
-              </motion.a>
+                <Smartphone className="w-5 h-5" />
+                Install App
+              </motion.button>
             </div>
 
             <p className="text-xs font-mono text-muted-foreground/50">Free download · No credit card required</p>
@@ -2291,23 +2280,45 @@ function SharpDataSection() {
   );
 }
 
+export const InstallModalContext = React.createContext<() => void>(() => {});
+
 function AppContent() {
+  const [installOpen, setInstallOpen] = useState(false);
+  const openInstall = () => setInstallOpen(true);
+
   return (
-    <div className="min-h-[100dvh] bg-background text-foreground font-sans selection:bg-primary/30 selection:text-primary">
-      <Navbar />
-      <main>
-        <Hero />
-        <FeaturesGrid />
-        <FeatureStripSection />
-        <BankrollFeatureCards />
-        <ProfitCalculatorSection />
-        <AlertConfigSection />
-        <TestimonialsSection />
-        <FAQSection />
-        <CTASection />
-      </main>
-      <Footer />
-    </div>
+    <InstallModalContext.Provider value={openInstall}>
+      <div className="min-h-[100dvh] bg-background text-foreground font-sans selection:bg-primary/30 selection:text-primary">
+        {/* Top install banner */}
+        <div className="w-full bg-[#0a0b0f] border-b border-primary/10 py-2 px-4 flex items-center justify-center gap-2.5 z-40 relative">
+          <Smartphone className="w-3.5 h-3.5 text-primary shrink-0" />
+          <span className="text-xs font-mono text-muted-foreground">
+            Install the mobile app —{" "}
+          </span>
+          <button
+            onClick={openInstall}
+            className="text-xs font-mono text-primary underline underline-offset-2 hover:text-primary/80 transition-colors"
+          >
+            Scan QR to add to Home Screen
+          </button>
+        </div>
+
+        <Navbar />
+        <main>
+          <Hero />
+          <FeaturesGrid />
+          <FeatureStripSection />
+          <BankrollFeatureCards />
+          <ProfitCalculatorSection />
+          <AlertConfigSection />
+          <TestimonialsSection />
+          <FAQSection />
+          <CTASection />
+        </main>
+        <Footer />
+        <InstallAppModal open={installOpen} onClose={() => setInstallOpen(false)} />
+      </div>
+    </InstallModalContext.Provider>
   );
 }
 
