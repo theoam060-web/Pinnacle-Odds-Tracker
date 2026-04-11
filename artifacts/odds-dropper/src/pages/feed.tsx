@@ -764,9 +764,9 @@ export default function FeedPage() {
         <span className="text-sm text-muted-foreground">
           <span className="font-semibold text-foreground">{displayRows.length}</span> drops matching your alert configs
         </span>
-        {summary && summary.totalEvents > 0 && (
+        {summary && (summary.monitoringCount ?? summary.totalEvents) > 0 && (
           <span className="text-xs text-muted-foreground/60 border-l border-border pl-3">
-            Monitoring <span className="font-semibold text-muted-foreground">{summary.totalEvents.toLocaleString()}</span> live markets
+            Monitoring <span className="font-semibold text-muted-foreground">{(summary.monitoringCount ?? summary.totalEvents).toLocaleString()}</span> live markets
           </span>
         )}
 
@@ -863,9 +863,9 @@ export default function FeedPage() {
                   <div className="flex flex-col items-center gap-2">
                     <TrendingDown className="w-7 h-7 text-muted-foreground/30 mb-1" />
                     <span className="font-medium text-sm text-foreground">No drops detected yet</span>
-                    {summary && summary.totalEvents > 0 ? (
+                    {summary && (summary.monitoringCount ?? summary.totalEvents) > 0 ? (
                       <span className="text-xs text-muted-foreground">
-                        Monitoring <span className="font-semibold text-primary">{summary.totalEvents.toLocaleString()}</span> real Pinnacle markets — drops appear as lines move.
+                        Monitoring <span className="font-semibold text-primary">{(summary.monitoringCount ?? summary.totalEvents).toLocaleString()}</span> real Pinnacle markets — drops appear as lines move.
                       </span>
                     ) : (
                       <span className="text-xs">Waiting for Pinnacle data...</span>

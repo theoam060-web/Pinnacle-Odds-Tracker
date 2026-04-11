@@ -10,6 +10,7 @@ import {
   GetTopMoversResponse,
 } from "@workspace/api-zod";
 import { formatEventForApi } from "../lib/oddsGenerator";
+import { getActiveMarketCount } from "../lib/oddsPoller";
 import { registerSSEClient, unregisterSSEClient } from "../lib/sseManager";
 
 const router: IRouter = Router();
@@ -107,6 +108,7 @@ router.get("/odds/summary", async (_req, res): Promise<void> => {
 
   const summary = {
     totalEvents: rows.length,
+    monitoringCount: getActiveMarketCount() || rows.length,
     dropsCount: drops.length,
     risesCount: rises.length,
     avgDropPercent,

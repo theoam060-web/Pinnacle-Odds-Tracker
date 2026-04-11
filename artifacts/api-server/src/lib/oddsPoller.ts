@@ -28,6 +28,10 @@ const FALLBACK_AFTER_EMPTY_POLLS = 3;
 // This lets us detect poll-to-poll drops without a DB round-trip or FK dependency.
 const priceCache = new Map<string, Map<string, number>>();
 
+// Tracks total active market count across all sports (updated each poll cycle)
+let lastActiveMarketCount = 0;
+export function getActiveMarketCount(): number { return lastActiveMarketCount; }
+
 interface OddsLine {
   selection: string;
   openingOdds: number;
@@ -458,17 +462,24 @@ async function pollOnce(minDropPercent: number, state: PollerState): Promise<voi
 
   logger.info({ sports: allResults.length }, "Full market poll complete");
 
-  // --- Filter to pre-match open markets for the market types we care about ---
+  // --- Build two market sets ---
+  // activeMarkets: ALL pre-match open markets (all periods + alternates) for drop detection + count
+  // primaryMarkets: period=0 non-alternate only, for DB persistence (limits write volume)
   const activeMarkets: NormalizedMarket[] = [];
+  const primaryMarkets: NormalizedMarket[] = [];
   for (const r of allResults) {
     for (const market of r.markets) {
-      if (market.period !== 0 || market.isAlternate || market.status !== "open") continue;
-      if (marketTypeFilter && !marketTypeFilter.includes(market.type)) continue;
+      if (market.status !== "open") continue;
       if (market.isLive) continue;
       if (market.startTime <= now) continue;
+      if (marketTypeFilter && !marketTypeFilter.includes(market.type)) continue;
       activeMarkets.push(market);
+      if (market.period === 0 && !market.isAlternate) {
+        primaryMarkets.push(market);
+      }
     }
   }
+  lastActiveMarketCount = activeMarkets.length;
 
   // --- Detect drops using in-memory price cache (poll-to-poll comparison) ---
   // priceCache tracks the last-polled decimalPrice per market/selection so we can
@@ -512,8 +523,10 @@ async function pollOnce(minDropPercent: number, state: PollerState): Promise<voi
   }
 
   // --- Persist legacy events table (REST API / odds_events table) ---
+  // Only persist primary markets (period=0, non-alternate) to keep DB write volume manageable.
+  // Drop detection runs against the full activeMarkets set via priceCache.
   try {
-    const legacyEvents = activeMarkets.map((market) => {
+    const legacyEvents = primaryMarkets.map((market) => {
       const lines = market.prices.map((p) => ({
         selection: `${p.designation}${p.points !== null ? ` ${p.points}` : ""}`,
         openingOdds: p.decimalPrice,

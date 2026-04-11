@@ -109,6 +109,7 @@ export const GetOddsDropByIdResponse = zod
  */
 export const GetOddsSummaryResponse = zod.object({
   totalEvents: zod.number(),
+  monitoringCount: zod.number().optional(),
   dropsCount: zod.number(),
   risesCount: zod.number(),
   avgDropPercent: zod.number(),
