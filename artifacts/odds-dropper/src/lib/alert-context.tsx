@@ -23,12 +23,16 @@ export const MARKET_TYPE_OPTIONS = [
 ];
 
 export const SPORT_OPTIONS = [
+  { slug: "all",               label: "All Sports" },
   { slug: "soccer",            label: "⚽ Football" },
   { slug: "basketball",        label: "🏀 Basketball" },
   { slug: "tennis",            label: "🎾 Tennis" },
   { slug: "hockey",            label: "🏒 Ice Hockey" },
   { slug: "american_football", label: "🏈 American Football" },
   { slug: "baseball",          label: "⚾ Baseball" },
+  { slug: "handball",          label: "🤾 Handball" },
+  { slug: "volleyball",        label: "🏐 Volleyball" },
+  { slug: "table_tennis",      label: "🏓 Table Tennis" },
 ];
 
 export const SPORT_MARKETS: Record<string, string[]> = {
@@ -119,11 +123,11 @@ export const DEFAULT_COMPARISON_BOOKMAKERS = ["bet365", "williamhill", "unibet_e
 
 export const DEFAULT_ALERT_CONFIG: Omit<AlertConfig, "id" | "name"> = {
   enabled: true,
-  sport: "soccer",
-  minDropPercent: 2,
+  sport: "all",
+  minDropPercent: 0.5,
   maxHoursUntilMatch: 48,
-  minOdds: 1.3,
-  maxOdds: 20,
+  minOdds: 1.01,
+  maxOdds: 100,
   minLimit: 0,
   maxLimit: 999999,
   markets: [],
@@ -163,7 +167,15 @@ function loadStore(): AlertStore {
     const raw = localStorage.getItem(STORAGE_KEY);
     if (!raw) return DEFAULT_STORE;
     const parsed: AlertStore = { ...DEFAULT_STORE, ...JSON.parse(raw) };
-    return { ...parsed, configs: parsed.configs.map(sanitizeConfig) };
+    const configs = parsed.configs.map(sanitizeConfig).map(c => {
+      // Migration: if a config was saved with sport "soccer" and minDropPercent 2
+      // (old defaults), upgrade to "all" + 0.5% so real Pinnacle drops show up
+      if (c.sport === "soccer" && c.minDropPercent === 2 && c.minOdds === 1.3) {
+        return { ...c, sport: "all", minDropPercent: 0.5, minOdds: 1.01, maxOdds: 100 };
+      }
+      return c;
+    });
+    return { ...parsed, configs };
   } catch {
     return DEFAULT_STORE;
   }

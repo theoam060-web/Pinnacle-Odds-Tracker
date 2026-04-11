@@ -24,6 +24,10 @@ import { sendTelegramDrop } from "./telegramNotifier";
 
 const FALLBACK_AFTER_EMPTY_POLLS = 3;
 
+// In-memory price cache: marketId → Map<designation+points, lastPolledDecimalPrice>
+// This lets us detect poll-to-poll drops without a DB round-trip or FK dependency.
+const priceCache = new Map<string, Map<string, number>>();
+
 interface OddsLine {
   selection: string;
   openingOdds: number;
@@ -40,6 +44,7 @@ interface StoredPrice {
   americanPrice: number;
   decimalPrice: number;
   openingDecimalPrice: number;
+  prevDecimalPrice?: number; // last-polled price for poll-to-poll drop detection
   changePercent: number;
   direction: "drop" | "rise" | "stable";
 }
@@ -100,9 +105,11 @@ async function persistMatchups(matchups: NormalizedMatchup[], now: Date): Promis
 async function persistMarkets(
   markets: NormalizedMarket[],
   now: Date,
-): Promise<{ changed: number; drops: number }> {
+  minDropPercent: number,
+): Promise<{ changed: number; drops: number; dropEvents: OddsDropEvent[] }> {
   let changed = 0;
   let drops = 0;
+  const dropEvents: OddsDropEvent[] = [];
 
   for (const market of markets) {
     const [existing] = await db
@@ -127,6 +134,8 @@ async function persistMarkets(
         americanPrice: p.americanPrice,
         decimalPrice: current,
         openingDecimalPrice: opening,
+        // prevDecimalPrice tracks the last-polled price for poll-to-poll detection
+        prevDecimalPrice: prev?.decimalPrice ?? current,
         changePercent,
         direction,
       };
@@ -221,32 +230,38 @@ async function persistMarkets(
       broadcastMarketUpdate(update);
     }
 
-    const prevBiggestDrop = existing?.biggestDrop ?? 0;
-    if (biggestDrop < -2 && biggestDrop < prevBiggestDrop) {
-      drops++;
-      const droppedPrice = updatedPrices.filter((p) => p.direction === "drop").sort((a, b) => a.changePercent - b.changePercent)[0];
-      if (droppedPrice) {
-        const drop: OddsDropEvent = {
-          eventId: market.id,
-          homeTeam: market.homeTeam,
-          awayTeam: market.awayTeam,
-          sport: market.sport,
-          league: market.league,
-          leagueName: market.leagueName,
-          selection: `${droppedPrice.designation}${droppedPrice.points !== null ? ` ${droppedPrice.points}` : ""}`,
-          openingOdds: droppedPrice.openingDecimalPrice,
-          currentOdds: droppedPrice.decimalPrice,
-          changePercent: droppedPrice.changePercent,
-          direction: "drop",
-          detectedAt: now.toISOString(),
-        };
-        broadcastOddsDrop(drop);
-        sendTelegramDrop(drop).catch((err) => logger.warn({ err }, "Telegram send failed"));
+    // A drop alert fires when odds actually moved DOWN in this poll cycle
+    // (prevDecimalPrice → current), not just from opening. This avoids
+    // re-alerting on stale historical drops every poll.
+    if (existing && pricesChanged) {
+      for (const price of updatedPrices) {
+        const prevPrice = price.prevDecimalPrice ?? price.openingDecimalPrice;
+        const pollDrop = calcChangePercent(prevPrice, price.decimalPrice);
+        if (pollDrop < -minDropPercent) {
+          drops++;
+          const drop: OddsDropEvent = {
+            eventId: market.id,
+            homeTeam: market.homeTeam,
+            awayTeam: market.awayTeam,
+            sport: market.sport,
+            league: market.league,
+            leagueName: market.leagueName,
+            selection: `${price.designation}${price.points !== null ? ` ${price.points}` : ""}`,
+            openingOdds: price.openingDecimalPrice,
+            currentOdds: price.decimalPrice,
+            changePercent: price.changePercent, // opening→current for display
+            direction: "drop",
+            detectedAt: now.toISOString(),
+          };
+          dropEvents.push(drop);
+          sendTelegramDrop(drop).catch((err) => logger.warn({ err }, "Telegram send failed"));
+          break; // one alert per market per poll is enough
+        }
       }
     }
   }
 
-  return { changed, drops };
+  return { changed, drops, dropEvents };
 }
 
 // ---------------------------------------------------------------------------
@@ -443,54 +458,97 @@ async function pollOnce(minDropPercent: number, state: PollerState): Promise<voi
 
   logger.info({ sports: allResults.length }, "Full market poll complete");
 
-  // Persist legacy events table — the main source for the live feed
-  try {
-    const legacyEvents = allResults.flatMap((r) => {
-      const events: Awaited<ReturnType<typeof fetchPinnacleOdds>> = [];
-      const seen = new Set<string>();
-      for (const market of r.markets) {
-        if (market.period !== 0 || market.isAlternate || market.status !== "open") continue;
-        if (marketTypeFilter && !marketTypeFilter.includes(market.type)) continue;
-        // Pre-match only: skip games that are live or have already kicked off
-        if (market.isLive) continue;
-        if (market.startTime <= now) continue;
-        if (seen.has(market.id)) continue;
-        seen.add(market.id);
-        const lines = market.prices.map((p) => ({
-          selection: `${p.designation}${p.points !== null ? ` ${p.points}` : ""}`,
-          openingOdds: p.decimalPrice,
-          currentOdds: p.decimalPrice,
-          changePercent: 0,
-          changeAbsolute: 0,
-          direction: "stable" as const,
-        }));
-        if (lines.length === 0) continue;
-        events.push({
-          id: market.id,
+  // --- Filter to pre-match open markets for the market types we care about ---
+  const activeMarkets: NormalizedMarket[] = [];
+  for (const r of allResults) {
+    for (const market of r.markets) {
+      if (market.period !== 0 || market.isAlternate || market.status !== "open") continue;
+      if (marketTypeFilter && !marketTypeFilter.includes(market.type)) continue;
+      if (market.isLive) continue;
+      if (market.startTime <= now) continue;
+      activeMarkets.push(market);
+    }
+  }
+
+  // --- Detect drops using in-memory price cache (poll-to-poll comparison) ---
+  // priceCache tracks the last-polled decimalPrice per market/selection so we can
+  // detect drops that actually happened in this poll cycle — not stale opening→current gaps.
+  const freshDropEvents: OddsDropEvent[] = [];
+
+  for (const market of activeMarkets) {
+    const marketPriceMap = priceCache.get(market.id) ?? new Map<string, number>();
+    const isFirstSeen = !priceCache.has(market.id);
+
+    for (const price of market.prices) {
+      const key = `${price.designation}|${price.points}`;
+      const prevPrice = marketPriceMap.get(key) ?? price.decimalPrice;
+      const pollDrop = calcChangePercent(prevPrice, price.decimalPrice);
+
+      // Always update cache with current price (regardless of whether it's a drop)
+      marketPriceMap.set(key, price.decimalPrice);
+
+      // Only fire on a genuinely fresh poll-to-poll downward move (not first-seen)
+      if (!isFirstSeen && pollDrop < -minDropPercent) {
+        freshDropEvents.push({
+          eventId: market.id,
           homeTeam: market.homeTeam,
           awayTeam: market.awayTeam,
           sport: market.sport,
           league: market.league,
           leagueName: market.leagueName,
-          commenceTime: market.startTime,
-          marketType: market.type as "moneyline" | "spread" | "total" | "team_total" | "asian_handicap",
-          lines,
-          maxRiskStake: market.maxRiskStake,
+          selection: `${price.designation}${price.points !== null ? ` ${price.points}` : ""}`,
+          openingOdds: prevPrice,
+          currentOdds: price.decimalPrice,
+          changePercent: pollDrop,
+          direction: "drop",
+          detectedAt: now.toISOString(),
         });
+        // One alert per market per poll is enough
+        break;
       }
-      return events;
+    }
+
+    priceCache.set(market.id, marketPriceMap);
+  }
+
+  // --- Persist legacy events table (REST API / odds_events table) ---
+  try {
+    const legacyEvents = activeMarkets.map((market) => {
+      const lines = market.prices.map((p) => ({
+        selection: `${p.designation}${p.points !== null ? ` ${p.points}` : ""}`,
+        openingOdds: p.decimalPrice,
+        currentOdds: p.decimalPrice,
+        changePercent: 0,
+        changeAbsolute: 0,
+        direction: "stable" as const,
+      }));
+      return {
+        id: market.id,
+        homeTeam: market.homeTeam,
+        awayTeam: market.awayTeam,
+        sport: market.sport,
+        league: market.league,
+        leagueName: market.leagueName,
+        commenceTime: market.startTime,
+        marketType: market.type as "moneyline" | "spread" | "total" | "team_total" | "asian_handicap",
+        lines,
+        maxRiskStake: market.maxRiskStake,
+      };
     });
     logger.info({ count: legacyEvents.length, marketTypeFilter }, "Persisting legacy events");
-    const allDrops = await persistLegacyEvents(legacyEvents, now, minDropPercent);
+    await persistLegacyEvents(legacyEvents, now, minDropPercent);
+  } catch (err) {
+    logger.warn({ err }, "Failed to persist legacy events");
+  }
 
-    // --- Per-match deduplication + 5-minute cooldown ---
-    // Key: "homeTeam|awayTeam|sport"  Value: last broadcast timestamp (ms)
+  // --- Per-match deduplication + 5-minute cooldown for broadcasting ---
+  try {
     const nowMs = Date.now();
     const MATCH_COOLDOWN_MS = 5 * 60 * 1000;
 
-    // Group drops by match, keep only the biggest mover per match
+    // Group by match, keep biggest mover per match
     const bestPerMatch = new Map<string, OddsDropEvent>();
-    for (const drop of allDrops) {
+    for (const drop of freshDropEvents) {
       const key = `${drop.homeTeam}|${drop.awayTeam}|${drop.sport}`;
       const existing = bestPerMatch.get(key);
       if (!existing || drop.changePercent < existing.changePercent) {
@@ -498,33 +556,30 @@ async function pollOnce(minDropPercent: number, state: PollerState): Promise<voi
       }
     }
 
-    // Apply 5-minute per-match cooldown, then take top 20 biggest movers
+    // Apply 5-minute cooldown, take top 20 biggest movers
     const eligible = [...bestPerMatch.entries()]
-      .filter(([key]) => {
-        const last = matchBroadcastCooldown.get(key) ?? 0;
-        return nowMs - last >= MATCH_COOLDOWN_MS;
-      })
+      .filter(([key]) => nowMs - (matchBroadcastCooldown.get(key) ?? 0) >= MATCH_COOLDOWN_MS)
       .map(([, drop]) => drop)
       .sort((a, b) => a.changePercent - b.changePercent)
       .slice(0, 20);
 
-    // Update cooldown for matches we are about to broadcast
     for (const drop of eligible) {
       const key = `${drop.homeTeam}|${drop.awayTeam}|${drop.sport}`;
       matchBroadcastCooldown.set(key, nowMs);
     }
 
     if (eligible.length > 0) {
-      logger.info({ total: allDrops.length, matches: bestPerMatch.size, broadcasting: eligible.length }, "Broadcasting staggered drops");
+      logger.info({ total: freshDropEvents.length, matches: bestPerMatch.size, broadcasting: eligible.length }, "Broadcasting staggered drops");
+      const STAGGER_MS = 800;
+      eligible.forEach((drop, i) => {
+        setTimeout(() => {
+          broadcastOddsDrop(drop);
+          sendTelegramDrop(drop).catch((err) => logger.warn({ err }, "Telegram send failed"));
+        }, i * STAGGER_MS);
+      });
     }
-
-    // Stagger at 800ms so each drop visibly appears one at a time in the feed
-    const STAGGER_MS = 800;
-    eligible.forEach((drop, i) => {
-      setTimeout(() => broadcastOddsDrop(drop), i * STAGGER_MS);
-    });
   } catch (err) {
-    logger.warn({ err }, "Failed to persist legacy events");
+    logger.warn({ err }, "Failed to broadcast drops");
   }
 }
 
