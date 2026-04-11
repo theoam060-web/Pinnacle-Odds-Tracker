@@ -27,6 +27,7 @@ const FALLBACK_AFTER_EMPTY_POLLS = 3;
 interface OddsLine {
   selection: string;
   openingOdds: number;
+  prevPolledOdds: number; // odds from the previous poll cycle — used for fresh-move detection
   currentOdds: number;
   changePercent: number;
   changeAbsolute: number;
@@ -278,21 +279,23 @@ async function persistLegacyEvents(
       .from(oddsEventsTable)
       .where(eq(oddsEventsTable.id, shape.id));
 
+    const existingLines = existing ? (existing.lines as OddsLine[]) : null;
+
     const updatedLines: OddsLine[] = shape.lines.map((newLine) => {
-      if (!existing) return newLine;
-      const existingLines = existing.lines as OddsLine[];
+      if (!existing || !existingLines) return { ...newLine, prevPolledOdds: newLine.currentOdds };
       const newDesignation = newLine.selection.split(" ")[0];
       const existingLine =
         existingLines.find((l) => l.selection === newLine.selection) ??
         existingLines.find((l) => l.selection.split(" ")[0] === newDesignation);
-      if (!existingLine) return newLine;
+      if (!existingLine) return { ...newLine, prevPolledOdds: newLine.currentOdds };
 
       const openingOdds = existingLine.openingOdds;
+      const prevPolledOdds = existingLine.currentOdds; // what it was last poll
       const currentOdds = newLine.currentOdds;
       const changeAbsolute = parseFloat((currentOdds - openingOdds).toFixed(3));
       const changePercent = calcChangePercent(openingOdds, currentOdds);
       const direction = calcDirection(openingOdds, currentOdds);
-      return { selection: newLine.selection, openingOdds, currentOdds, changeAbsolute, changePercent, direction };
+      return { selection: newLine.selection, openingOdds, prevPolledOdds, currentOdds, changeAbsolute, changePercent, direction };
     });
 
     const biggestDrop = getBiggestDrop(updatedLines);
@@ -300,13 +303,18 @@ async function persistLegacyEvents(
     const prevBiggestDrop = existing?.biggestDrop ?? 0;
     const persistedBiggestDrop = Math.min(prevBiggestDrop, biggestDrop);
 
-    // Alert when opening→current drop exceeds threshold AND cooldown has passed.
-    // 3-minute cooldown prevents spam while still showing active drops regularly.
+    // A drop is only actionable if the odds ACTUALLY MOVED DOWN in THIS poll cycle.
+    // Comparing poll-to-poll (prevPolledOdds → currentOdds) ensures we only alert
+    // on fresh movements — not on stale drops from hours ago that soft books have
+    // already followed. Opening→current is still stored for display context.
     const RE_ALERT_COOLDOWN_MS = 3 * 60 * 1000;
     const lastAlertAge = existing?.newDropAt
       ? Date.now() - new Date(existing.newDropAt).getTime()
       : Infinity;
-    const isNewDrop = biggestDrop < -minDropPercent && lastAlertAge > RE_ALERT_COOLDOWN_MS;
+    const hasFreshPollDrop = existing != null && updatedLines.some(
+      (l) => calcChangePercent(l.prevPolledOdds, l.currentOdds) < -minDropPercent,
+    );
+    const isNewDrop = hasFreshPollDrop && biggestDrop < -minDropPercent && lastAlertAge > RE_ALERT_COOLDOWN_MS;
     const newDropAt = isNewDrop ? now : (existing?.newDropAt ?? null);
 
     const hasLineChanges =
@@ -379,7 +387,6 @@ async function persistLegacyEvents(
 
     for (const line of updatedLines) {
       // Only store a movement tick when odds actually changed from the previously recorded value
-      const existingLines = existing ? (existing.lines as OddsLine[]) : null;
       const prevLine = existingLines
         ? existingLines.find(
             (l) =>
