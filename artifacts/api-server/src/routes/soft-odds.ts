@@ -3,7 +3,8 @@ import { logger } from "../lib/logger";
 
 const router: IRouter = Router();
 
-const ODDS_API_BASE = "https://api.the-odds-api.com/v4";
+const ODDS_API_BASE = "https://odds.p.rapidapi.com/v4";
+const RAPIDAPI_HOST = "odds.p.rapidapi.com";
 
 const SPORT_KEY_MAP: Record<string, string[]> = {
   soccer: [
@@ -196,7 +197,6 @@ async function fetchSportOdds(
   }
 
   const params = new URLSearchParams({
-    apiKey,
     regions: "eu,uk,us,au",
     markets,
     bookmakers: bookmakers.join(","),
@@ -204,7 +204,13 @@ async function fetchSportOdds(
   });
 
   const url = `${ODDS_API_BASE}/sports/${sportKey}/odds?${params.toString()}`;
-  const res = await fetch(url);
+  const res = await fetch(url, {
+    headers: {
+      "x-rapidapi-key": apiKey,
+      "x-rapidapi-host": RAPIDAPI_HOST,
+      "Content-Type": "application/json",
+    },
+  });
 
   if (!res.ok) {
     // 422 = invalid sport key — just return empty silently
