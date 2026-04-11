@@ -1,5 +1,5 @@
 import { db, oddsEventsTable, oddsMovementsTable } from "@workspace/db";
-import { eq } from "drizzle-orm";
+import { eq, lt, inArray } from "drizzle-orm";
 import { logger } from "./logger";
 
 interface OddsLine {
@@ -288,8 +288,39 @@ function getBiggestRise(lines: OddsLine[]): number {
   return rises.length ? Math.max(...rises) : 0;
 }
 
+export async function purgeStaleEvents(): Promise<void> {
+  // Delete events that started more than 3 hours ago — they are no longer actionable.
+  const staleThreshold = new Date(Date.now() - 3 * 60 * 60 * 1000);
+
+  // First find stale event IDs, then delete child movements before parent events.
+  const staleEvents = await db
+    .select({ id: oddsEventsTable.id })
+    .from(oddsEventsTable)
+    .where(lt(oddsEventsTable.commenceTime, staleThreshold));
+
+  if (staleEvents.length === 0) {
+    logger.info("No stale events to purge");
+    return;
+  }
+
+  const staleIds = staleEvents.map(e => e.id);
+
+  await db
+    .delete(oddsMovementsTable)
+    .where(inArray(oddsMovementsTable.eventId, staleIds));
+
+  await db
+    .delete(oddsEventsTable)
+    .where(inArray(oddsEventsTable.id, staleIds));
+
+  logger.info({ count: staleIds.length, threshold: staleThreshold.toISOString() }, "Purged stale odds events");
+}
+
 export async function seedDatabase(): Promise<void> {
   try {
+    // Wipe stale events first so old mock data from previous server runs doesn't persist.
+    await purgeStaleEvents();
+
     for (const event of seedEvents) {
       const biggestDrop = getBiggestDrop(event.lines);
       const biggestRise = getBiggestRise(event.lines);

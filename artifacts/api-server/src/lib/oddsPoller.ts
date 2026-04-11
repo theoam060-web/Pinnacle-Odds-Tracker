@@ -10,7 +10,7 @@ import { eq } from "drizzle-orm";
 import { logger } from "./logger";
 import { fetchAllPinnacleData, fetchPinnacleOdds, parseMarketTypesFromEnv } from "./pinnacleClient";
 import type { PollResult, NormalizedMarket, NormalizedMatchup } from "./pinnacleClient";
-import { seedDatabase } from "./oddsGenerator";
+import { seedDatabase, purgeStaleEvents } from "./oddsGenerator";
 import { startMockSimulator } from "./mockSimulator";
 import {
   broadcastOddsDrop,
@@ -549,6 +549,12 @@ const matchBroadcastCooldown = new Map<string, number>();
 
 export function startOddsPoller(_apiKey: string, intervalMs: number, minDropPercent: number): void {
   logger.info({ intervalMs, minDropPercent }, "Starting Pinnacle full-market poller");
+
+  // Purge stale events immediately on startup, then every hour.
+  purgeStaleEvents().catch(err => logger.warn({ err }, "Startup stale-event purge failed"));
+  setInterval(() => {
+    purgeStaleEvents().catch(err => logger.warn({ err }, "Periodic stale-event purge failed"));
+  }, 60 * 60 * 1000);
 
   const tick = async () => {
     try {
