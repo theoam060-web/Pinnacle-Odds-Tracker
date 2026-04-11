@@ -544,18 +544,16 @@ async function pollOnce(minDropPercent: number, state: PollerState): Promise<voi
       };
     });
     logger.info({ count: legacyEvents.length, marketTypeFilter }, "Persisting legacy events");
-    await persistLegacyEvents(legacyEvents, now, minDropPercent);
+    const legacyDrops = await persistLegacyEvents(legacyEvents, now, minDropPercent);
+    // Merge legacy drops with priceCache drops — either path may catch a move
+    freshDropEvents.push(...legacyDrops);
   } catch (err) {
     logger.warn({ err }, "Failed to persist legacy events");
   }
 
-  // --- Broadcast drops immediately — deduplicate within this poll only ---
-  // One alert per market per poll (biggest mover per match wins), no cross-poll cooldown.
-  // This ensures every real Pinnacle line move gets an alert as soon as it's detected.
+  // --- Broadcast drops — deduplicate per market with 60s cooldown ---
   try {
     const nowMs = Date.now();
-    // 60-second cooldown per market (not per match) to prevent duplicate alerts when
-    // the same market appears across multiple sport batches in a single poll cycle.
     const MARKET_DEDUP_MS = 60_000;
 
     // Deduplicate: one alert per market per 60s, keep biggest drop per match

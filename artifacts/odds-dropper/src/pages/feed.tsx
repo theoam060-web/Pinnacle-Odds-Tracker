@@ -197,6 +197,13 @@ function wsEventToRows(
   const now = Date.now();
   const entries: FeedRow[] = [];
 
+  // Only show events where Pinnacle actually just moved the line.
+  // Require newDropAt to be within the last 2 minutes so stable events
+  // with an old newDropAt timestamp don't pollute the feed.
+  const dropAtMs = event.newDropAt ? new Date(event.newDropAt).getTime() : 0;
+  const twoMinutesAgo = now - 2 * 60 * 1000;
+  if (!dropAtMs || dropAtMs < twoMinutesAgo) return entries;
+
   event.lines.forEach((line, lineIndex) => {
     const matchesAny = configs.some(c =>
       lineMatchesConfig(
@@ -210,7 +217,6 @@ function wsEventToRows(
 
     const key = `${event.id}:${line.selection}`;
     const last = lastShownRef.current.get(key);
-    const dropAtMs = event.newDropAt ? new Date(event.newDropAt).getTime() : 0;
     const oddsChanged = !last || last.odds !== line.currentOdds;
     const reAlerted = last && dropAtMs > 0 && dropAtMs > last.dropAt;
 
