@@ -373,11 +373,8 @@ function ComparePopover({ row, comparisonBookmakers }: {
         {result && !loading && (
           <>
             {!result.found ? (
-              <div className="p-3 space-y-1.5">
+              <div className="p-3">
                 <p className="text-xs text-muted-foreground">{result.message ?? "Match not found in The Odds API."}</p>
-                {!result.notCovered && (
-                  <p className="text-[10px] text-muted-foreground/60">The match may not be covered by The Odds API, or it has already started.</p>
-                )}
               </div>
             ) : (() => {
               const allUnavailable = result.bookmakers.every((bm: { available: boolean }) => !bm.available);

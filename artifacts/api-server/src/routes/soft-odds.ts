@@ -305,8 +305,8 @@ router.get("/soft-odds", async (req, res): Promise<void> => {
       found: false,
       bookmakers: bookmakerKeys.map(key => ({ key, title: key, available: false, outcomes: null })),
       message: isCovered
-        ? `Match not found in The Odds API. This league may not be covered, or the event has already started/finished.`
-        : `The Odds API does not cover ${sport}. Supported: soccer, basketball, hockey, baseball.`,
+        ? `This league isn't covered by The Odds API — only major leagues are supported.`
+        : `The Odds API doesn't cover ${sport}. Supported sports: soccer, basketball, hockey, baseball.`,
       notCovered: !isCovered,
     });
     return;
