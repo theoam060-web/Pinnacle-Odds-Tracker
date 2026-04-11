@@ -323,17 +323,12 @@ async function persistLegacyEvents(
     const persistedBiggestDrop = Math.min(prevBiggestDrop, biggestDrop);
 
     // A drop is only actionable if the odds ACTUALLY MOVED DOWN in THIS poll cycle.
-    // Comparing poll-to-poll (prevPolledOdds → currentOdds) ensures we only alert
-    // on fresh movements — not on stale drops from hours ago that soft books have
-    // already followed. Opening→current is still stored for display context.
-    const RE_ALERT_COOLDOWN_MS = 3 * 60 * 1000;
-    const lastAlertAge = existing?.newDropAt
-      ? Date.now() - new Date(existing.newDropAt).getTime()
-      : Infinity;
+    // No cooldown — update newDropAt on every fresh poll-to-poll drop so the REST
+    // endpoint always returns the most recent drop timestamp.
     const hasFreshPollDrop = existing != null && updatedLines.some(
       (l) => calcChangePercent(l.prevPolledOdds, l.currentOdds) < -minDropPercent,
     );
-    const isNewDrop = hasFreshPollDrop && biggestDrop < -minDropPercent && lastAlertAge > RE_ALERT_COOLDOWN_MS;
+    const isNewDrop = hasFreshPollDrop && biggestDrop < -minDropPercent;
     const newDropAt = isNewDrop ? now : (existing?.newDropAt ?? null);
 
     const hasLineChanges =
@@ -554,36 +549,39 @@ async function pollOnce(minDropPercent: number, state: PollerState): Promise<voi
     logger.warn({ err }, "Failed to persist legacy events");
   }
 
-  // --- Per-match deduplication + 5-minute cooldown for broadcasting ---
+  // --- Broadcast drops immediately — deduplicate within this poll only ---
+  // One alert per market per poll (biggest mover per match wins), no cross-poll cooldown.
+  // This ensures every real Pinnacle line move gets an alert as soon as it's detected.
   try {
     const nowMs = Date.now();
-    const MATCH_COOLDOWN_MS = 5 * 60 * 1000;
+    // 60-second cooldown per market (not per match) to prevent duplicate alerts when
+    // the same market appears across multiple sport batches in a single poll cycle.
+    const MARKET_DEDUP_MS = 60_000;
 
-    // Group by match, keep biggest mover per match
+    // Deduplicate: one alert per market per 60s, keep biggest drop per match
     const bestPerMatch = new Map<string, OddsDropEvent>();
     for (const drop of freshDropEvents) {
-      const key = `${drop.homeTeam}|${drop.awayTeam}|${drop.sport}`;
-      const existing = bestPerMatch.get(key);
+      const marketKey = drop.eventId;
+      if (nowMs - (matchBroadcastCooldown.get(marketKey) ?? 0) < MARKET_DEDUP_MS) continue;
+      const matchKey = `${drop.homeTeam}|${drop.awayTeam}|${drop.sport}`;
+      const existing = bestPerMatch.get(matchKey);
       if (!existing || drop.changePercent < existing.changePercent) {
-        bestPerMatch.set(key, drop);
+        bestPerMatch.set(matchKey, { ...drop, eventId: marketKey });
       }
     }
 
-    // Apply 5-minute cooldown, take top 20 biggest movers
-    const eligible = [...bestPerMatch.entries()]
-      .filter(([key]) => nowMs - (matchBroadcastCooldown.get(key) ?? 0) >= MATCH_COOLDOWN_MS)
-      .map(([, drop]) => drop)
+    // Take top 20 biggest movers, stagger broadcasts by 200ms
+    const eligible = [...bestPerMatch.values()]
       .sort((a, b) => a.changePercent - b.changePercent)
       .slice(0, 20);
 
     for (const drop of eligible) {
-      const key = `${drop.homeTeam}|${drop.awayTeam}|${drop.sport}`;
-      matchBroadcastCooldown.set(key, nowMs);
+      matchBroadcastCooldown.set(drop.eventId, nowMs);
     }
 
     if (eligible.length > 0) {
-      logger.info({ total: freshDropEvents.length, matches: bestPerMatch.size, broadcasting: eligible.length }, "Broadcasting staggered drops");
-      const STAGGER_MS = 800;
+      logger.info({ total: freshDropEvents.length, matches: bestPerMatch.size, broadcasting: eligible.length }, "Broadcasting fresh drops");
+      const STAGGER_MS = 200;
       eligible.forEach((drop, i) => {
         setTimeout(() => {
           broadcastOddsDrop(drop);

@@ -30,8 +30,12 @@ router.get("/odds/drops", async (req, res): Promise<void> => {
 
   let rows = await db.select().from(oddsEventsTable).orderBy(desc(oddsEventsTable.lastUpdated));
 
-  // Pre-match only: exclude games that have already started
   const now = new Date();
+  // Only show drops detected in the last 2 hours (fresh drops only)
+  const twoHoursAgo = new Date(now.getTime() - 2 * 60 * 60 * 1000);
+  rows = rows.filter(r => r.newDropAt != null && new Date(r.newDropAt) > twoHoursAgo);
+
+  // Pre-match only: exclude games that have already started
   rows = rows.filter(r => !r.commenceTime || new Date(r.commenceTime) > now);
 
   // Exclude events with unresolved team names

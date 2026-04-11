@@ -146,12 +146,13 @@ function buildRows(
   sort: SortOption,
 ): FeedRow[] {
   if (!events) return [];
-  const sixHoursAgo = Date.now() - 6 * 60 * 60 * 1000;
+  const twoHoursAgo = Date.now() - 2 * 60 * 60 * 1000;
   const rows: FeedRow[] = [];
 
   for (const event of events) {
-    const updatedAt = new Date(event.lastUpdated as Date).getTime();
-    if (updatedAt < sixHoursAgo) continue;
+    // Only show events where a fresh drop was detected in the last 2 hours
+    const dropAt = event.newDropAt ? new Date(event.newDropAt as Date).getTime() : 0;
+    if (!dropAt || dropAt < twoHoursAgo) continue;
 
     const allCurrentOdds = event.lines.map(l => l.currentOdds);
     event.lines.forEach((line, lineIndex) => {
@@ -751,7 +752,7 @@ export default function FeedPage() {
       <div className="mb-5">
         <h1 className="text-2xl font-bold tracking-tight mb-1 text-foreground">Live Market Feed</h1>
         <p className="text-muted-foreground text-sm">
-          Events with odds drops detected in the last 6 hours.
+          Fresh Pinnacle drops detected in real-time.
           {activeConfigs.length > 0 && (
             <span className="ml-2 text-primary font-medium">{activeConfigs.length} active alert config{activeConfigs.length !== 1 ? "s" : ""}.</span>
           )}
