@@ -608,26 +608,29 @@ export default function FeedPage() {
   const liveRows = useMemo(() => buildRows(events, configs, "newest"), [events, configs]);
 
   useEffect(() => {
-    if (!liveRows.length && !initializedRef.current) return;
-
     if (!initializedRef.current) {
-      // First load: show all current drops and seed the dedup map
+      // First load: start the feed EMPTY — seed the dedup map so WS drops
+      // that arrive later are not duplicated, but do NOT show historical drops.
+      if (!liveRows.length) return; // wait until we have the REST response
       initializedRef.current = true;
       liveRows.forEach(r => lastShownRef.current.set(rowKey(r), {
         odds: r.currentOdds,
         dropAt: r.newDropAt ? new Date(r.newDropAt).getTime() : 0,
       }));
-      setShownRows(liveRows);
+      // Feed stays empty — WebSocket will deliver fresh drops as they happen
       return;
     }
 
-    // Subsequent HTTP polls: only add rows whose odds or newDropAt changed since last shown.
-    // WS events have already updated lastShownRef so no duplicate entries are created.
+    // Subsequent HTTP polls (every 60s): only add rows whose newDropAt is
+    // within the last 2 minutes so we catch any drops the WebSocket missed,
+    // without back-filling historical drops.
+    const twoMinutesAgo = Date.now() - 2 * 60 * 1000;
     const newEntries: FeedRow[] = [];
     for (const row of liveRows) {
       const key = rowKey(row);
       const last = lastShownRef.current.get(key);
       const dropAtMs = row.newDropAt ? new Date(row.newDropAt).getTime() : 0;
+      if (dropAtMs < twoMinutesAgo) continue; // skip anything older than 2 min
       const oddsChanged = !last || last.odds !== row.currentOdds;
       const reAlerted = last && dropAtMs > 0 && dropAtMs > last.dropAt;
       if (oddsChanged || reAlerted) {
