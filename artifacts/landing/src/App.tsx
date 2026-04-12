@@ -832,7 +832,7 @@ const BOOKS: BookLogo[] = [
 ];
 
 function MarqueeBand() {
-  const tripled = [...BOOKS, ...BOOKS, ...BOOKS];
+  const doubled = [...BOOKS, ...BOOKS];
   return (
     <div className="border-y border-border/30 bg-background py-5 overflow-hidden relative">
       {/* Left label */}
@@ -847,9 +847,9 @@ function MarqueeBand() {
       {/* Right fade */}
       <div className="absolute right-0 top-0 bottom-0 z-10 bg-gradient-to-l from-background to-transparent w-20 pointer-events-none" />
 
-      {/* Scrolling track */}
-      <div className="flex animate-marquee items-center gap-0">
-        {tripled.map((book, i) => (
+      {/* Scrolling track — width: max-content ensures translateX(-50%) = exactly one set of logos */}
+      <div className="animate-marquee items-center gap-0" style={{ display: "flex", width: "max-content" }}>
+        {doubled.map((book, i) => (
           <div
             key={i}
             className="shrink-0 px-5 flex items-center justify-center"
