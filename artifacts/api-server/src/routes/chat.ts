@@ -1,4 +1,5 @@
 import { Router } from "express";
+import { requireAuth } from "@clerk/express";
 import OpenAI from "openai";
 import { Resend } from "resend";
 
@@ -31,7 +32,7 @@ If a question is outside the scope of SharpTracker, politely say you can only he
 
 Always respond in the same language as the user (Swedish or English).`;
 
-router.post("/api/chat", async (req, res) => {
+router.post("/api/chat", requireAuth(), async (req, res) => {
   const { messages } = req.body as {
     messages: { role: "user" | "assistant"; content: string }[];
   };
@@ -56,7 +57,7 @@ router.post("/api/chat", async (req, res) => {
   }
 });
 
-router.post("/api/chat/email", async (req, res) => {
+router.post("/api/chat/email", requireAuth(), async (req, res) => {
   const { from, message } = req.body as { from?: string; message?: string };
 
   if (!from || !message) {
