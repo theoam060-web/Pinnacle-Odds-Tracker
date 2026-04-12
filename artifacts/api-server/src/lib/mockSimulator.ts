@@ -60,8 +60,10 @@ export async function simulateTick(): Promise<void> {
       const biggestDrop = drops.length ? Math.min(...drops) : 0;
       const biggestRise = rises.length ? Math.max(...rises) : 0;
 
+      // Always refresh newDropAt so the 2-minute live-feed window stays open
+      const freshDropAt = biggestDrop < -0.5 ? now : (event.newDropAt ?? now);
       await db.update(oddsEventsTable)
-        .set({ lines: updatedLines, biggestDrop, biggestRise, lastUpdated: now })
+        .set({ lines: updatedLines, biggestDrop, biggestRise, newDropAt: freshDropAt, lastUpdated: now })
         .where(eq(oddsEventsTable.id, event.id));
 
       const update: OddsEventUpdate = {
@@ -76,7 +78,7 @@ export async function simulateTick(): Promise<void> {
         lines: updatedLines,
         biggestDrop,
         biggestRise,
-        newDropAt: event.newDropAt ? event.newDropAt.toISOString() : null,
+        newDropAt: freshDropAt.toISOString(),
         lastUpdated: now.toISOString(),
       };
       broadcastOddsUpdate(update);

@@ -6,7 +6,7 @@ import {
   pinnacleMarketsTable,
   pinnacleMarketMovementsTable,
 } from "@workspace/db";
-import { eq } from "drizzle-orm";
+import { eq, like, gt } from "drizzle-orm";
 import { logger } from "./logger";
 import { fetchAllPinnacleData, fetchPinnacleOdds, parseMarketTypesFromEnv } from "./pinnacleClient";
 import type { PollResult, NormalizedMarket, NormalizedMatchup } from "./pinnacleClient";
@@ -611,6 +611,19 @@ const pollerState: PollerState = { consecutiveEmpty: 0, hasSeededFallback: false
 // Per-match broadcast cooldown — key: "homeTeam|awayTeam|sport", value: last broadcast ms
 const matchBroadcastCooldown = new Map<string, number>();
 
+async function activateMockMode(): Promise<void> {
+  logger.info("MOCK_MODE=true — seeding database with mock events and starting simulator");
+  await purgeStaleEvents();
+  await seedDatabase();
+  // Stamp all seeded events with newDropAt=now so they pass the 2-hour feed filter
+  await db
+    .update(oddsEventsTable)
+    .set({ newDropAt: new Date() })
+    .where(like(oddsEventsTable.id, "evt-%"));
+  logger.info("Mock events seeded and stamped with fresh newDropAt");
+  startMockSimulator(15000); // tick every 15s for a lively demo feed
+}
+
 export function startOddsPoller(_apiKey: string, intervalMs: number, minDropPercent: number): void {
   logger.info({ intervalMs, minDropPercent }, "Starting Pinnacle full-market poller");
 
@@ -619,6 +632,12 @@ export function startOddsPoller(_apiKey: string, intervalMs: number, minDropPerc
   setInterval(() => {
     purgeStaleEvents().catch(err => logger.warn({ err }, "Periodic stale-event purge failed"));
   }, 60 * 60 * 1000);
+
+  // If MOCK_MODE is enabled, seed mock data immediately and skip Pinnacle polling
+  if (process.env["MOCK_MODE"] === "true") {
+    activateMockMode().catch(err => logger.error({ err }, "Mock mode activation failed"));
+    return;
+  }
 
   const tick = async () => {
     try {

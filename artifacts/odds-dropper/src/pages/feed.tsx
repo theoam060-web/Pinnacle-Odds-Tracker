@@ -615,28 +615,28 @@ export default function FeedPage() {
 
   useEffect(() => {
     if (!initializedRef.current) {
-      // First load: start the feed EMPTY — seed the dedup map so WS drops
-      // that arrive later are not duplicated, but do NOT show historical drops.
+      // First load: show all current drops immediately so the feed starts populated.
       if (!liveRows.length) return; // wait until we have the REST response
       initializedRef.current = true;
-      liveRows.forEach(r => lastShownRef.current.set(rowKey(r), {
-        odds: r.currentOdds,
-        dropAt: r.newDropAt ? new Date(r.newDropAt).getTime() : 0,
-      }));
-      // Feed stays empty — WebSocket will deliver fresh drops as they happen
+      const initialEntries: FeedRow[] = [];
+      liveRows.forEach(r => {
+        const key = rowKey(r);
+        const dropAt = r.newDropAt ? new Date(r.newDropAt as string).getTime() : 0;
+        lastShownRef.current.set(key, { odds: r.currentOdds, dropAt });
+        initialEntries.push({ ...r, alertedAt: Date.now() });
+      });
+      if (initialEntries.length > 0) {
+        setShownRows(initialEntries.slice(0, MAX_FEED_ROWS));
+      }
       return;
     }
 
-    // Subsequent HTTP polls (every 60s): only add rows whose newDropAt is
-    // within the last 2 minutes so we catch any drops the WebSocket missed,
-    // without back-filling historical drops.
-    const twoMinutesAgo = Date.now() - 2 * 60 * 1000;
+    // Subsequent HTTP polls (every 60s): add rows whose newDropAt changed or odds moved.
     const newEntries: FeedRow[] = [];
     for (const row of liveRows) {
       const key = rowKey(row);
       const last = lastShownRef.current.get(key);
-      const dropAtMs = row.newDropAt ? new Date(row.newDropAt).getTime() : 0;
-      if (dropAtMs < twoMinutesAgo) continue; // skip anything older than 2 min
+      const dropAtMs = row.newDropAt ? new Date(row.newDropAt as string).getTime() : 0;
       const oddsChanged = !last || last.odds !== row.currentOdds;
       const reAlerted = last && dropAtMs > 0 && dropAtMs > last.dropAt;
       if (oddsChanged || reAlerted) {
@@ -645,7 +645,11 @@ export default function FeedPage() {
       }
     }
     if (newEntries.length > 0) {
-      setShownRows(prev => [...newEntries, ...prev].slice(0, MAX_FEED_ROWS));
+      setShownRows(prev => {
+        const existing = new Set(prev.map(rowKey));
+        const fresh = newEntries.filter(r => !existing.has(rowKey(r)));
+        return [...fresh, ...prev].slice(0, MAX_FEED_ROWS);
+      });
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [liveRows]);

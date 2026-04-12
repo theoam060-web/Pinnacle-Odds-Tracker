@@ -151,7 +151,7 @@ const DEFAULT_STORE: AlertStore = {
   comparisonBookmakers: DEFAULT_COMPARISON_BOOKMAKERS,
 };
 
-const STORAGE_KEY = "pt:alerts:v1";
+const STORAGE_KEY = "pt:alerts:v3";
 
 const VALID_MARKET_SLUGS = new Set(MARKET_TYPE_OPTIONS.map(m => m.slug));
 const VALID_SPORT_SLUGS  = new Set(SPORT_OPTIONS.map(s => s.slug));
