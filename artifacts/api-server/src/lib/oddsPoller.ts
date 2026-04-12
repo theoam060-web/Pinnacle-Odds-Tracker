@@ -22,7 +22,7 @@ import {
 } from "./sseManager";
 import { sendTelegramDrop } from "./telegramNotifier";
 
-const FALLBACK_AFTER_EMPTY_POLLS = 3;
+const FALLBACK_AFTER_EMPTY_POLLS = 999;
 
 // In-memory price cache: marketId → Map<designation+points, lastPolledDecimalPrice>
 // This lets us detect poll-to-poll drops without a DB round-trip or FK dependency.

@@ -8,7 +8,7 @@ const SPORT_DISCOVERY_TTL_MS = 2 * 60 * 1000;
 const REQUEST_TIMEOUT_MS = 20_000;
 const MAX_RETRIES = 2;
 const RETRY_DELAY_MS = 1_000;
-const INTER_SPORT_DELAY_MS = 300;
+const INTER_SPORT_DELAY_MS = 3000;
 
 // ---------------------------------------------------------------------------
 // Public types
