@@ -481,12 +481,16 @@ async function fetchMatchupsForSport(
 }
 
 // ---------------------------------------------------------------------------
-// Per-sport 403 cooldown cache
+// Per-sport 403 cooldown cache with exponential backoff
 // When a sport's markets AND its league fallbacks all return 403, we mark it
-// blocked for SPORT_BLOCK_COOLDOWN_MS to avoid hammering Pinnacle.
+// blocked with increasing cooldowns: 5 → 10 → 20 → 40 → 60 min (max).
+// This lets Pinnacle's own IP block expire between retries instead of cycling
+// the same 5-minute window in lockstep.
 // ---------------------------------------------------------------------------
-const SPORT_BLOCK_COOLDOWN_MS = 5 * 60 * 1000; // 5 minutes
-const sportBlockedUntil = new Map<number, number>(); // sportId → unblock timestamp
+const SPORT_BLOCK_BASE_MS = 5 * 60 * 1000; // 5 minutes base
+const SPORT_BLOCK_MAX_MS  = 60 * 60 * 1000; // 60 minutes cap
+const sportBlockedUntil   = new Map<number, number>(); // sportId → unblock ts
+const sportBlockCount     = new Map<number, number>(); // sportId → consecutive block count
 
 export function isSportBlocked(sportId: number): boolean {
   const until = sportBlockedUntil.get(sportId);
@@ -498,12 +502,20 @@ export function isSportBlocked(sportId: number): boolean {
   return true;
 }
 
+export function resetSportBlock(sportId: number): void {
+  sportBlockedUntil.delete(sportId);
+  sportBlockCount.delete(sportId);
+}
+
 function markSportBlocked(sportId: number): void {
-  const until = Date.now() + SPORT_BLOCK_COOLDOWN_MS;
+  const count = (sportBlockCount.get(sportId) ?? 0) + 1;
+  sportBlockCount.set(sportId, count);
+  const cooldownMs = Math.min(SPORT_BLOCK_BASE_MS * Math.pow(2, count - 1), SPORT_BLOCK_MAX_MS);
+  const until = Date.now() + cooldownMs;
   sportBlockedUntil.set(sportId, until);
   logger.info(
-    { sportId, unblockAt: new Date(until).toISOString() },
-    "Sport markets fully blocked — cooling down for 5 min",
+    { sportId, consecutiveBlocks: count, cooldownMinutes: Math.round(cooldownMs / 60000), unblockAt: new Date(until).toISOString() },
+    "Sport markets fully blocked — exponential backoff",
   );
 }
 
@@ -519,28 +531,42 @@ async function fetchMarketsForSport(
   sportId: number,
   matchupsById: Map<number, NormalizedMatchup>,
 ): Promise<PinnacleMarketRaw[]> {
+  // primaryOnly=true: fetch only primary (non-alternate) markets — 5-10× smaller
+  // response than primaryOnly=false, which prevents IP-level rate-limiting on
+  // large sports like soccer (~63k → ~8k markets). Alternate lines are outside
+  // the sharp-bettor use-case anyway.
+  const MARKETS_URL = (id: string, kind: "sport" | "league") =>
+    kind === "sport"
+      ? `/sports/${id}/markets/straight?primaryOnly=true`
+      : `/leagues/${id}/markets/straight?primaryOnly=true`;
+
   try {
-    return await fetchGuestApi<PinnacleMarketRaw[]>(
-      config,
-      `/sports/${sportId}/markets/straight?primaryOnly=false`,
-    );
+    return await fetchGuestApi<PinnacleMarketRaw[]>(config, MARKETS_URL(String(sportId), "sport"));
   } catch (err: unknown) {
     const is403 =
       err instanceof Error && (err.message.includes("403") || err.message.includes("Access denied"));
     if (!is403) throw err;
 
-    // Extract unique league IDs from the matchups we already have
-    const leagueIds = [...new Set([...matchupsById.values()].map((m) => m.leagueId))];
+    // Extract unique league IDs sorted by frequency (most matchups first) so the
+    // sample hits the busiest leagues — they are least likely to return empty/403.
+    const leagueFreq = new Map<number, number>();
+    for (const m of matchupsById.values()) {
+      leagueFreq.set(m.leagueId, (leagueFreq.get(m.leagueId) ?? 0) + 1);
+    }
+    const leagueIds = [...leagueFreq.entries()]
+      .sort((a, b) => b[1] - a[1])
+      .map(([id]) => id);
+
     if (leagueIds.length === 0) {
       markSportBlocked(sportId);
       throw err;
     }
 
-    // Sample up to 3 leagues first — if they all return 403 this is a full IP block
+    // Sample up to 3 busiest leagues first — if they all return 403 this is a full IP block
     const sampleIds = leagueIds.slice(0, 3);
     const sampleResults = await Promise.all(
       sampleIds.map((lid) =>
-        fetchGuestApi<PinnacleMarketRaw[]>(config, `/leagues/${lid}/markets/straight?primaryOnly=false`).then(
+        fetchGuestApi<PinnacleMarketRaw[]>(config, MARKETS_URL(String(lid), "league")).then(
           (data) => ({ ok: true as const, data }),
           (e: unknown) => ({ ok: false as const, err: e }),
         ),
@@ -568,7 +594,7 @@ async function fetchMarketsForSport(
       const batch = remainingIds.slice(i, i + BATCH);
       const results = await Promise.all(
         batch.map((lid) =>
-          fetchGuestApi<PinnacleMarketRaw[]>(config, `/leagues/${lid}/markets/straight?primaryOnly=false`).catch(
+          fetchGuestApi<PinnacleMarketRaw[]>(config, MARKETS_URL(String(lid), "league")).catch(
             () => [] as PinnacleMarketRaw[],
           ),
         ),
@@ -641,6 +667,8 @@ export async function fetchAllPinnacleData(): Promise<PollResult[]> {
         { sportId, sport: result.sport, matchups: result.matchups.length, markets: result.markets.length },
         "Fetched Pinnacle sport snapshot",
       );
+      // Reset backoff counter on a successful poll that returned markets
+      if (result.markets.length > 0) resetSportBlock(sportId);
     } catch (err) {
       const is403 =
         err instanceof Error && (err.message.includes(" 403 ") || err.message.includes("Access denied"));

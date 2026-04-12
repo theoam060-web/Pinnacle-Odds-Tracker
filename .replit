@@ -29,7 +29,7 @@ timeoutMs = 120000
 [userenv]
 
 [userenv.shared]
-POLL_INTERVAL_MS = "1000"
+POLL_INTERVAL_MS = "3000"
 MIN_DROP_PERCENT = "0.5"
 PINNACLE_SPORT_NAMES = "soccer,basketball,tennis,hockey,football,baseball,handball,volleyball"
 PINNACLE_MARKET_TYPES = "moneyline,spread,total"
