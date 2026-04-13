@@ -82,7 +82,10 @@ async function ensureProduct(
 
     const prices = await stripe.prices.list({ product: productId, active: true, limit: 10 });
     const matchPrice = prices.data.find(
-      (p) => p.currency === plan.currency && p.recurring?.interval === 'month',
+      (p) =>
+        p.currency === plan.currency &&
+        p.recurring?.interval === 'month' &&
+        p.unit_amount === plan.unit_amount,
     );
     if (matchPrice) {
       priceId = matchPrice.id;
@@ -149,12 +152,16 @@ async function main() {
   console.log('Products synced.');
 
   const accounts = await sync.postgresClient.getAllAccounts();
-  if (accounts.length > 0) {
-    const accountId = String(accounts[0].id);
-    console.log(`Backfilling ${priceIds.length} price(s): ${priceIds.join(', ')}`);
-    await sync.backfillPrices(priceIds, accountId);
-    console.log('Prices synced.');
+  if (accounts.length === 0) {
+    throw new Error(
+      'No StripeSync accounts found — backfillPrices cannot run. ' +
+      'Ensure the Stripe integration is fully configured and a connected account exists.',
+    );
   }
+  const accountId = String(accounts[0].id);
+  console.log(`Backfilling ${priceIds.length} price(s): ${priceIds.join(', ')}`);
+  await sync.backfillPrices(priceIds, accountId);
+  console.log('Prices synced.');
   console.log('Sync complete.\n');
 
   // 5. DB verification
