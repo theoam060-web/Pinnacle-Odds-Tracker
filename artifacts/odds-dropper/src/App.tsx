@@ -119,6 +119,9 @@ function AuthScreen() {
                   card: "shadow-none bg-transparent",
                   rootBox: "w-full",
                   formButtonPrimary: "bg-cyan-400 text-black hover:bg-cyan-300 font-mono",
+                  socialButtonsBlockButton: { display: "none" },
+                  socialButtonsBlockButtonText: { display: "none" },
+                  dividerRow: { display: "none" },
                 },
               }}
             />
@@ -142,6 +145,9 @@ function AuthScreen() {
                   card: "shadow-none bg-transparent",
                   rootBox: "w-full",
                   formButtonPrimary: "bg-cyan-400 text-black hover:bg-cyan-300 font-mono",
+                  socialButtonsBlockButton: { display: "none" },
+                  socialButtonsBlockButtonText: { display: "none" },
+                  dividerRow: { display: "none" },
                 },
               }}
             />
