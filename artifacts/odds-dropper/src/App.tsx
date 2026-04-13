@@ -74,13 +74,13 @@ function AuthScreen() {
 
       <div className="flex-1 flex flex-col items-center justify-center px-4 py-8">
         <div className="w-full max-w-[400px]">
-          <div className="flex rounded-xl overflow-hidden border border-white/10 mb-6">
+          <div className="flex rounded-xl overflow-hidden border border-white/20 mb-6">
             <button
               onClick={() => setMode("sign-in")}
-              className={`flex-1 flex items-center justify-center gap-2 py-2.5 text-sm font-mono transition-colors ${
+              className={`flex-1 flex items-center justify-center gap-2 py-3 text-sm font-mono transition-colors border-r border-white/20 ${
                 mode === "sign-in"
-                  ? "bg-cyan-400/10 text-cyan-400 border-r border-white/10"
-                  : "text-white/40 hover:text-white/60 border-r border-white/10"
+                  ? "bg-cyan-400/15 text-cyan-400"
+                  : "bg-white/5 text-white/80 hover:text-white hover:bg-white/10"
               }`}
             >
               <LogIn className="w-3.5 h-3.5" />
@@ -88,10 +88,10 @@ function AuthScreen() {
             </button>
             <button
               onClick={() => setMode("sign-up")}
-              className={`flex-1 flex items-center justify-center gap-2 py-2.5 text-sm font-mono transition-colors ${
+              className={`flex-1 flex items-center justify-center gap-2 py-3 text-sm font-mono transition-colors ${
                 mode === "sign-up"
-                  ? "bg-cyan-400/10 text-cyan-400"
-                  : "text-white/40 hover:text-white/60"
+                  ? "bg-cyan-400/15 text-cyan-400"
+                  : "bg-white/5 text-white/80 hover:text-white hover:bg-white/10"
               }`}
             >
               <UserPlus className="w-3.5 h-3.5" />
