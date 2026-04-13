@@ -415,6 +415,17 @@ function NavUserMenu({ closePanel }: { closePanel: () => void }) {
             onClick={() => {
               setOpen(false);
               closePanel();
+              window.location.href = "/app/";
+            }}
+            className="w-full text-left px-4 py-2 text-sm font-mono text-primary hover:bg-primary/5 transition-colors"
+          >
+            Prenumerationer
+          </button>
+          <div className="border-t border-border/40 my-1" />
+          <button
+            onClick={() => {
+              setOpen(false);
+              closePanel();
               signOut();
             }}
             className="w-full text-left px-4 py-2 text-sm font-mono text-foreground/70 hover:text-primary hover:bg-primary/5 transition-colors"
@@ -511,7 +522,15 @@ function Navbar() {
             </div>
           </Show>
           <Show when="signed-in">
-            <NavUserMenu closePanel={closePanel} />
+            <div className="flex items-center gap-3">
+              <button
+                onClick={() => { closePanel(); window.location.href = "/app/"; }}
+                className="hidden md:inline-flex items-center gap-1.5 bg-primary/10 text-primary border border-primary/30 hover:bg-primary hover:text-primary-foreground px-4 py-2 rounded-md font-mono text-sm transition-all shadow-[0_0_15px_rgba(0,255,255,0.08)] hover:shadow-[0_0_20px_rgba(0,255,255,0.3)]"
+              >
+                Prenumerationer
+              </button>
+              <NavUserMenu closePanel={closePanel} />
+            </div>
           </Show>
         </div>
       </div>
