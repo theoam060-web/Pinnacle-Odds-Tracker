@@ -1,15 +1,23 @@
 import { useState, useEffect } from "react";
 import { QRCodeSVG } from "qrcode.react";
-import { X, Smartphone } from "lucide-react";
+import { X, Smartphone, Download } from "lucide-react";
 import { AnimatePresence, motion } from "framer-motion";
+
+interface BeforeInstallPromptEvent extends Event {
+  prompt(): Promise<void>;
+  userChoice: Promise<{ outcome: "accepted" | "dismissed" }>;
+}
 
 interface Props {
   open: boolean;
   onClose: () => void;
+  deferredPrompt?: BeforeInstallPromptEvent | null;
+  onNativeInstall?: () => Promise<void>;
 }
 
-export default function InstallAppModal({ open, onClose }: Props) {
+export default function InstallAppModal({ open, onClose, deferredPrompt, onNativeInstall }: Props) {
   const [appUrl, setAppUrl] = useState("");
+  const [installing, setInstalling] = useState(false);
 
   useEffect(() => {
     setAppUrl(window.location.origin + (import.meta.env.BASE_URL || "/"));
@@ -22,6 +30,16 @@ export default function InstallAppModal({ open, onClose }: Props) {
     return () => window.removeEventListener("keydown", onKey);
   }, [open, onClose]);
 
+  const handleNativeInstall = async () => {
+    if (!onNativeInstall) return;
+    setInstalling(true);
+    try {
+      await onNativeInstall();
+    } finally {
+      setInstalling(false);
+    }
+  };
+
   return (
     <AnimatePresence>
       {open && (
@@ -33,10 +51,8 @@ export default function InstallAppModal({ open, onClose }: Props) {
           transition={{ duration: 0.18 }}
           onClick={onClose}
         >
-          {/* Backdrop */}
           <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" />
 
-          {/* Modal card */}
           <motion.div
             className="relative z-10 w-full max-w-sm bg-[#0d0e14] border border-white/10 rounded-2xl shadow-[0_24px_80px_rgba(0,0,0,0.8)] overflow-hidden"
             initial={{ scale: 0.92, opacity: 0, y: 16 }}
@@ -50,7 +66,7 @@ export default function InstallAppModal({ open, onClose }: Props) {
               <div className="flex items-center gap-2.5">
                 <img src="/icon-192.png" alt="SharpTracker" className="w-8 h-8 rounded-lg" />
                 <div>
-                  <p className="text-sm font-semibold text-foreground leading-tight">Install the app</p>
+                  <p className="text-sm font-semibold text-foreground leading-tight">Installera appen</p>
                   <p className="text-[11px] text-muted-foreground font-mono">sharptracker.io</p>
                 </div>
               </div>
@@ -62,16 +78,37 @@ export default function InstallAppModal({ open, onClose }: Props) {
               </button>
             </div>
 
+            {/* Native install button — shown when browser supports it */}
+            {deferredPrompt && (
+              <div className="px-5 pt-5">
+                <button
+                  onClick={handleNativeInstall}
+                  disabled={installing}
+                  className="w-full flex items-center justify-center gap-2 bg-primary hover:bg-primary/90 disabled:opacity-60 text-background font-semibold text-sm rounded-xl py-3 transition-colors"
+                >
+                  <Download className="w-4 h-4" />
+                  {installing ? "Installerar..." : "Installera SharpTracker"}
+                </button>
+                <div className="flex items-center gap-3 mt-4 mb-2">
+                  <div className="flex-1 h-px bg-white/8" />
+                  <span className="text-[10px] font-mono text-muted-foreground/50 uppercase tracking-widest">eller skanna QR</span>
+                  <div className="flex-1 h-px bg-white/8" />
+                </div>
+              </div>
+            )}
+
             {/* QR Code */}
-            <div className="flex flex-col items-center py-6 gap-3 px-5">
-              <p className="text-xs font-mono text-muted-foreground text-center mb-1">
-                Scan with your phone to open SharpTracker
-              </p>
+            <div className="flex flex-col items-center py-5 gap-3 px-5">
+              {!deferredPrompt && (
+                <p className="text-xs font-mono text-muted-foreground text-center mb-1">
+                  Skanna med din telefon för att öppna SharpTracker
+                </p>
+              )}
               <div className="bg-white rounded-xl p-3 shadow-lg">
                 {appUrl && (
                   <QRCodeSVG
                     value={appUrl}
-                    size={180}
+                    size={160}
                     bgColor="#ffffff"
                     fgColor="#0a0b0f"
                     level="H"
@@ -79,8 +116,8 @@ export default function InstallAppModal({ open, onClose }: Props) {
                       src: "/icon-192.png",
                       x: undefined,
                       y: undefined,
-                      height: 36,
-                      width: 36,
+                      height: 32,
+                      width: 32,
                       opacity: 1,
                       excavate: true,
                     }}
@@ -92,20 +129,20 @@ export default function InstallAppModal({ open, onClose }: Props) {
             {/* Install steps */}
             <div className="px-5 pb-6 space-y-3">
               <p className="text-[10px] font-mono text-muted-foreground/60 uppercase tracking-widest mb-2">
-                How to install
+                Hur man installerar (iOS / Safari)
               </p>
               {[
                 {
                   step: "1",
                   content: (
                     <>
-                      Tap{" "}
+                      Tryck på{" "}
                       <span className="inline-flex items-center justify-center w-6 h-6 bg-white/10 border border-white/15 rounded-md mx-0.5 align-middle">
                         <svg viewBox="0 0 24 24" fill="currentColor" className="w-3.5 h-3.5 text-foreground">
                           <path d="M12 2l-3 4h2v7h2V6h2l-3-4zm-6 14v3a1 1 0 001 1h10a1 1 0 001-1v-3h-2v2H8v-2H6z"/>
                         </svg>
                       </span>{" "}
-                      in the browser menu
+                      i webbläsarmenyn
                     </>
                   ),
                 },
@@ -113,9 +150,9 @@ export default function InstallAppModal({ open, onClose }: Props) {
                   step: "2",
                   content: (
                     <>
-                      Scroll down and tap{" "}
+                      Scrolla ner och tryck på{" "}
                       <span className="inline-flex items-center gap-1 bg-white/10 border border-white/15 rounded-md px-1.5 py-0.5 text-[11px] font-mono text-foreground align-middle mx-0.5">
-                        Add to Home Screen
+                        Lägg till på hemskärmen
                       </span>
                     </>
                   ),
@@ -124,9 +161,9 @@ export default function InstallAppModal({ open, onClose }: Props) {
                   step: "3",
                   content: (
                     <>
-                      Look for the{" "}
+                      Hitta{" "}
                       <img src="/icon-192.png" alt="" className="inline w-5 h-5 rounded-md align-middle mx-0.5" />{" "}
-                      icon on your home screen
+                      ikonen på din hemskärm
                     </>
                   ),
                 },
@@ -138,6 +175,16 @@ export default function InstallAppModal({ open, onClose }: Props) {
                   <p className="text-sm text-foreground/80 leading-snug">{content}</p>
                 </div>
               ))}
+            </div>
+
+            {/* Bottom note */}
+            <div className="px-5 pb-5">
+              <div className="flex items-center gap-2 rounded-xl bg-white/3 border border-white/6 px-3 py-2.5">
+                <Smartphone className="w-3.5 h-3.5 text-primary shrink-0" />
+                <p className="text-[11px] font-mono text-muted-foreground">
+                  Fungerar på iOS och Android · Gratis · Inga notis-behörigheter krävs
+                </p>
+              </div>
             </div>
           </motion.div>
         </motion.div>

@@ -2282,26 +2282,78 @@ function SharpDataSection() {
 
 export const InstallModalContext = React.createContext<() => void>(() => {});
 
+interface BeforeInstallPromptEvent extends Event {
+  prompt(): Promise<void>;
+  userChoice: Promise<{ outcome: "accepted" | "dismissed" }>;
+}
+
 function AppContent() {
   const [installOpen, setInstallOpen] = useState(false);
+  const [deferredPrompt, setDeferredPrompt] = useState<BeforeInstallPromptEvent | null>(null);
+  const [isInstalled, setIsInstalled] = useState(false);
+
+  useEffect(() => {
+    const handler = (e: Event) => {
+      e.preventDefault();
+      setDeferredPrompt(e as BeforeInstallPromptEvent);
+    };
+    window.addEventListener("beforeinstallprompt", handler);
+
+    const installedHandler = () => setIsInstalled(true);
+    window.addEventListener("appinstalled", installedHandler);
+
+    if (window.matchMedia("(display-mode: standalone)").matches) {
+      setIsInstalled(true);
+    }
+
+    return () => {
+      window.removeEventListener("beforeinstallprompt", handler);
+      window.removeEventListener("appinstalled", installedHandler);
+    };
+  }, []);
+
   const openInstall = () => setInstallOpen(true);
+
+  const handleInstallClick = async () => {
+    if (deferredPrompt) {
+      await deferredPrompt.prompt();
+      const { outcome } = await deferredPrompt.userChoice;
+      if (outcome === "accepted") {
+        setDeferredPrompt(null);
+        setIsInstalled(true);
+      }
+    } else {
+      setInstallOpen(true);
+    }
+  };
 
   return (
     <InstallModalContext.Provider value={openInstall}>
       <div className="min-h-[100dvh] bg-background text-foreground font-sans selection:bg-primary/30 selection:text-primary">
         {/* Top install banner */}
-        <div className="w-full bg-[#0a0b0f] border-b border-primary/10 py-2 px-4 flex items-center justify-center gap-2.5 z-40 relative">
-          <Smartphone className="w-3.5 h-3.5 text-primary shrink-0" />
-          <span className="text-xs font-mono text-muted-foreground">
-            Install the mobile app —{" "}
-          </span>
-          <button
-            onClick={openInstall}
-            className="text-xs font-mono text-primary underline underline-offset-2 hover:text-primary/80 transition-colors"
-          >
-            Scan QR to add to Home Screen
-          </button>
-        </div>
+        {!isInstalled && (
+          <div className="w-full bg-[#0a0b0f] border-b border-primary/10 py-2 px-4 flex items-center justify-center gap-3 z-40 relative">
+            <Smartphone className="w-3.5 h-3.5 text-primary shrink-0" />
+            <span className="text-xs font-mono text-muted-foreground">
+              {deferredPrompt ? "Installera SharpTracker som app —" : "Installera som app —"}
+            </span>
+            <button
+              onClick={handleInstallClick}
+              className="inline-flex items-center gap-1.5 text-xs font-mono font-semibold text-background bg-primary hover:bg-primary/90 transition-colors px-2.5 py-1 rounded-md"
+            >
+              <svg className="w-3 h-3" viewBox="0 0 16 16" fill="currentColor">
+                <path d="M8 1v9M5 7l3 3 3-3M3 14h10" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" fill="none"/>
+              </svg>
+              Ladda ner
+            </button>
+            <button
+              onClick={() => setInstallOpen(true)}
+              className="text-xs font-mono text-muted-foreground/50 hover:text-muted-foreground transition-colors"
+            >
+              QR-kod
+            </button>
+          </div>
+        )}
 
         <Navbar />
         <main>
@@ -2316,7 +2368,22 @@ function AppContent() {
           <CTASection />
         </main>
         <Footer />
-        <InstallAppModal open={installOpen} onClose={() => setInstallOpen(false)} />
+        <InstallAppModal
+          open={installOpen}
+          onClose={() => setInstallOpen(false)}
+          deferredPrompt={deferredPrompt}
+          onNativeInstall={async () => {
+            if (deferredPrompt) {
+              await deferredPrompt.prompt();
+              const { outcome } = await deferredPrompt.userChoice;
+              if (outcome === "accepted") {
+                setDeferredPrompt(null);
+                setIsInstalled(true);
+                setInstallOpen(false);
+              }
+            }
+          }}
+        />
       </div>
     </InstallModalContext.Provider>
   );
