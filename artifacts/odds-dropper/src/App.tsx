@@ -59,6 +59,34 @@ function LoadingScreen({ label = "Laddar…" }: { label?: string }) {
   );
 }
 
+const clerkAppearance = {
+  variables: {
+    colorPrimary: "#00e5ff",
+    colorBackground: "#111218",
+    colorText: "#ffffff",
+    colorTextSecondary: "rgba(255,255,255,0.65)",
+    colorInputBackground: "#1a1b22",
+    colorInputText: "#ffffff",
+    borderRadius: "0.75rem",
+    fontFamily: "JetBrains Mono, monospace",
+  },
+  elements: {
+    card: "shadow-none border border-white/10",
+    rootBox: "w-full",
+    headerTitle: { color: "#ffffff", opacity: 1 },
+    headerSubtitle: { color: "rgba(255,255,255,0.65)", opacity: 1 },
+    formFieldLabel: { color: "rgba(255,255,255,0.75)" },
+    formButtonPrimary: "bg-cyan-400 text-black hover:bg-cyan-300 font-mono",
+    socialButtonsBlockButton: { display: "none" },
+    socialButtonsBlockButtonText: { display: "none" },
+    dividerRow: { display: "none" },
+    footerActionText: { color: "rgba(255,255,255,0.5)" },
+    footerActionLink: { color: "#00e5ff" },
+    identityPreviewText: { color: "#ffffff" },
+    formResendCodeLink: { color: "#00e5ff" },
+  },
+} as const;
+
 function AuthScreen() {
   const [mode, setMode] = useState<"sign-in" | "sign-up">("sign-in");
   const base = import.meta.env.BASE_URL?.replace(/\/$/, "") ?? "";
@@ -104,52 +132,14 @@ function AuthScreen() {
               routing="hash"
               afterSignInUrl={`${base}/`}
               signUpUrl={undefined}
-              appearance={{
-                variables: {
-                  colorPrimary: "#00e5ff",
-                  colorBackground: "#111218",
-                  colorText: "#ffffff",
-                  colorTextSecondary: "rgba(255,255,255,0.5)",
-                  colorInputBackground: "#1a1b22",
-                  colorInputText: "#ffffff",
-                  borderRadius: "0.75rem",
-                  fontFamily: "JetBrains Mono, monospace",
-                },
-                elements: {
-                  card: "shadow-none bg-transparent",
-                  rootBox: "w-full",
-                  formButtonPrimary: "bg-cyan-400 text-black hover:bg-cyan-300 font-mono",
-                  socialButtonsBlockButton: { display: "none" },
-                  socialButtonsBlockButtonText: { display: "none" },
-                  dividerRow: { display: "none" },
-                },
-              }}
+              appearance={clerkAppearance}
             />
           ) : (
             <SignUp
               routing="hash"
               afterSignUpUrl={`${base}/`}
               signInUrl={undefined}
-              appearance={{
-                variables: {
-                  colorPrimary: "#00e5ff",
-                  colorBackground: "#111218",
-                  colorText: "#ffffff",
-                  colorTextSecondary: "rgba(255,255,255,0.5)",
-                  colorInputBackground: "#1a1b22",
-                  colorInputText: "#ffffff",
-                  borderRadius: "0.75rem",
-                  fontFamily: "JetBrains Mono, monospace",
-                },
-                elements: {
-                  card: "shadow-none bg-transparent",
-                  rootBox: "w-full",
-                  formButtonPrimary: "bg-cyan-400 text-black hover:bg-cyan-300 font-mono",
-                  socialButtonsBlockButton: { display: "none" },
-                  socialButtonsBlockButtonText: { display: "none" },
-                  dividerRow: { display: "none" },
-                },
-              }}
+              appearance={clerkAppearance}
             />
           )}
         </div>
