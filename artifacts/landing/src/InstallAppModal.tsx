@@ -15,12 +15,14 @@ interface Props {
   onNativeInstall?: () => Promise<void>;
 }
 
+const BASE = import.meta.env.BASE_URL || "/";
+
 export default function InstallAppModal({ open, onClose, deferredPrompt, onNativeInstall }: Props) {
   const [appUrl, setAppUrl] = useState("");
   const [installing, setInstalling] = useState(false);
 
   useEffect(() => {
-    setAppUrl(window.location.origin + (import.meta.env.BASE_URL || "/"));
+    setAppUrl(window.location.origin + BASE);
   }, []);
 
   useEffect(() => {
@@ -64,7 +66,7 @@ export default function InstallAppModal({ open, onClose, deferredPrompt, onNativ
             {/* Header */}
             <div className="flex items-center justify-between px-5 py-4 border-b border-white/8">
               <div className="flex items-center gap-2.5">
-                <img src="/icon-192.png" alt="SharpTracker" className="w-8 h-8 rounded-lg" />
+                <img src={`${BASE}icon-192.png`} alt="SharpTracker" className="w-8 h-8 rounded-lg" />
                 <div>
                   <p className="text-sm font-semibold text-foreground leading-tight">Installera appen</p>
                   <p className="text-[11px] text-muted-foreground font-mono">sharptracker.io</p>
@@ -113,7 +115,7 @@ export default function InstallAppModal({ open, onClose, deferredPrompt, onNativ
                     fgColor="#0a0b0f"
                     level="H"
                     imageSettings={{
-                      src: "/icon-192.png",
+                      src: `${BASE}icon-192.png`,
                       x: undefined,
                       y: undefined,
                       height: 32,
@@ -138,8 +140,10 @@ export default function InstallAppModal({ open, onClose, deferredPrompt, onNativ
                     <>
                       Tryck på{" "}
                       <span className="inline-flex items-center justify-center w-6 h-6 bg-white/10 border border-white/15 rounded-md mx-0.5 align-middle">
-                        <svg viewBox="0 0 24 24" fill="currentColor" className="w-3.5 h-3.5 text-foreground">
-                          <path d="M12 2l-3 4h2v7h2V6h2l-3-4zm-6 14v3a1 1 0 001 1h10a1 1 0 001-1v-3h-2v2H8v-2H6z"/>
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-3.5 h-3.5 text-foreground">
+                          <path d="M4 12v8a2 2 0 002 2h12a2 2 0 002-2v-8"/>
+                          <polyline points="16 6 12 2 8 6"/>
+                          <line x1="12" y1="2" x2="12" y2="15"/>
                         </svg>
                       </span>{" "}
                       i webbläsarmenyn
@@ -162,7 +166,7 @@ export default function InstallAppModal({ open, onClose, deferredPrompt, onNativ
                   content: (
                     <>
                       Hitta{" "}
-                      <img src="/icon-192.png" alt="" className="inline w-5 h-5 rounded-md align-middle mx-0.5" />{" "}
+                      <img src={`${BASE}icon-192.png`} alt="" className="inline w-5 h-5 rounded-md align-middle mx-0.5" />{" "}
                       ikonen på din hemskärm
                     </>
                   ),
