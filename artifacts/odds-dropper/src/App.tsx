@@ -338,8 +338,16 @@ type SubStatus = "loading" | "active" | "none";
 
 function SubscriptionGate({ children }: { children: React.ReactNode }) {
   const { getToken } = useAuth();
+  const { user } = useUser();
   const [status, setStatus] = useState<SubStatus>("loading");
   const bypassAuth = import.meta.env.VITE_DEV_BYPASS_AUTH === "true";
+  const adminEmails = (import.meta.env.VITE_ADMIN_EMAILS ?? "")
+    .split(",")
+    .map((e: string) => e.trim())
+    .filter(Boolean);
+  const isAdmin =
+    adminEmails.length > 0 &&
+    adminEmails.includes(user?.primaryEmailAddress?.emailAddress ?? "");
 
   const check = useCallback(async () => {
     try {
@@ -358,9 +366,9 @@ function SubscriptionGate({ children }: { children: React.ReactNode }) {
   }, [getToken]);
 
   useEffect(() => {
-    if (bypassAuth) { setStatus("active"); return; }
+    if (bypassAuth || isAdmin) { setStatus("active"); return; }
     check();
-  }, [bypassAuth, check]);
+  }, [bypassAuth, isAdmin, check]);
 
   if (status === "loading") return <LoadingScreen label="Kontrollerar prenumeration…" />;
   if (status === "none") return <SubscriptionWall />;
