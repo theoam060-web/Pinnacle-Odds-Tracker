@@ -5,6 +5,7 @@ import { useGetOddsDrops, useGetOddsSummary, getGetOddsDropsQueryKey } from "@wo
 import { Layout } from "@/components/layout";
 import { OddsSparkline } from "@/components/odds-sparkline";
 import { EventGraphModal } from "@/components/event-graph-modal";
+import { OddsCompareModal } from "@/components/odds-compare-modal";
 import { LogBetModal } from "@/components/log-bet-modal";
 import { PinnacleOddsModal } from "@/components/pinnacle-odds-modal";
 import { CountdownTimer } from "@/components/countdown-timer";
@@ -459,6 +460,7 @@ interface FeedTableRowProps {
   onLogBet: (row: FeedRow & { novigOdds: number }) => void;
   onOddsModal: (id: number) => void;
   onGraphClick: (eventId: string, selection: string) => void;
+  onCompare: (row: FeedRow) => void;
 }
 
 const FeedTableRow = memo(function FeedTableRow({
@@ -468,6 +470,7 @@ const FeedTableRow = memo(function FeedTableRow({
   onLogBet,
   onOddsModal,
   onGraphClick,
+  onCompare,
 }: FeedTableRowProps) {
   const dropAbs = Math.abs(row.changePercent);
   const novig = useMemo(() => computeNovig(row.allCurrentOdds, row.lineIndex), [row.allCurrentOdds, row.lineIndex]);
@@ -560,7 +563,16 @@ const FeedTableRow = memo(function FeedTableRow({
             <BookmarkPlus className="w-3 h-3" />
             Log
           </Button>
-          <ComparePopover row={row} comparisonBookmakers={comparisonBookmakers} />
+          <Button
+            size="sm"
+            variant="outline"
+            className="h-7 text-xs px-2 gap-1"
+            onClick={() => onCompare(row)}
+            title="Compare odds across bookmakers"
+          >
+            <BarChart2 className="w-3 h-3" />
+            Compare
+          </Button>
         </div>
       </TableCell>
     </TableRow>
@@ -572,6 +584,7 @@ export default function FeedPage() {
   const [logBetRow, setLogBetRow] = useState<(FeedRow & { novigOdds: number }) | null>(null);
   const [oddsMatchupId, setOddsMatchupId] = useState<number | null>(null);
   const [graphModal, setGraphModal] = useState<{ eventId: string; selection: string } | null>(null);
+  const [compareRow, setCompareRow] = useState<FeedRow | null>(null);
   const [sortBy, setSortBy] = useState<SortOption>("newest");
 
   // Accumulated feed rows. Initial load: all current drops.
@@ -905,6 +918,7 @@ export default function FeedPage() {
                   onLogBet={setLogBetRow}
                   onOddsModal={setOddsMatchupId}
                   onGraphClick={(eventId, selection) => setGraphModal({ eventId, selection })}
+                  onCompare={setCompareRow}
                 />
               ))
             )}
@@ -917,6 +931,20 @@ export default function FeedPage() {
           eventId={graphModal.eventId}
           defaultSelection={graphModal.selection}
           onClose={() => setGraphModal(null)}
+        />
+      )}
+      {compareRow && (
+        <OddsCompareModal
+          open={true}
+          onClose={() => setCompareRow(null)}
+          homeTeam={compareRow.homeTeam}
+          awayTeam={compareRow.awayTeam}
+          sport={compareRow.sport}
+          leagueName={compareRow.leagueName}
+          commenceTime={compareRow.commenceTime}
+          marketType={compareRow.marketType}
+          selection={compareRow.selection}
+          pinnacleOdds={compareRow.currentOdds}
         />
       )}
       {logBetRow && (

@@ -237,6 +237,154 @@ function makeEventCacheKey(
   return `${homeTeam.toLowerCase()}|${awayTeam.toLowerCase()}|${t}|${bookmakers.sort().join(",")}|${market}`;
 }
 
+/**
+ * GET /compare — full bookmaker odds comparison for a given match.
+ * Fetches ALL bookmakers from The Odds API (no filter) and returns them
+ * with the best odds per outcome marked. Includes Pinnacle as a reference.
+ */
+router.get("/compare", async (req, res): Promise<void> => {
+  const apiKey = process.env["ODDS_API_KEY"];
+  if (!apiKey) {
+    res.status(503).json({ error: "ODDS_API_KEY not configured" });
+    return;
+  }
+
+  const { homeTeam, awayTeam, sport, commenceTime, marketType } =
+    req.query as Record<string, string>;
+
+  if (!homeTeam || !awayTeam || !sport || !commenceTime) {
+    res.status(400).json({ error: "Missing required params: homeTeam, awayTeam, sport, commenceTime" });
+    return;
+  }
+
+  const oddsMarket = MARKET_TYPE_MAP[marketType ?? "moneyline"] ?? "h2h";
+  const sportKeys = SPORT_KEY_MAP[sport] ?? SPORT_KEY_MAP["all"] ?? [];
+
+  if (sportKeys.length === 0) {
+    res.json({ found: false, message: `No coverage for sport: ${sport}` });
+    return;
+  }
+
+  // Fetch with ALL bookmakers (empty = all available) and eu+uk+us regions
+  const allRegions = "eu,uk,us,au";
+  let matchedEvent: OddsApiEvent | null = null;
+
+  for (const sportKey of sportKeys) {
+    try {
+      // Use a separate cache key for "all bookmakers" fetches
+      const cacheKey = `compare:${sportKey}:all:${oddsMarket}`;
+      const cached = sportCache.get(cacheKey);
+      let events: OddsApiEvent[];
+
+      if (cached && Date.now() - cached.fetchedAt < CACHE_TTL_MS) {
+        events = cached.data;
+      } else {
+        const params = new URLSearchParams({
+          regions: allRegions,
+          markets: oddsMarket,
+          oddsFormat: "decimal",
+        });
+        const url = `${ODDS_API_BASE}/sports/${sportKey}/odds?${params.toString()}`;
+        const resp = await fetch(url, {
+          headers: {
+            "x-rapidapi-key": apiKey,
+            "x-rapidapi-host": RAPIDAPI_HOST,
+          },
+        });
+        if (!resp.ok) {
+          if (resp.status === 422 || resp.status === 404) continue;
+          throw new Error(`Odds API ${resp.status}`);
+        }
+        events = await resp.json() as OddsApiEvent[];
+        sportCache.set(cacheKey, { data: events, fetchedAt: Date.now() });
+      }
+
+      const found = events.find(e => eventMatches(e, homeTeam, awayTeam, commenceTime));
+      if (found) {
+        matchedEvent = found;
+        break;
+      }
+    } catch (err) {
+      logger.warn({ err, sportKey }, "Compare fetch failed for sport key");
+    }
+  }
+
+  if (!matchedEvent) {
+    res.json({ found: false, message: "Match not found in The Odds API." });
+    return;
+  }
+
+  // Build outcome list from all bookmakers
+  const outcomeNames = new Set<string>();
+  for (const bm of matchedEvent.bookmakers) {
+    const market = bm.markets.find(m => m.key === oddsMarket);
+    if (market) {
+      for (const o of market.outcomes) outcomeNames.add(o.name);
+    }
+  }
+  const outcomes = [...outcomeNames];
+
+  // Find best odds per outcome across all bookmakers
+  const bestOdds = new Map<string, { price: number; bookmakerKey: string; bookmakerTitle: string }>();
+  for (const bm of matchedEvent.bookmakers) {
+    const market = bm.markets.find(m => m.key === oddsMarket);
+    if (!market) continue;
+    for (const o of market.outcomes) {
+      const current = bestOdds.get(o.name);
+      if (!current || o.price > current.price) {
+        bestOdds.set(o.name, { price: o.price, bookmakerKey: bm.key, bookmakerTitle: bm.title });
+      }
+    }
+  }
+
+  // Build bookmaker rows — Pinnacle first
+  const bookmakerRows = matchedEvent.bookmakers
+    .sort((a, b) => {
+      if (a.key === "pinnacle") return -1;
+      if (b.key === "pinnacle") return 1;
+      return a.title.localeCompare(b.title);
+    })
+    .map(bm => {
+      const market = bm.markets.find(m => m.key === oddsMarket);
+      const oddsMap: Record<string, { price: number; isBest: boolean; margin: number | null }> = {};
+
+      for (const outcomeName of outcomes) {
+        const o = market?.outcomes.find(x => x.name === outcomeName);
+        if (o) {
+          const best = bestOdds.get(outcomeName);
+          const isBest = best?.bookmakerKey === bm.key;
+          const pinnacleRow = matchedEvent!.bookmakers.find(b => b.key === "pinnacle");
+          const pinnacleMarket = pinnacleRow?.markets.find(m => m.key === oddsMarket);
+          const pinnacleOutcome = pinnacleMarket?.outcomes.find(x => x.name === outcomeName);
+          const margin = pinnacleOutcome
+            ? parseFloat((((o.price - pinnacleOutcome.price) / pinnacleOutcome.price) * 100).toFixed(1))
+            : null;
+          oddsMap[outcomeName] = { price: o.price, isBest, margin };
+        }
+      }
+
+      return {
+        key: bm.key,
+        title: bm.title,
+        isPinnacle: bm.key === "pinnacle",
+        lastUpdate: bm.last_update,
+        odds: oddsMap,
+      };
+    });
+
+  res.json({
+    found: true,
+    homeTeam: matchedEvent.home_team,
+    awayTeam: matchedEvent.away_team,
+    sportTitle: matchedEvent.sport_title,
+    commenceTime: matchedEvent.commence_time,
+    marketType: oddsMarket,
+    outcomes,
+    bookmakers: bookmakerRows,
+    bestOdds: Object.fromEntries(bestOdds),
+  });
+});
+
 router.get("/soft-odds", async (req, res): Promise<void> => {
   const apiKey = process.env["ODDS_API_KEY"];
   if (!apiKey) {
