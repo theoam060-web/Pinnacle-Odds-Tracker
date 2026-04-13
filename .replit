@@ -35,7 +35,7 @@ PINNACLE_SPORT_NAMES = "soccer,basketball,tennis,hockey,football,baseball,handba
 PINNACLE_MARKET_TYPES = "moneyline,spread,total"
 VAPID_EMAIL = "mailto:alerts@sharptracker.io"
 PINNACLE_SPORT_IDS = "4,19,33,29,15,3"
-MOCK_MODE = "false"
+MOCK_MODE = "true"
 
 [userenv.development]
 VITE_DEV_BYPASS_AUTH = "true"

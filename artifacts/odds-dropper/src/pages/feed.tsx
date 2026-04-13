@@ -4,6 +4,7 @@ import { Link } from "wouter";
 import { useGetOddsDrops, useGetOddsSummary, getGetOddsDropsQueryKey } from "@workspace/api-client-react";
 import { Layout } from "@/components/layout";
 import { OddsSparkline } from "@/components/odds-sparkline";
+import { EventGraphModal } from "@/components/event-graph-modal";
 import { LogBetModal } from "@/components/log-bet-modal";
 import { PinnacleOddsModal } from "@/components/pinnacle-odds-modal";
 import { CountdownTimer } from "@/components/countdown-timer";
@@ -457,6 +458,7 @@ interface FeedTableRowProps {
   comparisonBookmakers: string[];
   onLogBet: (row: FeedRow & { novigOdds: number }) => void;
   onOddsModal: (id: number) => void;
+  onGraphClick: (eventId: string, selection: string) => void;
 }
 
 const FeedTableRow = memo(function FeedTableRow({
@@ -465,6 +467,7 @@ const FeedTableRow = memo(function FeedTableRow({
   comparisonBookmakers,
   onLogBet,
   onOddsModal,
+  onGraphClick,
 }: FeedTableRowProps) {
   const dropAbs = Math.abs(row.changePercent);
   const novig = useMemo(() => computeNovig(row.allCurrentOdds, row.lineIndex), [row.allCurrentOdds, row.lineIndex]);
@@ -472,21 +475,22 @@ const FeedTableRow = memo(function FeedTableRow({
   return (
     <TableRow className={`hover:bg-muted/20 ${dropIntensityBg(dropAbs)}`}>
       <TableCell>
-        <Link href={`/event/${row.eventId}`}>
-          <div className="cursor-pointer group">
-            <div className="text-[10px] text-muted-foreground font-mono mb-0.5">
-              {formatTime(row.commenceTime)} · {formatDate(row.commenceTime)}
-            </div>
-            <div className="text-sm font-medium text-foreground group-hover:text-primary transition-colors leading-tight">
-              {row.homeTeam} <span className="text-muted-foreground text-xs">vs</span> {row.awayTeam}
-            </div>
-            <div className="mt-0.5">
-              <Badge variant="outline" className="text-[9px] font-normal border-muted-foreground/20 px-1 py-0 h-4">
-                {row.leagueName}
-              </Badge>
-            </div>
+        <div
+          className="cursor-pointer group"
+          onClick={() => onGraphClick(row.eventId, row.selection)}
+        >
+          <div className="text-[10px] text-muted-foreground font-mono mb-0.5">
+            {formatTime(row.commenceTime)} · {formatDate(row.commenceTime)}
           </div>
-        </Link>
+          <div className="text-sm font-medium text-foreground group-hover:text-primary transition-colors leading-tight">
+            {row.homeTeam} <span className="text-muted-foreground text-xs">vs</span> {row.awayTeam}
+          </div>
+          <div className="mt-0.5">
+            <Badge variant="outline" className="text-[9px] font-normal border-muted-foreground/20 px-1 py-0 h-4">
+              {row.leagueName}
+            </Badge>
+          </div>
+        </div>
       </TableCell>
 
       <TableCell className="text-center">
@@ -531,6 +535,7 @@ const FeedTableRow = memo(function FeedTableRow({
             selection={row.selection}
             openingOdds={row.openingOdds}
             currentOdds={row.currentOdds}
+            onClick={() => onGraphClick(row.eventId, row.selection)}
           />
         </div>
       </TableCell>
@@ -541,13 +546,10 @@ const FeedTableRow = memo(function FeedTableRow({
             size="sm"
             variant="outline"
             className="h-7 text-xs px-2 gap-1"
-            onClick={() => {
-              const matchupId = parseInt(row.eventId.split("-")[1]);
-              if (!isNaN(matchupId)) onOddsModal(matchupId);
-            }}
+            onClick={() => onGraphClick(row.eventId, row.selection)}
           >
             <LineChart className="w-3 h-3" />
-            Odds
+            Chart
           </Button>
           <Button
             size="sm"
@@ -569,6 +571,7 @@ export default function FeedPage() {
   const { configs, novigMethod, comparisonBookmakers } = useAlertStore();
   const [logBetRow, setLogBetRow] = useState<(FeedRow & { novigOdds: number }) | null>(null);
   const [oddsMatchupId, setOddsMatchupId] = useState<number | null>(null);
+  const [graphModal, setGraphModal] = useState<{ eventId: string; selection: string } | null>(null);
   const [sortBy, setSortBy] = useState<SortOption>("newest");
 
   // Accumulated feed rows. Initial load: all current drops.
@@ -901,6 +904,7 @@ export default function FeedPage() {
                   comparisonBookmakers={comparisonBookmakers}
                   onLogBet={setLogBetRow}
                   onOddsModal={setOddsMatchupId}
+                  onGraphClick={(eventId, selection) => setGraphModal({ eventId, selection })}
                 />
               ))
             )}
@@ -908,6 +912,13 @@ export default function FeedPage() {
         </Table>
       </div>
 
+      {graphModal && (
+        <EventGraphModal
+          eventId={graphModal.eventId}
+          defaultSelection={graphModal.selection}
+          onClose={() => setGraphModal(null)}
+        />
+      )}
       {logBetRow && (
         <LogBetModal row={logBetRow} onClose={() => setLogBetRow(null)} />
       )}
