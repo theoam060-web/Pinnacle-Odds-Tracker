@@ -450,9 +450,7 @@ export default function BetStatsPage() {
                         labelFormatter={(v: number) => `Bet ${v}`}
                         formatter={(value: number, name: string) => [
                           `${value >= 0 ? "+" : ""}${sym}${value.toFixed(2)}`,
-                          name === "actual" ? "Actual Profit"
-                            : name === "expected" ? "Expected Profit (EV)"
-                            : "CLV Optimal Profit",
+                          name === "actual" ? "Actual Profit" : "Expected Profit (EV)",
                         ]}
                       />
                       <ReferenceLine yAxisId="left" y={0} stroke="#374151" />
@@ -476,17 +474,6 @@ export default function BetStatsPage() {
                         isAnimationActive={false}
                         strokeDasharray={hasValidEV ? undefined : "4 3"}
                         strokeOpacity={hasValidEV ? 1 : 0.4}
-                      />
-                      <Line
-                        yAxisId={hasValidEV || hasClosingOdds ? "right" : "left"}
-                        type="monotone"
-                        dataKey="clv"
-                        stroke="#22c55e"
-                        strokeWidth={1.5}
-                        dot={false}
-                        isAnimationActive={false}
-                        strokeDasharray={hasClosingOdds ? undefined : "4 3"}
-                        strokeOpacity={hasClosingOdds ? 1 : 0.4}
                       />
                     </ComposedChart>
                   </ResponsiveContainer>
