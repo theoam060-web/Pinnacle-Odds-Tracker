@@ -96,7 +96,7 @@ export default function TermsPage() {
 
         <Section title="12. Contact">
           <p>If you have questions about these Terms of Service, please contact us at:</p>
-          <p className="font-mono text-primary">support@sharptracker.io</p>
+          <p className="font-mono text-primary">info@sharptracker.io</p>
         </Section>
       </div>
     </div>
