@@ -12,6 +12,7 @@ import { fetchAllPinnacleData, fetchPinnacleOdds, parseMarketTypesFromEnv } from
 import type { PollResult, NormalizedMarket, NormalizedMatchup } from "./pinnacleClient";
 import { seedDatabase, purgeStaleEvents } from "./oddsGenerator";
 import { startMockSimulator } from "./mockSimulator";
+import { startOddsApiPoller } from "./oddsApiPoller";
 import {
   broadcastOddsDrop,
   broadcastOddsUpdate,
@@ -625,6 +626,28 @@ async function activateMockMode(): Promise<void> {
 }
 
 export function startOddsPoller(_apiKey: string, intervalMs: number, minDropPercent: number): void {
+  // If MOCK_MODE is enabled, seed mock data immediately and skip any real polling
+  if (process.env["MOCK_MODE"] === "true") {
+    logger.info({ intervalMs, minDropPercent }, "MOCK_MODE active — using simulator instead of live data");
+    purgeStaleEvents().catch(err => logger.warn({ err }, "Startup stale-event purge failed"));
+    activateMockMode().catch(err => logger.error({ err }, "Mock mode activation failed"));
+    return;
+  }
+
+  // If ODDS_API_KEY is set, use The Odds API poller (Pinnacle via RapidAPI)
+  // This is the preferred fallback when the native Pinnacle guest API is IP-blocked.
+  const oddsApiKey = process.env["ODDS_API_KEY"];
+  if (oddsApiKey) {
+    logger.info(
+      { intervalMs: 300_000, minDropPercent },
+      "ODDS_API_KEY detected — using The Odds API poller (Pinnacle odds via RapidAPI)",
+    );
+    // Use 5-minute intervals to be credit-efficient (overrides the default 20s)
+    startOddsApiPoller(oddsApiKey, 300_000, minDropPercent);
+    return;
+  }
+
+  // Fallback: native Pinnacle guest API poller
   logger.info({ intervalMs, minDropPercent }, "Starting Pinnacle full-market poller");
 
   // Purge stale events immediately on startup, then every hour.
@@ -632,12 +655,6 @@ export function startOddsPoller(_apiKey: string, intervalMs: number, minDropPerc
   setInterval(() => {
     purgeStaleEvents().catch(err => logger.warn({ err }, "Periodic stale-event purge failed"));
   }, 60 * 60 * 1000);
-
-  // If MOCK_MODE is enabled, seed mock data immediately and skip Pinnacle polling
-  if (process.env["MOCK_MODE"] === "true") {
-    activateMockMode().catch(err => logger.error({ err }, "Mock mode activation failed"));
-    return;
-  }
 
   const tick = async () => {
     try {
