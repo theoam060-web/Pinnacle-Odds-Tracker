@@ -945,6 +945,7 @@ export default function FeedPage() {
           marketType={compareRow.marketType}
           selection={compareRow.selection}
           pinnacleOdds={compareRow.currentOdds}
+          configuredBookmakers={comparisonBookmakers}
         />
       )}
       {logBetRow && (
