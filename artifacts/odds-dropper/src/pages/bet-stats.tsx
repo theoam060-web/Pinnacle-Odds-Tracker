@@ -491,33 +491,17 @@ export default function BetStatsPage() {
                       Expected Profit (EV){!hasValidEV && " — no-vig data saknas"}
                     </span>
                   </span>
-                  <span className="flex items-center gap-1.5">
-                    <span className={`w-2.5 h-2.5 rounded-full inline-block ${hasClosingOdds ? "bg-green-500" : "bg-green-500/30"}`} />
-                    <span className={`font-medium ${hasClosingOdds ? "text-green-400" : "text-green-400/50"}`}>
-                      CLV Optimal Profit{!hasClosingOdds && " — stängningskurs saknas"}
-                    </span>
-                  </span>
                 </div>
 
                 {/* Info notices */}
-                {(!hasValidEV || !hasClosingOdds) && (
-                  <div className="mt-3 space-y-1.5">
-                    {!hasValidEV && (
-                      <div className="flex items-start gap-2 bg-cyan-950/30 border border-cyan-900/40 rounded px-3 py-2 text-[11px] text-cyan-300/80">
-                        <span className="shrink-0 mt-0.5">ℹ</span>
-                        <span>
-                          <span className="font-semibold text-cyan-300">Expected Profit</span>: no-vig-odds saknas för dina sparade spel — logga nya spel direkt från flödet för korrekt EV.
-                        </span>
-                      </div>
-                    )}
-                    {!hasClosingOdds && (
-                      <div className="flex items-start gap-2 bg-green-950/30 border border-green-900/40 rounded px-3 py-2 text-[11px] text-green-300/80">
-                        <span className="shrink-0 mt-0.5">ℹ</span>
-                        <span>
-                          <span className="font-semibold text-green-300">CLV Optimal Profit</span>: öppna <span className="font-semibold text-foreground">Mina Spel</span> → Redigera ett spel → fyll i stängningskursen (closing odds) för att aktivera linjen.
-                        </span>
-                      </div>
-                    )}
+                {!hasValidEV && (
+                  <div className="mt-3">
+                    <div className="flex items-start gap-2 bg-cyan-950/30 border border-cyan-900/40 rounded px-3 py-2 text-[11px] text-cyan-300/80">
+                      <span className="shrink-0 mt-0.5">ℹ</span>
+                      <span>
+                        <span className="font-semibold text-cyan-300">Expected Profit</span>: no-vig-odds saknas för dina sparade spel — logga nya spel direkt från flödet för korrekt EV.
+                      </span>
+                    </div>
                   </div>
                 )}
               </>
