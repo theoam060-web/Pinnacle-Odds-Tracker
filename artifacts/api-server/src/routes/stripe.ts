@@ -47,7 +47,7 @@ router.get('/stripe/products', async (_req, res) => {
 });
 
 router.post('/stripe/checkout', requireAuth, async (req: any, res) => {
-  const { priceId } = req.body;
+  const { priceId, redirectAfter } = req.body;
   if (!priceId) return res.status(400).json({ error: 'priceId required' });
   try {
     let user = await storage.getUser(req.userId);
@@ -67,9 +67,12 @@ router.post('/stripe/checkout', requireAuth, async (req: any, res) => {
     const proto = req.headers['x-forwarded-proto'] || 'https';
     const baseUrl = `${proto}://${host}`;
 
-    // Success URL includes {CHECKOUT_SESSION_ID} — Stripe replaces it with the real session ID
-    const successUrl = `${baseUrl}/landing/success?session_id={CHECKOUT_SESSION_ID}`;
-    const cancelUrl  = `${baseUrl}/landing/pricing`;
+    // redirectAfter lets the client control where to go after fulfillment on the success page
+    const redirectParam = redirectAfter
+      ? `&redirect=${encodeURIComponent(redirectAfter)}`
+      : '';
+    const successUrl = `${baseUrl}/landing/success?session_id={CHECKOUT_SESSION_ID}${redirectParam}`;
+    const cancelUrl = redirectAfter ? `${baseUrl}${redirectAfter}` : `${baseUrl}/landing/pricing`;
 
     const session = await stripeService.createCheckoutSession(customerId, priceId, successUrl, cancelUrl);
 

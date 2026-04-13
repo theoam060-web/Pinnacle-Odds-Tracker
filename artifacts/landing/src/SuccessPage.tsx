@@ -3,7 +3,7 @@ import { motion } from "framer-motion";
 import { useLocation } from "wouter";
 import { Activity, CheckCircle2, Loader2, XCircle } from "lucide-react";
 
-const API_BASE = "https://84e61830-7611-4d35-8623-77d057b02e4e-00-30ovvqhxka0d5.kirk.replit.dev";
+const API_BASE = `${window.location.protocol}//${window.location.host}`;
 
 type Status = "loading" | "success" | "already" | "error";
 
@@ -12,6 +12,16 @@ export default function SuccessPage() {
   const [status, setStatus] = useState<Status>("loading");
   const [plan, setPlan] = useState<string>("SharpTracker");
   const [errorMsg, setErrorMsg] = useState<string>("");
+
+  const redirectTo = new URLSearchParams(window.location.search).get("redirect") ?? null;
+
+  const goToDashboard = () => {
+    if (redirectTo) {
+      window.location.href = redirectTo;
+    } else {
+      navigate("/");
+    }
+  };
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -99,16 +109,16 @@ export default function SuccessPage() {
 
               <div className="flex flex-col sm:flex-row gap-3 justify-center">
                 <button
-                  onClick={() => navigate("/")}
+                  onClick={goToDashboard}
                   className="px-6 py-3 rounded-lg bg-primary text-primary-foreground font-mono text-sm font-bold hover:bg-primary/90 transition-all shadow-[0_0_20px_rgba(0,255,255,0.25)]"
                 >
-                  Go to Dashboard →
+                  Öppna SharpTracker →
                 </button>
                 <button
                   onClick={() => navigate("/pricing")}
                   className="px-6 py-3 rounded-lg border border-border/60 text-foreground/60 font-mono text-sm hover:border-primary/40 hover:text-primary transition-all"
                 >
-                  View Plan
+                  Se plan
                 </button>
               </div>
             </>
