@@ -20,7 +20,7 @@ import { Activity, LogIn, UserPlus, ArrowRight, Loader2, CheckCircle2, ExternalL
 
 const clerkPubKey = import.meta.env.VITE_CLERK_PUBLISHABLE_KEY as string;
 const clerkProxyUrl = import.meta.env.VITE_CLERK_PROXY_URL as string | undefined;
-const API_BASE = import.meta.env.BASE_URL?.replace(/\/$/, "") ?? "";
+const API_BASE = "";
 
 function AppServices() {
   useAutoSettle();

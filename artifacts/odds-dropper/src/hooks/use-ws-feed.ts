@@ -60,8 +60,7 @@ export function useWsFeed({ onOddsUpdate, onNewDrop }: UseWsFeedOptions = {}) {
       if (destroyed) return;
 
       const proto = location.protocol === "https:" ? "wss:" : "ws:";
-      const prefix = (import.meta.env.BASE_URL ?? "").replace(/\/$/, "");
-      const url = `${proto}//${location.host}${prefix}/api/odds/ws`;
+      const url = `${proto}//${location.host}/api/odds/ws`;
 
       ws = new WebSocket(url);
 

@@ -28,7 +28,7 @@ export function usePushNotifications(): UsePushNotificationsResult {
   const [isLoading, setIsLoading] = useState(false);
   const [swRegistration, setSwRegistration] = useState<ServiceWorkerRegistration | null>(null);
 
-  const API_BASE = import.meta.env.BASE_URL?.replace(/\/$/, "") ?? "";
+  const API_BASE = "";
 
   useEffect(() => {
     if (!("serviceWorker" in navigator) || !("PushManager" in window)) {

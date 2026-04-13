@@ -279,7 +279,7 @@ function ComparePopover({ row, comparisonBookmakers }: {
   const [fetchError, setFetchError] = useState<string | null>(null);
   const hasFetched = useRef(false);
 
-  const API_BASE = import.meta.env.BASE_URL.replace(/\/$/, "");
+  const API_BASE = "";
 
   async function fetchComparison() {
     if (hasFetched.current) return;

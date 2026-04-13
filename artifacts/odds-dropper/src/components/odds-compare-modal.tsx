@@ -10,7 +10,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Trophy, RefreshCw, ExternalLink, Star } from "lucide-react";
 
-const API_BASE = import.meta.env.BASE_URL.replace(/\/$/, "");
+const API_BASE = "";
 
 interface OddsEntry {
   price: number;

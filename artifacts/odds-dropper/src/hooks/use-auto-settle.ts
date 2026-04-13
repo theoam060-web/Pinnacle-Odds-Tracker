@@ -3,7 +3,7 @@ import { LoggedBet, BetResult, useBetStore } from "@/lib/bet-store";
 import { useSettings } from "@/lib/settings-context";
 import { useToast } from "@/hooks/use-toast";
 
-const API_BASE = import.meta.env.BASE_URL.replace(/\/$/, "");
+const API_BASE = "";
 
 /** Guess sport from league name for bets logged before sport field was added */
 function deriveSport(leagueName: string): string {

@@ -50,8 +50,7 @@ export function useOddsStream({ filters = {}, onDrop }: UseOddsStreamOptions = {
   });
 
   const getStreamUrl = useCallback(() => {
-    const base = import.meta.env.BASE_URL?.replace(/\/$/, "") || "";
-    return `${base}/api/odds/stream`;
+    return `/api/odds/stream`;
   }, []);
 
   useEffect(() => {
