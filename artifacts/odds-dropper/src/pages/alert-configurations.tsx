@@ -11,8 +11,9 @@ import { Badge } from "@/components/ui/badge";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Check, ChevronsUpDown, Plus, Trash2, BellRing, BarChart2, X, Bell, BellOff, BellDot, Smartphone } from "lucide-react";
+import { Check, ChevronsUpDown, Plus, Trash2, BellRing, BarChart2, X, Bell, BellOff, BellDot, Smartphone, Lock } from "lucide-react";
 import { usePushNotifications } from "@/lib/usePushNotifications";
+import { usePlan, PLAN_LIMITS } from "@/lib/plan-context";
 import {
   useAlertStore,
   AlertConfig,
@@ -156,6 +157,8 @@ function getSportIcon(sportSlug: string): string {
 
 function ConfigDetail({ config }: { config: AlertConfig }) {
   const { updateConfig, removeConfig, configs } = useAlertStore();
+  const tier = usePlan();
+  const limits = PLAN_LIMITS[tier];
 
   function patch(partial: Partial<AlertConfig>) {
     updateConfig(config.id, partial);
@@ -312,16 +315,23 @@ function ConfigDetail({ config }: { config: AlertConfig }) {
           Markets <span className="text-[10px]">(empty = all)</span>
         </Label>
         <div className="grid grid-cols-2 gap-x-4 gap-y-2">
-          {MARKET_TYPE_OPTIONS.filter(m => (SPORT_MARKETS[config.sport] ?? []).includes(m.slug)).map(m => (
-            <div key={m.slug} className="flex items-center gap-2">
-              <Checkbox
-                id={`${config.id}-mkt-${m.slug}`}
-                checked={config.markets.includes(m.slug)}
-                onCheckedChange={() => patch({ markets: toggleItem(config.markets, m.slug) })}
-              />
-              <Label htmlFor={`${config.id}-mkt-${m.slug}`} className="text-xs cursor-pointer">{m.label}</Label>
-            </div>
-          ))}
+          {MARKET_TYPE_OPTIONS.filter(m => (SPORT_MARKETS[config.sport] ?? []).includes(m.slug)).map(m => {
+            const isLocked = limits.markets !== null && !limits.markets.includes(m.slug);
+            return (
+              <div key={m.slug} className={`flex items-center gap-2 ${isLocked ? "opacity-50" : ""}`}>
+                <Checkbox
+                  id={`${config.id}-mkt-${m.slug}`}
+                  checked={!isLocked && config.markets.includes(m.slug)}
+                  onCheckedChange={() => !isLocked && patch({ markets: toggleItem(config.markets, m.slug) })}
+                  disabled={isLocked}
+                />
+                <Label htmlFor={`${config.id}-mkt-${m.slug}`} className={`text-xs ${isLocked ? "cursor-not-allowed" : "cursor-pointer"} flex items-center gap-1`}>
+                  {m.label}
+                  {isLocked && <span className="inline-flex items-center gap-0.5 text-[9px] font-bold text-amber-400/80 bg-amber-400/10 border border-amber-400/20 px-1 py-0 rounded"><Lock className="w-2 h-2" />Gold</span>}
+                </Label>
+              </div>
+            );
+          })}
         </div>
       </div>
     </div>
@@ -330,6 +340,8 @@ function ConfigDetail({ config }: { config: AlertConfig }) {
 
 export default function AlertConfigurationsPage() {
   const { configs, novigMethod, setNovigMethod, addConfig, comparisonBookmakers, setComparisonBookmakers } = useAlertStore();
+  const tier = usePlan();
+  const maxConfigs = PLAN_LIMITS[tier].maxConfigs;
   const [selectedId, setSelectedId] = useState<string>(() => configs[0]?.id ?? "");
   const prevCountRef = useRef<number>(configs.length);
   const push = usePushNotifications();
@@ -510,21 +522,31 @@ export default function AlertConfigurationsPage() {
           </div>
 
           {/* Add Config button */}
-          {configs.length < 9 && (
-            <div className="p-3 border-t border-border/50">
+          <div className="p-3 border-t border-border/50 space-y-2">
+            {configs.length < maxConfigs ? (
               <Button
                 variant="outline"
                 size="sm"
                 className="w-full h-8 text-xs gap-1.5"
-                onClick={() => {
-                  addConfig();
-                }}
+                onClick={() => { addConfig(); }}
               >
                 <Plus className="w-3.5 h-3.5" />
                 Add Config
               </Button>
-            </div>
-          )}
+            ) : (
+              <div className="text-center space-y-1.5">
+                <p className="text-[10px] text-muted-foreground font-mono">
+                  {tier === "silver" ? `Silver: max ${maxConfigs} konfigurationer` : `Max ${maxConfigs} konfigurationer`}
+                </p>
+                {tier === "silver" && (
+                  <p className="text-[10px] text-amber-400/80">
+                    <Lock className="w-2.5 h-2.5 inline mr-0.5" />
+                    Uppgradera till Gold för fler
+                  </p>
+                )}
+              </div>
+            )}
+          </div>
         </div>
 
         {/* Right panel: detail editor */}

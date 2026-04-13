@@ -40,6 +40,24 @@ export class Storage {
     return result.rows[0] || null;
   }
 
+  async getSubscriptionPlanTier(subscriptionId: string): Promise<'silver' | 'gold' | null> {
+    try {
+      const result = await db.execute(sql`
+        SELECT prod.metadata->>'plan' AS plan_tier
+        FROM stripe.subscription_items si
+        JOIN stripe.prices pr ON pr.id = si.price
+        JOIN stripe.products prod ON prod.id = pr.product
+        WHERE si.subscription = ${subscriptionId}
+        LIMIT 1
+      `);
+      const tier = (result.rows[0] as any)?.plan_tier as string | undefined;
+      if (tier === 'silver' || tier === 'gold') return tier;
+      return null;
+    } catch {
+      return null;
+    }
+  }
+
   async getUser(id: string) {
     const [user] = await db.select().from(usersTable).where(eq(usersTable.id, id));
     return user;

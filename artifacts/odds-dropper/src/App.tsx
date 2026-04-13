@@ -17,6 +17,7 @@ import TopMoversPage from "@/pages/top-movers";
 import MyBetsPage from "@/pages/my-bets";
 import React, { useEffect, useState, useCallback } from "react";
 import { Activity, LogIn, UserPlus, ArrowRight, Loader2, CheckCircle2, ExternalLink } from "lucide-react";
+import { PlanContext, type PlanTier } from "@/lib/plan-context";
 
 const clerkPubKey = import.meta.env.VITE_CLERK_PUBLISHABLE_KEY as string;
 const clerkProxyUrl = import.meta.env.VITE_CLERK_PROXY_URL as string | undefined;
@@ -342,6 +343,7 @@ function SubscriptionGate({ children }: { children: React.ReactNode }) {
   const { getToken } = useAuth();
   const { user } = useUser();
   const [status, setStatus] = useState<SubStatus>("loading");
+  const [planTier, setPlanTier] = useState<PlanTier>("none");
   const bypassAuth = import.meta.env.VITE_DEV_BYPASS_AUTH === "true";
   const adminEmails = (import.meta.env.VITE_ADMIN_EMAILS ?? "")
     .split(",")
@@ -361,20 +363,26 @@ function SubscriptionGate({ children }: { children: React.ReactNode }) {
       const data = await res.json();
       const sub = data.subscription;
       const isActive = sub?.status === "active" || sub?.status === "trialing";
-      setStatus(isActive ? "active" : "none");
+      if (isActive) {
+        const tier: PlanTier = data.planTier === "silver" ? "silver" : "gold";
+        setPlanTier(tier);
+        setStatus("active");
+      } else {
+        setStatus("none");
+      }
     } catch {
       setStatus("none");
     }
   }, [getToken]);
 
   useEffect(() => {
-    if (bypassAuth || isAdmin) { setStatus("active"); return; }
+    if (bypassAuth || isAdmin) { setPlanTier("gold"); setStatus("active"); return; }
     check();
   }, [bypassAuth, isAdmin, check]);
 
   if (status === "loading") return <LoadingScreen label="Kontrollerar prenumeration…" />;
   if (status === "none") return <SubscriptionWall />;
-  return <>{children}</>;
+  return <PlanContext.Provider value={planTier}>{children}</PlanContext.Provider>;
 }
 
 function AuthGate({ children }: { children: React.ReactNode }) {

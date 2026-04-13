@@ -113,9 +113,12 @@ router.post('/stripe/portal', requireAuth, async (req: any, res) => {
 router.get('/stripe/subscription', requireAuth, async (req: any, res) => {
   try {
     const user = await storage.getUser(req.userId);
-    if (!user?.stripeSubscriptionId) return res.json({ subscription: null });
-    const sub = await storage.getSubscription(user.stripeSubscriptionId);
-    res.json({ subscription: sub });
+    if (!user?.stripeSubscriptionId) return res.json({ subscription: null, planTier: null });
+    const [sub, planTier] = await Promise.all([
+      storage.getSubscription(user.stripeSubscriptionId),
+      storage.getSubscriptionPlanTier(user.stripeSubscriptionId),
+    ]);
+    res.json({ subscription: sub, planTier });
   } catch (err) {
     res.status(500).json({ error: 'Failed to fetch subscription' });
   }
