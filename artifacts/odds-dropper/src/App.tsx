@@ -77,8 +77,6 @@ const clerkAppearance = {
     headerSubtitle: { color: "rgba(255,255,255,0.65)", opacity: 1 },
     formFieldLabel: { color: "rgba(255,255,255,0.75)" },
     formButtonPrimary: "bg-cyan-400 text-black hover:bg-cyan-300 font-mono",
-    socialButtonsBlockButton: { display: "none" },
-    socialButtonsBlockButtonText: { display: "none" },
     dividerRow: { display: "none" },
     footerActionText: { color: "rgba(255,255,255,0.5)" },
     footerActionLink: { color: "#00e5ff" },
