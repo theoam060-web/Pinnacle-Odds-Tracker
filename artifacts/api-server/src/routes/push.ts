@@ -39,7 +39,7 @@ export function sendPushToAll(payload: {
   }
 }
 
-router.post("/api/push/subscribe", requireAuth(), (req, res) => {
+router.post("/push/subscribe", requireAuth(), (req, res) => {
   const userId = req.auth?.userId;
   if (!userId) return res.status(401).json({ error: "Unauthorized" });
   if (!VAPID_PRIVATE_KEY) return res.status(503).json({ error: "Push not configured" });
@@ -56,7 +56,7 @@ router.post("/api/push/subscribe", requireAuth(), (req, res) => {
   res.json({ ok: true });
 });
 
-router.delete("/api/push/subscribe", requireAuth(), (req, res) => {
+router.delete("/push/subscribe", requireAuth(), (req, res) => {
   const userId = req.auth?.userId;
   if (!userId) return res.status(401).json({ error: "Unauthorized" });
 
@@ -70,7 +70,7 @@ router.delete("/api/push/subscribe", requireAuth(), (req, res) => {
   res.json({ ok: true });
 });
 
-router.post("/api/push/test", requireAuth(), (req, res) => {
+router.post("/push/test", requireAuth(), (req, res) => {
   if (!VAPID_PRIVATE_KEY) return res.status(503).json({ error: "Push not configured" });
   const userId = req.auth?.userId;
   if (!userId) return res.status(401).json({ error: "Unauthorized" });
@@ -95,7 +95,7 @@ router.post("/api/push/test", requireAuth(), (req, res) => {
   });
 });
 
-router.get("/api/push/vapid-public-key", (_req, res) => {
+router.get("/push/vapid-public-key", (_req, res) => {
   res.json({ publicKey: VAPID_PUBLIC_KEY });
 });
 

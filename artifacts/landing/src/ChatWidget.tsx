@@ -260,7 +260,7 @@ export default function ChatWidget() {
             </div>
 
             {/* Input area — only shown when in chat stage */}
-            {(stage === "chat" || (stage === "post-answer" && false)) && stage === "chat" && (
+            {stage === "chat" && (
               <div className="px-3 py-3 border-t" style={{ borderColor: "hsl(240 5% 14%)" }}>
                 <div className="flex items-center gap-2 rounded-xl px-3 py-2" style={{ background: "hsl(240 5% 14%)", border: "1px solid hsl(240 5% 20%)" }}>
                   <input
