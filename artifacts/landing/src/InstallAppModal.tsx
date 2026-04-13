@@ -22,7 +22,7 @@ export default function InstallAppModal({ open, onClose, deferredPrompt, onNativ
   const [installing, setInstalling] = useState(false);
 
   useEffect(() => {
-    setAppUrl(window.location.origin + BASE);
+    setAppUrl(window.location.origin + "/app/");
   }, []);
 
   useEffect(() => {
