@@ -192,7 +192,7 @@ function SubscriptionWall() {
             "Content-Type": "application/json",
             Authorization: `Bearer ${token}`,
           },
-          body: JSON.stringify({ priceId, redirectAfter: "/" }),
+          body: JSON.stringify({ priceId, redirectAfter: "/app/" }),
         });
         const data = await res.json();
         if (data.url) {

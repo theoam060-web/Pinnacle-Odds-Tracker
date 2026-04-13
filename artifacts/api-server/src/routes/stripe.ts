@@ -71,8 +71,8 @@ router.post('/stripe/checkout', requireAuth, async (req: any, res) => {
     const redirectParam = redirectAfter
       ? `&redirect=${encodeURIComponent(redirectAfter)}`
       : '';
-    const successUrl = `${baseUrl}/landing/success?session_id={CHECKOUT_SESSION_ID}${redirectParam}`;
-    const cancelUrl = redirectAfter ? `${baseUrl}${redirectAfter}` : `${baseUrl}/landing/pricing`;
+    const successUrl = `${baseUrl}/success?session_id={CHECKOUT_SESSION_ID}${redirectParam}`;
+    const cancelUrl = redirectAfter ? `${baseUrl}${redirectAfter}` : `${baseUrl}/pricing`;
 
     const session = await stripeService.createCheckoutSession(customerId, priceId, successUrl, cancelUrl);
 
@@ -101,7 +101,7 @@ router.post('/stripe/portal', requireAuth, async (req: any, res) => {
 
     const host = req.headers.host || '';
     const proto = req.headers['x-forwarded-proto'] || 'https';
-    const returnUrl = `${proto}://${host}/landing/`;
+    const returnUrl = `${proto}://${host}/`;
 
     const session = await stripeService.createCustomerPortalSession(user.stripeCustomerId, returnUrl);
     res.json({ url: session.url });

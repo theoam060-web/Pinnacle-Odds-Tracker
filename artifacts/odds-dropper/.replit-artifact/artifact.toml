@@ -1,5 +1,5 @@
 kind = "web"
-previewPath = "/"
+previewPath = "/app/"
 title = "Odds Dropper"
 version = "1.0.0"
 id = "artifacts/odds-dropper"
@@ -11,7 +11,7 @@ version = "1.0.0"
 
 [[services]]
 name = "web"
-paths = [ "/" ]
+paths = [ "/app/" ]
 localPort = 21569
 
 [services.development]
@@ -28,4 +28,4 @@ to = "/index.html"
 
 [services.env]
 PORT = "21569"
-BASE_PATH = "/"
+BASE_PATH = "/app/"

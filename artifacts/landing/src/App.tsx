@@ -489,7 +489,7 @@ function Navbar() {
           <button
             onClick={() => {
               closePanel();
-              if (window.location.pathname.replace(/\/+$/, "").endsWith("/landing") || window.location.pathname === "/") {
+              if (window.location.pathname === "/" || window.location.pathname === "") {
                 document.getElementById("faq")?.scrollIntoView({ behavior: "smooth" });
               } else {
                 navigate("/");
@@ -1495,7 +1495,7 @@ function FeatureStripSection() {
 }
 
 function BankrollFeatureCards() {
-  const appBase = "https://84e61830-7611-4d35-8623-77d057b02e4e-00-30ovvqhxka0d5.kirk.replit.dev";
+  const appBase = `${window.location.origin}/app`;
   const cyan  = "hsl(186,100%,50%)";
   const green = "#4ade80";
   const red   = "#f87171";

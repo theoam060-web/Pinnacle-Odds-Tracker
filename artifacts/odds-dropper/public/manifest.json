@@ -2,20 +2,21 @@
   "name": "SharpTracker",
   "short_name": "SharpTracker",
   "description": "Real-time sharp odds movement tracker for professional bettors",
-  "start_url": "/",
+  "start_url": "/app/",
+  "scope": "/app/",
   "display": "standalone",
   "background_color": "#0a0a10",
   "theme_color": "#00e5ff",
   "orientation": "portrait-primary",
   "icons": [
     {
-      "src": "/icon-192.png",
+      "src": "/app/icon-192.png",
       "sizes": "192x192",
       "type": "image/png",
       "purpose": "any maskable"
     },
     {
-      "src": "/icon-512.png",
+      "src": "/app/icon-512.png",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "any maskable"
@@ -27,15 +28,15 @@
       "name": "Live Feed",
       "short_name": "Feed",
       "description": "Open the live odds drop feed",
-      "url": "/",
-      "icons": [{ "src": "/icon-192.png", "sizes": "192x192" }]
+      "url": "/app/",
+      "icons": [{ "src": "/app/icon-192.png", "sizes": "192x192" }]
     },
     {
       "name": "Alert Configurations",
       "short_name": "Alerts",
       "description": "Manage your alert settings",
-      "url": "/alert-configurations",
-      "icons": [{ "src": "/icon-192.png", "sizes": "192x192" }]
+      "url": "/app/alert-configurations",
+      "icons": [{ "src": "/app/icon-192.png", "sizes": "192x192" }]
     }
   ]
 }
