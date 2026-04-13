@@ -56,12 +56,7 @@ export function EventGraphModal({ eventId, defaultSelection, onClose }: Props) {
       currentOdds: l.currentOdds,
       changePercent: l.changePercent,
     })),
-    movements: ((data as any).movements ?? []).map((m: {
-      timestamp: string;
-      odds: number;
-      selection: string;
-      limit?: number | null;
-    }) => ({
+    movements: (data.movements ?? []).map(m => ({
       timestamp: m.timestamp,
       odds: m.odds,
       selection: m.selection,

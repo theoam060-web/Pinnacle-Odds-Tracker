@@ -2,16 +2,7 @@ import { useState, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { MessageCircle, X, Send, Mail, RefreshCw, ChevronRight } from "lucide-react";
 
-const API_BASE = (() => {
-  const base = import.meta.env.BASE_URL?.replace(/\/$/, "") ?? "";
-  const parts = base.split("/").filter(Boolean);
-  const slug = parts[0];
-  const domain = window.location.hostname;
-  if (slug) {
-    return `https://${domain}/${slug}`;
-  }
-  return `https://${domain}`;
-})();
+const API_BASE = `${window.location.protocol}//${window.location.host}`;
 
 type Message = { role: "user" | "assistant"; content: string };
 type Stage = "chat" | "post-answer" | "email-form" | "email-sent";
