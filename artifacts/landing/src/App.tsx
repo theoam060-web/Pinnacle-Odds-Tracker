@@ -2,13 +2,13 @@ import {
   LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer,
   ReferenceLine, Area, AreaChart, CartesianGrid
 } from "recharts";
-import { Switch, Route, Router as WouterRouter, Link, useLocation, Redirect } from "wouter";
+import { Switch, Route, Router as WouterRouter, Link, useLocation } from "wouter";
 import { QueryClient, QueryClientProvider, useQueryClient } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { motion, useScroll, useTransform, AnimatePresence } from "framer-motion";
 import React, { useEffect, useState, useRef, useContext } from "react";
-import { ClerkProvider, SignIn, SignUp, Show, useClerk, useUser } from "@clerk/react";
+import { ClerkProvider, Show, useClerk, useUser } from "@clerk/react";
 import { 
   Activity, Bell,
   LineChart as LineChartIcon, Radar,
@@ -502,10 +502,10 @@ function Navbar() {
 
         <div className="flex items-center gap-4">
           <Show when="signed-out">
-            <button onClick={() => { closePanel(); navigate("/sign-in"); }} className="hidden md:block text-sm font-mono text-foreground hover:text-primary transition-colors" data-testid="btn-login">Log In</button>
+            <button onClick={() => { closePanel(); window.location.href = "/app/"; }} className="hidden md:block text-sm font-mono text-foreground hover:text-primary transition-colors" data-testid="btn-login">Log In</button>
             <div className="flex flex-col items-center gap-0.5">
               <span className="text-[11px] font-bold text-green-400 leading-none tracking-wide">14 days free</span>
-              <button onClick={() => { closePanel(); navigate("/sign-up"); }} className="bg-primary/10 text-primary border border-primary/30 hover:bg-primary hover:text-primary-foreground px-5 py-2 rounded-md font-mono text-sm transition-all shadow-[0_0_15px_rgba(0,255,255,0.1)] hover:shadow-[0_0_20px_rgba(0,255,255,0.3)]" data-testid="btn-get-access">
+              <button onClick={() => { closePanel(); window.location.href = "/app/"; }} className="bg-primary/10 text-primary border border-primary/30 hover:bg-primary hover:text-primary-foreground px-5 py-2 rounded-md font-mono text-sm transition-all shadow-[0_0_15px_rgba(0,255,255,0.1)] hover:shadow-[0_0_20px_rgba(0,255,255,0.3)]" data-testid="btn-get-access">
                 Sign Up
               </button>
             </div>
@@ -659,7 +659,7 @@ function Hero() {
             className="flex flex-col sm:flex-row items-center gap-4"
           >
             <button
-              onClick={() => navigate("/sign-up")}
+              onClick={() => window.location.href = "/app/"}
               className="bg-primary text-primary-foreground px-10 py-4 rounded-md font-mono font-bold tracking-wide flex items-center justify-center gap-2 hover:bg-primary/90 transition-colors shadow-[0_0_30px_hsl(var(--primary)/0.35)]"
               data-testid="btn-sign-up"
             >
@@ -1191,7 +1191,7 @@ function CTASection() {
           Join the sharpest bettors leveraging real-time sharp market data to find better prices before the market closes.
         </p>
         <div className="flex justify-center">
-          <button className="bg-primary text-primary-foreground px-10 py-4 rounded-md font-mono font-bold tracking-wide text-lg hover:bg-primary/90 transition-colors shadow-[0_0_30px_hsl(var(--primary)/0.3)]" data-testid="btn-footer-signup">
+          <button onClick={() => window.location.href = "/app/"} className="bg-primary text-primary-foreground px-10 py-4 rounded-md font-mono font-bold tracking-wide text-lg hover:bg-primary/90 transition-colors shadow-[0_0_30px_hsl(var(--primary)/0.3)]" data-testid="btn-footer-signup">
             Start 14-Day Free Trial
           </button>
         </div>
@@ -1225,7 +1225,7 @@ function Footer() {
             <ul className="space-y-2 font-mono text-sm text-muted-foreground">
               <li><Link href="/pricing" className="hover:text-primary">Pricing</Link></li>
               <li><Link href="/why" className="hover:text-primary">Why SharpTracker?</Link></li>
-              <li><Link href="/sign-up" className="hover:text-primary">Sign Up</Link></li>
+              <li><a href="/app/" className="hover:text-primary">Sign Up</a></li>
             </ul>
           </div>
           <div>
@@ -2397,20 +2397,9 @@ function ScrollToTop() {
   return null;
 }
 
-function ClerkSignInPage() {
-  return (
-    <div className="min-h-[100dvh] bg-background flex items-center justify-center py-16">
-      <SignIn routing="path" path={`${basePath}/sign-in`} signUpUrl={`${basePath}/sign-up`} />
-    </div>
-  );
-}
-
-function ClerkSignUpPage() {
-  return (
-    <div className="min-h-[100dvh] bg-background flex items-center justify-center py-16">
-      <SignUp routing="path" path={`${basePath}/sign-up`} signInUrl={`${basePath}/sign-in`} />
-    </div>
-  );
+function RedirectToApp() {
+  useEffect(() => { window.location.replace("/app/"); }, []);
+  return null;
 }
 
 function ClerkQueryClientCacheInvalidator() {
@@ -2436,9 +2425,9 @@ function Router() {
   return (
     <Switch>
       <Route path="/" component={AppContent} />
-      <Route path="/sign-in/*?" component={ClerkSignInPage} />
-      <Route path="/sign-up/*?" component={ClerkSignUpPage} />
-      <Route path="/signup" component={() => <Redirect to="/sign-up" />} />
+      <Route path="/sign-in/*?" component={RedirectToApp} />
+      <Route path="/sign-up/*?" component={RedirectToApp} />
+      <Route path="/signup" component={RedirectToApp} />
       <Route path="/why" component={WhyPage} />
       <Route path="/features/odds-drops" component={OddsDropPage} />
       <Route path="/features/bet-tracker" component={BetTrackerPage} />
