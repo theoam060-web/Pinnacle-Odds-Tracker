@@ -82,6 +82,10 @@ const clerkAppearance = {
     footerActionLink: { color: "#00e5ff" },
     identityPreviewText: { color: "#ffffff" },
     formResendCodeLink: { color: "#00e5ff" },
+    socialButtonsBlockButton: "border border-white/25 bg-white/8 hover:bg-white/15 transition-colors",
+    socialButtonsBlockButtonText: { color: "#ffffff", fontWeight: "500" },
+    socialButtonsBlockButtonArrow: { color: "#ffffff" },
+    socialButtonsProviderIcon: { opacity: 1 },
   },
 } as const;
 
