@@ -46,7 +46,7 @@ const PLANS: PlanDefinition[] = [
   {
     metaKey: 'silver',
     name: 'SharpTracker Silver',
-    description: 'Dropping odds alerts, Bet Tracker, Bet Size Calculator — 3 sports, 3 markets each.',
+    description: 'Dropping odds alerts, Bet Size Calculator — 3 alert configs, 3 sports, 3 markets each. Only members Telegram group.',
     metadata: { plan: 'silver', tier: '1' },
     unit_amount: 3499, // €34.99/month
     currency: 'eur',
@@ -54,9 +54,17 @@ const PLANS: PlanDefinition[] = [
   {
     metaKey: 'gold',
     name: 'SharpTracker Gold',
-    description: 'Everything in Silver + all sports, all markets, player props, live EV & closing EV.',
+    description: 'Everything in Silver + 9 alert configs, all sports, all markets, Bet Tracker & Bet Stats, live EV & closing EV.',
     metadata: { plan: 'gold', tier: '2' },
     unit_amount: 8499, // €84.99/month
+    currency: 'eur',
+  },
+  {
+    metaKey: 'platinum',
+    name: 'SharpTracker Platinum',
+    description: 'Everything in Gold + 20 alert configs, bookmaker comparison, push notifications, Current CLV & Current CV.',
+    metadata: { plan: 'platinum', tier: '3' },
+    unit_amount: 11499, // €114.99/month
     currency: 'eur',
   },
 ];

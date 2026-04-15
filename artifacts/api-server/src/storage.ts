@@ -40,7 +40,7 @@ export class Storage {
     return result.rows[0] || null;
   }
 
-  async getSubscriptionPlanTier(subscriptionId: string): Promise<'silver' | 'gold' | null> {
+  async getSubscriptionPlanTier(subscriptionId: string): Promise<'silver' | 'gold' | 'platinum' | null> {
     try {
       const result = await db.execute(sql`
         SELECT prod.metadata->>'plan' AS plan_tier
@@ -51,7 +51,7 @@ export class Storage {
         LIMIT 1
       `);
       const tier = (result.rows[0] as any)?.plan_tier as string | undefined;
-      if (tier === 'silver' || tier === 'gold') return tier;
+      if (tier === 'silver' || tier === 'gold' || tier === 'platinum') return tier;
       return null;
     } catch {
       return null;
