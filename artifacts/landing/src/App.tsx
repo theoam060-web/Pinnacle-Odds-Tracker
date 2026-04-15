@@ -8,7 +8,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { motion, useScroll, useTransform, AnimatePresence } from "framer-motion";
 import React, { useEffect, useState, useRef, useContext } from "react";
-import { ClerkProvider, Show, useClerk, useUser } from "@clerk/react";
+import { ClerkProvider, Show, useClerk, useUser, useAuth } from "@clerk/react";
 import { 
   Activity, Bell,
   LineChart as LineChartIcon, Radar,
@@ -373,10 +373,50 @@ const FEATURE_ITEMS = [
   },
 ];
 
+const LANDING_API_BASE = `${window.location.protocol}//${window.location.host}`;
+
+async function openSubscriptionPortalOrWall(getToken: () => Promise<string | null>) {
+  try {
+    const token = await getToken();
+    const res = await fetch(`${LANDING_API_BASE}/api/stripe/portal`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      },
+    });
+    if (res.ok) {
+      const { url } = await res.json();
+      if (url) { window.location.href = url; return; }
+    }
+  } catch {}
+  window.location.href = "/app/";
+}
+
+function SubscriptionButton({ closePanel, className, children }: { closePanel: () => void; className?: string; children: React.ReactNode }) {
+  const { getToken } = useAuth();
+  const [loading, setLoading] = useState(false);
+
+  const handleClick = async () => {
+    closePanel();
+    setLoading(true);
+    await openSubscriptionPortalOrWall(getToken);
+    setLoading(false);
+  };
+
+  return (
+    <button onClick={handleClick} disabled={loading} className={className}>
+      {loading ? <span className="opacity-60">Laddar…</span> : children}
+    </button>
+  );
+}
+
 function NavUserMenu({ closePanel }: { closePanel: () => void }) {
   const { user, isLoaded } = useUser();
   const { signOut } = useClerk();
+  const { getToken } = useAuth();
   const [open, setOpen] = useState(false);
+  const [subLoading, setSubLoading] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -412,14 +452,16 @@ function NavUserMenu({ closePanel }: { closePanel: () => void }) {
             <p className="text-xs font-mono text-muted-foreground truncate">{user.emailAddresses?.[0]?.emailAddress}</p>
           </div>
           <button
-            onClick={() => {
+            onClick={async () => {
               setOpen(false);
-              closePanel();
-              window.location.href = "/app/";
+              setSubLoading(true);
+              await openSubscriptionPortalOrWall(getToken);
+              setSubLoading(false);
             }}
-            className="w-full text-left px-4 py-2 text-sm font-mono text-primary hover:bg-primary/5 transition-colors"
+            disabled={subLoading}
+            className="w-full text-left px-4 py-2 text-sm font-mono text-primary hover:bg-primary/5 transition-colors disabled:opacity-50"
           >
-            Prenumerationer
+            {subLoading ? "Laddar…" : "Prenumerationer"}
           </button>
           <div className="border-t border-border/40 my-1" />
           <button
@@ -523,12 +565,12 @@ function Navbar() {
           </Show>
           <Show when="signed-in">
             <div className="flex items-center gap-3">
-              <button
-                onClick={() => { closePanel(); window.location.href = "/app/"; }}
-                className="hidden md:inline-flex items-center gap-1.5 bg-primary/10 text-primary border border-primary/30 hover:bg-primary hover:text-primary-foreground px-4 py-2 rounded-md font-mono text-sm transition-all shadow-[0_0_15px_rgba(0,255,255,0.08)] hover:shadow-[0_0_20px_rgba(0,255,255,0.3)]"
+              <SubscriptionButton
+                closePanel={closePanel}
+                className="hidden md:inline-flex items-center gap-1.5 bg-primary/10 text-primary border border-primary/30 hover:bg-primary hover:text-primary-foreground px-4 py-2 rounded-md font-mono text-sm transition-all shadow-[0_0_15px_rgba(0,255,255,0.08)] hover:shadow-[0_0_20px_rgba(0,255,255,0.3)] disabled:opacity-50"
               >
                 Prenumerationer
-              </button>
+              </SubscriptionButton>
               <NavUserMenu closePanel={closePanel} />
             </div>
           </Show>
