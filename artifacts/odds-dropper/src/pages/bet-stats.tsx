@@ -314,24 +314,34 @@ export default function BetStatsPage() {
       .slice(0, 8);
   }, [filteredBets]);
 
-  // Platinum-only: Current CLV (rolling 10-bet average CLV) and Current CV (cumulative closing value in currency)
-  const last10CLVBets = useMemo(() => {
-    return bets
-      .filter(b => b.closingOdds && b.closingOdds > 1)
-      .slice(-10);
+  // +EV since start (all bets ever, not time-filtered)
+  const totalEVSinceStart = useMemo(() => {
+    if (bets.length === 0) return null;
+    const sum = bets.reduce((s, b) => s + calcEVCurrency(b.bettingOdds, b.novigOdds, b.stake), 0);
+    return sum;
   }, [bets]);
 
-  const currentCLV = useMemo(() => {
-    if (last10CLVBets.length === 0) return null;
-    const avg = last10CLVBets.reduce((s, b) => s + (b.bettingOdds / b.closingOdds! - 1) * 100, 0) / last10CLVBets.length;
-    return avg;
-  }, [last10CLVBets]);
+  // +CLV since start (all bets ever with closing odds, not time-filtered)
+  const totalCLVSinceStart = useMemo(() => {
+    const clvBets = bets.filter(b => b.closingOdds && b.closingOdds > 1);
+    if (clvBets.length === 0) return null;
+    return clvBets.reduce((s, b) => s + b.stake * (b.bettingOdds / b.closingOdds! - 1), 0);
+  }, [bets]);
 
-  const currentCV = useMemo(() => {
-    const cvBets = filteredBets.filter(b => b.closingOdds && b.closingOdds > 1);
-    if (cvBets.length === 0) return null;
-    return cvBets.reduce((s, b) => s + b.stake * (b.bettingOdds / b.closingOdds! - 1), 0);
-  }, [filteredBets]);
+  // Chart data: cumulative +EV and +CLV across all bets since start
+  const evClvChartData = useMemo(() => {
+    const sorted = bets
+      .slice()
+      .sort((a, b) => new Date(a.loggedAt).getTime() - new Date(b.loggedAt).getTime());
+    let cumEV = 0;
+    let cumCLV = 0;
+    return sorted.map((b, i) => {
+      cumEV = parseFloat((cumEV + calcEVCurrency(b.bettingOdds, b.novigOdds, b.stake)).toFixed(2));
+      const clvDelta = (b.closingOdds && b.closingOdds > 1) ? b.stake * (b.bettingOdds / b.closingOdds - 1) : 0;
+      cumCLV = parseFloat((cumCLV + clvDelta).toFixed(2));
+      return { betNum: i + 1, ev: cumEV, clv: cumCLV };
+    });
+  }, [bets]);
 
   const isEmpty = bets.length === 0;
   const today = new Date();
@@ -467,42 +477,131 @@ export default function BetStatsPage() {
             />
           </div>
 
-          {/* ── Platinum-only stat cards: Current CLV & Current CV ─────── */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-5">
-            {/* Current CLV */}
-            <div className={`relative bg-card border rounded-md px-4 py-3 ${tier !== "platinum" ? "overflow-hidden" : ""}`}>
-              {tier !== "platinum" && (
-                <div className="absolute inset-0 backdrop-blur-sm bg-card/80 flex flex-col items-center justify-center gap-1 z-10">
-                  <Lock className="w-4 h-4 text-violet-400/60" />
-                  <span className="text-[10px] font-mono text-violet-400/60 uppercase tracking-widest">Platinum only</span>
-                </div>
-              )}
-              <div className="text-[10px] uppercase tracking-wider text-muted-foreground mb-1">Current CLV <span className="text-violet-400/70 font-mono">(last 10 bets)</span></div>
-              <div className={`text-xl font-mono font-bold ${currentCLV !== null && currentCLV >= 0 ? "text-violet-400" : "text-red-400"}`}>
-                {currentCLV === null ? "—" : `${currentCLV >= 0 ? "+" : ""}${currentCLV.toFixed(2)}%`}
+          {/* ── +EV & +CLV since start cards + chart ─────────────────────── */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-3">
+            {/* +EV since start */}
+            <div className="relative bg-card border rounded-xl px-4 py-4 overflow-hidden"
+              style={{ borderColor: "rgba(6,182,212,0.25)", boxShadow: "0 0 18px rgba(6,182,212,0.07)" }}>
+              <div className="absolute top-0 left-0 right-0 h-[2px]"
+                style={{ background: "linear-gradient(90deg, transparent, rgba(6,182,212,0.6), transparent)" }} />
+              <div className="text-[9px] uppercase tracking-widest text-muted-foreground font-semibold mb-1">+EV sedan start</div>
+              <div className={`text-2xl font-mono font-bold leading-none ${
+                totalEVSinceStart === null ? "text-muted-foreground"
+                : totalEVSinceStart >= 0 ? "text-cyan-400" : "text-red-400"
+              }`}>
+                {totalEVSinceStart === null ? "—"
+                  : `${totalEVSinceStart >= 0 ? "+" : ""}${sym}${Math.abs(totalEVSinceStart).toFixed(2)}`}
               </div>
-              <div className="text-[10px] text-muted-foreground mt-0.5">
-                {currentCLV === null ? "Enter closing odds on recent bets" : `Rolling avg on ${last10CLVBets.length} bets`}
+              <div className="text-[11px] text-muted-foreground mt-1">
+                {totalEVSinceStart === null
+                  ? "Logga spel med no-vig-odds för att beräkna EV"
+                  : `Kumulativt förväntad vinst från ${bets.length} spel`}
               </div>
             </div>
 
-            {/* Current CV */}
-            <div className={`relative bg-card border rounded-md px-4 py-3 ${tier !== "platinum" ? "overflow-hidden" : ""}`}>
-              {tier !== "platinum" && (
-                <div className="absolute inset-0 backdrop-blur-sm bg-card/80 flex flex-col items-center justify-center gap-1 z-10">
-                  <Lock className="w-4 h-4 text-violet-400/60" />
-                  <span className="text-[10px] font-mono text-violet-400/60 uppercase tracking-widest">Platinum only</span>
-                </div>
-              )}
-              <div className="text-[10px] uppercase tracking-wider text-muted-foreground mb-1">Current CV <span className="text-violet-400/70 font-mono">(closing value)</span></div>
-              <div className={`text-xl font-mono font-bold ${currentCV !== null && currentCV >= 0 ? "text-violet-400" : "text-red-400"}`}>
-                {currentCV === null ? "—" : `${currentCV >= 0 ? "+" : ""}${sym}${Math.abs(currentCV).toFixed(2)}`}
+            {/* +CLV since start */}
+            <div className="relative bg-card border rounded-xl px-4 py-4 overflow-hidden"
+              style={{ borderColor: "rgba(167,139,250,0.25)", boxShadow: "0 0 18px rgba(167,139,250,0.07)" }}>
+              <div className="absolute top-0 left-0 right-0 h-[2px]"
+                style={{ background: "linear-gradient(90deg, transparent, rgba(167,139,250,0.6), transparent)" }} />
+              <div className="text-[9px] uppercase tracking-widest text-muted-foreground font-semibold mb-1">+CLV sedan start</div>
+              <div className={`text-2xl font-mono font-bold leading-none ${
+                totalCLVSinceStart === null ? "text-muted-foreground"
+                : totalCLVSinceStart >= 0 ? "text-violet-400" : "text-red-400"
+              }`}>
+                {totalCLVSinceStart === null ? "—"
+                  : `${totalCLVSinceStart >= 0 ? "+" : ""}${sym}${Math.abs(totalCLVSinceStart).toFixed(2)}`}
               </div>
-              <div className="text-[10px] text-muted-foreground mt-0.5">
-                {currentCV === null ? "Enter closing odds to calculate" : "Total closing line edge in currency"}
+              <div className="text-[11px] text-muted-foreground mt-1">
+                {totalCLVSinceStart === null
+                  ? "Fyll i stängningskurser för att beräkna CLV"
+                  : `Kumulativt closing line edge sedan start`}
               </div>
             </div>
           </div>
+
+          {/* ── +EV & +CLV chart ────────────────────────────────────────────── */}
+          {bets.length >= 2 && (
+            <div className="bg-card border rounded-xl p-4 mb-5">
+              <div className="flex items-center gap-2 mb-1">
+                <TrendingUp className="w-4 h-4 text-cyan-400" />
+                <span className="text-sm font-medium">+EV & +CLV sedan start</span>
+                <span className="text-[10px] text-muted-foreground ml-auto">{bets.length} spel</span>
+              </div>
+              <p className="text-[10px] text-muted-foreground mb-3">
+                Kumulativ utveckling från ditt första spel med SharpTracker.
+              </p>
+              <div className="h-[200px]">
+                <ResponsiveContainer width="100%" height="100%">
+                  <ComposedChart data={evClvChartData} margin={{ top: 4, right: 8, left: -20, bottom: 4 }}>
+                    <defs>
+                      <linearGradient id="evGrad" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="5%" stopColor="#06b6d4" stopOpacity={0.15} />
+                        <stop offset="95%" stopColor="#06b6d4" stopOpacity={0} />
+                      </linearGradient>
+                    </defs>
+                    <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" vertical={false} />
+                    <XAxis
+                      dataKey="betNum"
+                      type="number"
+                      domain={[1, evClvChartData.length]}
+                      tickFormatter={(v: number) => `Spel ${v}`}
+                      tick={{ fontSize: 10, fill: "#4b5563" }}
+                      tickLine={false}
+                      axisLine={false}
+                      tickCount={5}
+                    />
+                    <YAxis
+                      tick={{ fontSize: 10, fill: "#4b5563" }}
+                      tickFormatter={(v: number) => `${sym}${v}`}
+                      tickLine={false}
+                      axisLine={false}
+                    />
+                    <Tooltip
+                      contentStyle={{ background: "#0d1117", border: "1px solid #333", borderRadius: 8, fontSize: 11 }}
+                      labelFormatter={(v: number) => `Spel ${v}`}
+                      formatter={(value: number, name: string) => [
+                        `${value >= 0 ? "+" : ""}${sym}${value.toFixed(2)}`,
+                        name === "ev" ? "+EV" : "+CLV",
+                      ]}
+                    />
+                    <ReferenceLine y={0} stroke="#374151" />
+                    <Area
+                      type="monotone"
+                      dataKey="ev"
+                      stroke="#06b6d4"
+                      strokeWidth={2}
+                      fill="url(#evGrad)"
+                      dot={false}
+                      isAnimationActive={false}
+                    />
+                    <Line
+                      type="monotone"
+                      dataKey="clv"
+                      stroke="#a78bfa"
+                      strokeWidth={1.5}
+                      dot={false}
+                      isAnimationActive={false}
+                      strokeOpacity={totalCLVSinceStart !== null ? 1 : 0.3}
+                      strokeDasharray={totalCLVSinceStart !== null ? undefined : "4 3"}
+                    />
+                  </ComposedChart>
+                </ResponsiveContainer>
+              </div>
+              <div className="flex items-center gap-5 mt-2 text-[11px]">
+                <span className="flex items-center gap-1.5">
+                  <span className="w-2.5 h-2.5 rounded-full bg-cyan-400 inline-block" />
+                  <span className="text-cyan-400 font-medium">+EV (förväntad vinst)</span>
+                </span>
+                <span className="flex items-center gap-1.5">
+                  <span className={`w-2.5 h-2.5 rounded-full inline-block ${totalCLVSinceStart !== null ? "bg-violet-400" : "bg-violet-400/30"}`} />
+                  <span className={`font-medium ${totalCLVSinceStart !== null ? "text-violet-400" : "text-violet-400/40"}`}>
+                    +CLV{totalCLVSinceStart === null ? " — stängningskurser saknas" : ""}
+                  </span>
+                </span>
+              </div>
+            </div>
+          )}
 
           {/* ── Profit comparison chart ── */}
           <div className="bg-card border rounded-md p-4 mb-4">
