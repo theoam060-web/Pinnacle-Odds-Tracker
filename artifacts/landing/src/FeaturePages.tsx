@@ -1240,7 +1240,7 @@ export function BookmakerComparisonPage() {
       <ContentBlock
         tag="Real-Time Availability"
         heading="See who has it and who doesn't."
-        body="When you spot a sharp odds movement in the live feed, hit Compare. SharpTracker instantly queries The Odds API and shows you every bookmaker that has the event — their current odds, whether they've already moved, and how far off they are from the sharp price. You see the full picture in one table, not five browser tabs."
+        body="When you spot a sharp odds movement in the live feed, hit Compare. SharpTracker instantly checks every bookmaker that has the event — their current odds, whether they've already moved, and how far off they are from the sharp price. You see the full picture in one table, not five browser tabs."
         visual={<IlluBookmakerTable />}
         imageRight
       />

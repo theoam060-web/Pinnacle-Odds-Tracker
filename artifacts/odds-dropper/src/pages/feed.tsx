@@ -369,13 +369,7 @@ function ComparePopover({ row, comparisonBookmakers }: {
         {fetchError && !loading && (
           <div className="p-3">
             <p className="text-xs text-destructive mb-2">{fetchError}</p>
-            {fetchError.includes("ODDS_API_KEY") ? (
-              <p className="text-[10px] text-muted-foreground">
-                Add your API key from <a href="https://the-odds-api.com" target="_blank" rel="noopener noreferrer" className="underline text-primary">the-odds-api.com</a> as <span className="font-mono">ODDS_API_KEY</span>.
-              </p>
-            ) : (
-              <Button size="sm" variant="outline" className="h-6 text-xs" onClick={resetAndOpen}>Retry</Button>
-            )}
+            <Button size="sm" variant="outline" className="h-6 text-xs" onClick={resetAndOpen}>Retry</Button>
           </div>
         )}
 
@@ -441,7 +435,7 @@ function ComparePopover({ row, comparisonBookmakers }: {
               );
             })()}
             <div className="px-3 py-1.5 border-t border-border/50 flex items-center justify-between">
-              <span className="text-[9px] text-muted-foreground/50">via The Odds API</span>
+              <span className="text-[9px] text-muted-foreground/50">via Pinnacle</span>
               <Button size="sm" variant="ghost" className="h-5 text-[10px] px-1.5 text-muted-foreground" onClick={resetAndOpen}>
                 Refresh
               </Button>

@@ -8,7 +8,7 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Trophy, RefreshCw, ExternalLink, Star } from "lucide-react";
+import { Trophy, RefreshCw, Star } from "lucide-react";
 
 const API_BASE = "";
 
@@ -198,7 +198,7 @@ export function OddsCompareModal({
           {/* Not found */}
           {result && !loading && !result.found && (
             <div className="flex flex-col items-center justify-center py-12 gap-2 px-6 text-center">
-              <p className="text-sm text-muted-foreground">{result.message ?? "Matchen hittades inte i The Odds API."}</p>
+              <p className="text-sm text-muted-foreground">{result.message ?? "Matchen hittades inte i vår databas."}</p>
               <p className="text-xs text-muted-foreground/60">Bara stora ligor täcks. Prova igen närmre avspark.</p>
             </div>
           )}
@@ -339,7 +339,7 @@ export function OddsCompareModal({
 
         <div className="px-5 py-3 border-t border-border flex items-center justify-between bg-card">
           <div className="flex items-center gap-3">
-            <span className="text-[10px] text-muted-foreground/50">via The Odds API (Pinnacle)</span>
+            <span className="text-[10px] text-muted-foreground/50">via Pinnacle</span>
             {result?.found && (
               <Button
                 size="sm"
@@ -351,14 +351,6 @@ export function OddsCompareModal({
               </Button>
             )}
           </div>
-          <a
-            href="https://the-odds-api.com"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="text-[10px] text-muted-foreground/40 hover:text-muted-foreground flex items-center gap-0.5 transition-colors"
-          >
-            the-odds-api.com <ExternalLink className="w-2.5 h-2.5" />
-          </a>
         </div>
       </DialogContent>
     </Dialog>

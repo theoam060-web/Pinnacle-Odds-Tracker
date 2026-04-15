@@ -398,8 +398,7 @@ export default function AlertConfigurationsPage() {
           <Label className="text-sm font-semibold">Bookmaker Comparison</Label>
         </div>
         <p className="text-[11px] text-muted-foreground mb-3">
-          Select bookmakers to compare against sharp odds in the live feed. Requires an <span className="font-mono text-primary">ODDS_API_KEY</span> environment variable from{" "}
-          <a href="https://the-odds-api.com" target="_blank" rel="noopener noreferrer" className="underline hover:text-foreground transition-colors">the-odds-api.com</a>.
+          Select bookmakers to compare against sharp odds in the live feed.
         </p>
         <BookmakerMultiSelect
           selected={comparisonBookmakers}

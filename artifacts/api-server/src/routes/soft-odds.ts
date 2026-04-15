@@ -245,7 +245,7 @@ function makeEventCacheKey(
 router.get("/compare", async (req, res): Promise<void> => {
   const apiKey = process.env["ODDS_API_KEY"];
   if (!apiKey) {
-    res.status(503).json({ error: "ODDS_API_KEY not configured" });
+    res.status(503).json({ error: "Bookmaker comparison temporarily unavailable." });
     return;
   }
 
@@ -389,9 +389,7 @@ router.get("/soft-odds", async (req, res): Promise<void> => {
   const apiKey = process.env["ODDS_API_KEY"];
   if (!apiKey) {
     res.status(503).json({
-      error: "ODDS_API_KEY not configured",
-      message:
-        "Add your The Odds API key as the ODDS_API_KEY environment variable to enable bookmaker comparison.",
+      error: "Bookmaker comparison temporarily unavailable.",
     });
     return;
   }
