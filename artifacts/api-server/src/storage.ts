@@ -47,7 +47,9 @@ export class Storage {
         FROM stripe.subscription_items si
         JOIN stripe.prices pr ON pr.id = si.price
         JOIN stripe.products prod ON prod.id = pr.product
+        JOIN stripe.subscriptions sub ON sub.id = si.subscription
         WHERE si.subscription = ${subscriptionId}
+          AND sub.status IN ('active', 'trialing')
         LIMIT 1
       `);
       const tier = (result.rows[0] as any)?.plan_tier as string | undefined;
