@@ -22,6 +22,7 @@ import {
   type MarketUpdate,
 } from "./sseManager";
 import { sendTelegramDrop } from "./telegramNotifier";
+import { sendPushToAll } from "../routes/push";
 
 const FALLBACK_AFTER_EMPTY_POLLS = 999;
 
@@ -585,6 +586,16 @@ async function pollOnce(minDropPercent: number, state: PollerState): Promise<voi
         setTimeout(() => {
           broadcastOddsDrop(drop);
           sendTelegramDrop(drop).catch((err) => logger.warn({ err }, "Telegram send failed"));
+          sendPushToAll({
+            title: `⚡ ${drop.homeTeam} vs ${drop.awayTeam}`,
+            body: `${drop.selection} · Pinnacle ▼ ${Math.abs(drop.changePercent).toFixed(1)}%  (${drop.currentOdds.toFixed(2)})`,
+            sport: drop.sport,
+            market: drop.selection,
+            bookmaker: "Pinnacle",
+            drop: parseFloat(Math.abs(drop.changePercent).toFixed(2)),
+            tag: `drop-${drop.eventId}`,
+            url: "/app/",
+          });
         }, i * STAGGER_MS);
       });
     }
