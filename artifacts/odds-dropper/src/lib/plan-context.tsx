@@ -1,6 +1,6 @@
 import { createContext, useContext } from "react";
 
-export type PlanTier = "silver" | "gold" | "none";
+export type PlanTier = "silver" | "gold" | "platinum" | "none";
 
 export const PlanContext = createContext<PlanTier>("none");
 
@@ -9,7 +9,8 @@ export function usePlan(): PlanTier {
 }
 
 export const PLAN_LIMITS = {
-  silver: { maxConfigs: 3, markets: ["moneyline"] as string[] },
-  gold:   { maxConfigs: 9, markets: null as string[] | null },
-  none:   { maxConfigs: 0, markets: [] as string[] },
+  silver:   { maxConfigs: 3,  markets: ["moneyline"] as string[] },
+  gold:     { maxConfigs: 9,  markets: null as string[] | null },
+  platinum: { maxConfigs: 20, markets: null as string[] | null },
+  none:     { maxConfigs: 0,  markets: [] as string[] },
 } as const;

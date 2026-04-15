@@ -372,7 +372,7 @@ export default function AlertConfigurationsPage() {
           <h1 className="text-2xl font-bold tracking-tight">Alert Configurations</h1>
         </div>
         <p className="text-muted-foreground text-sm">
-          Configure up to 9 independent alert setups. Each one filters the live feed and triggers a sound notification.
+          Configure up to {maxConfigs} independent alert setups. Each one filters the live feed and triggers a sound notification.
         </p>
       </div>
 
@@ -415,21 +415,28 @@ export default function AlertConfigurationsPage() {
         )}
       </div>
 
-      {/* Push Notifications */}
-      <div className="bg-card border rounded-lg p-4 mb-6">
+      {/* Push Notifications — Platinum only */}
+      <div className={`bg-card border rounded-lg p-4 mb-6 ${tier !== "platinum" ? "opacity-60" : ""}`}>
         <div className="flex items-center gap-2 mb-1">
-          <Smartphone className="w-4 h-4 text-primary" />
+          <Smartphone className={`w-4 h-4 ${tier === "platinum" ? "text-violet-400" : "text-muted-foreground"}`} />
           <Label className="text-sm font-semibold">Mobile Push Notifications</Label>
-          {push.isSubscribed && (
+          {tier === "platinum" && push.isSubscribed && (
             <Badge variant="outline" className="text-[9px] h-4 px-1.5 text-green-400 border-green-400/30">Active</Badge>
+          )}
+          {tier !== "platinum" && (
+            <Badge variant="outline" className="text-[9px] h-4 px-1.5 text-violet-400 border-violet-400/30 gap-1">
+              <Lock className="w-2.5 h-2.5" /> Platinum
+            </Badge>
           )}
         </div>
         <p className="text-[11px] text-muted-foreground mb-4">
           Get instant alerts on your phone — even when SharpTracker is closed. Install the app via your browser's
-          &ldquo;Add to Home Screen&rdquo; option for the best experience.
+          &ldquo;Add to Home Screen&rdquo; option for the best experience. Requires a Platinum subscription.
         </p>
 
-        {push.permission === "unsupported" ? (
+        {tier !== "platinum" ? (
+          <p className="text-[11px] text-violet-400/70">Upgrade to Platinum to enable push notifications.</p>
+        ) : push.permission === "unsupported" ? (
           <p className="text-[11px] text-amber-400">Push notifications are not supported in this browser.</p>
         ) : push.permission === "denied" ? (
           <p className="text-[11px] text-amber-400">
@@ -441,7 +448,7 @@ export default function AlertConfigurationsPage() {
               <Button
                 size="sm"
                 variant="outline"
-                className="h-8 text-xs gap-1.5 border-primary/50 text-primary hover:bg-primary/10"
+                className="h-8 text-xs gap-1.5 border-violet-400/50 text-violet-400 hover:bg-violet-400/10"
                 onClick={push.subscribe}
                 disabled={push.isLoading}
               >
@@ -484,7 +491,7 @@ export default function AlertConfigurationsPage() {
             )}
           </div>
         )}
-        {testError && <p className="text-[11px] text-red-400 mt-2">{testError}</p>}
+        {tier === "platinum" && testError && <p className="text-[11px] text-red-400 mt-2">{testError}</p>}
       </div>
 
       <Separator className="mb-6" />

@@ -208,16 +208,23 @@ function SubscriptionWall() {
     silver: [
       "Realtids-odds drop-alertar",
       "3 sporter & 3 marknader var",
-      "Bet Tracker",
       "Bet Size Calculator",
       "Bookmaker-jämförelse",
+      "Telegram-grupp (enbart members)",
     ],
     gold: [
       "Allt i Silver",
+      "Bet Tracker & Bet Stats",
       "Alla sporter & alla marknader",
-      "Player props",
       "Live EV & Closing EV",
-      "Obegränsade alert-configs",
+      "9 alert-konfigurationer",
+    ],
+    platinum: [
+      "Allt i Gold",
+      "Push-notiser i appen",
+      "20 alert-konfigurationer",
+      "Current CLV & Current CV",
+      "More coming…",
     ],
   };
 
@@ -263,14 +270,18 @@ function SubscriptionWall() {
                 const priceId = price?.id;
                 const amount = price ? `€${(price.unit_amount / 100).toFixed(2)}` : "—";
                 const features = PLAN_FEATURES[planKey] ?? [];
-                const isGold = i === plans.length - 1;
+                const isGold = planKey === "gold";
+                const isPlatinum = planKey === "platinum";
+                const isHighlighted = isGold || isPlatinum;
                 const isLoading = checkingOut === priceId;
 
                 return (
                   <div
                     key={plan.id}
                     className={`relative rounded-2xl border p-5 transition-all ${
-                      isGold
+                      isPlatinum
+                        ? "border-violet-400/40 bg-violet-400/5"
+                        : isGold
                         ? "border-cyan-400/40 bg-cyan-400/5"
                         : "border-white/10 bg-white/3"
                     }`}
@@ -287,7 +298,7 @@ function SubscriptionWall() {
                       <div>
                         <h2 className="text-base font-bold text-white">{plan.name}</h2>
                         <div className="flex items-baseline gap-1 mt-1">
-                          <span className={`text-2xl font-bold font-mono ${isGold ? "text-cyan-400" : "text-white"}`}>
+                          <span className={`text-2xl font-bold font-mono ${isPlatinum ? "text-violet-400" : isGold ? "text-cyan-400" : "text-white"}`}>
                             {amount}
                           </span>
                           <span className="text-white/40 text-xs font-mono">/månad</span>
@@ -298,7 +309,7 @@ function SubscriptionWall() {
                     <ul className="space-y-2 mb-5">
                       {features.map((f) => (
                         <li key={f} className="flex items-center gap-2 text-sm text-white/70">
-                          <CheckCircle2 className={`w-3.5 h-3.5 shrink-0 ${isGold ? "text-cyan-400" : "text-white/40"}`} />
+                          <CheckCircle2 className={`w-3.5 h-3.5 shrink-0 ${isPlatinum ? "text-violet-400" : isGold ? "text-cyan-400" : "text-white/40"}`} />
                           {f}
                         </li>
                       ))}
@@ -308,7 +319,9 @@ function SubscriptionWall() {
                       onClick={() => priceId && handleCheckout(priceId)}
                       disabled={!priceId || !!checkingOut}
                       className={`w-full flex items-center justify-center gap-2 py-3 rounded-xl text-sm font-mono font-semibold transition-all disabled:opacity-50 ${
-                        isGold
+                        isPlatinum
+                          ? "bg-violet-500 text-white hover:bg-violet-400"
+                          : isGold
                           ? "bg-cyan-400 text-black hover:bg-cyan-300"
                           : "bg-white/8 text-white hover:bg-white/12 border border-white/10"
                       }`}
@@ -364,7 +377,8 @@ function SubscriptionGate({ children }: { children: React.ReactNode }) {
       const sub = data.subscription;
       const isActive = sub?.status === "active" || sub?.status === "trialing";
       if (isActive) {
-        const tier: PlanTier = data.planTier === "silver" ? "silver" : "gold";
+        const t = data.planTier;
+        const tier: PlanTier = t === "silver" ? "silver" : t === "platinum" ? "platinum" : "gold";
         setPlanTier(tier);
         setStatus("active");
       } else {

@@ -20,7 +20,7 @@ function PricingNav() {
         </button>
         {isSignedIn ? (
           <button
-            onClick={() => navigate("/")}
+            onClick={() => { window.location.href = "/app/"; }}
             className="bg-primary/10 text-primary border border-primary/30 hover:bg-primary hover:text-primary-foreground px-5 py-2 rounded-md font-mono text-sm transition-all"
           >
             Dashboard
@@ -47,16 +47,6 @@ function PinnacleIcon() {
   );
 }
 
-function FanDuelIcon() {
-  return (
-    <svg width="16" height="16" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
-      <rect width="32" height="32" rx="4" fill="#1493FF"/>
-      <path d="M8 8h11v3H11.5v3.2h6.8v3H11.5V24H8V8z" fill="white"/>
-      <path d="M20 8h3.5l-3 16H17L20 8z" fill="white" opacity="0.7"/>
-    </svg>
-  );
-}
-
 function BookmakerBadge({ name, icon }: { name: string; icon: React.ReactNode }) {
   return (
     <span className="inline-flex items-center gap-1.5 bg-[#1a1a1a] border border-white/10 rounded-md px-2.5 py-1">
@@ -79,24 +69,42 @@ function FeatureLine({ text, highlight = false }: FeatureDef) {
   );
 }
 
+function PlatinumFeatureLine({ text, highlight = false }: FeatureDef) {
+  return (
+    <li className="flex items-start gap-2.5">
+      <Check className={`w-4 h-4 mt-0.5 shrink-0 ${highlight ? "text-violet-400" : "text-violet-400/50"}`} />
+      <span className={`text-sm leading-snug ${highlight ? "text-foreground font-semibold" : "text-foreground/65"}`}>
+        {text}
+      </span>
+    </li>
+  );
+}
+
 const SILVER_FEATURES: FeatureDef[] = [
   { text: "Dropping odds alerts", highlight: true },
-  { text: "Bet Tracker" },
   { text: "Bet size calculator" },
   { text: "3 sports" },
   { text: "3 markets per sport" },
+  { text: "Only members Telegram group" },
 ];
 
 const GOLD_FEATURES: FeatureDef[] = [
   { text: "Everything in Silver", highlight: true },
   { text: "ALL sports — every league covered", highlight: true },
   { text: "ALL markets", highlight: true },
-  { text: "Pinnacle + 1 Sharp Bookmaker" },
+  { text: "Bet Tracker & Bet Stats", highlight: true },
   { text: "Odds movement history" },
-  { text: "Player props" },
-  { text: "Limit change tracking" },
-  { text: "Live EV in Bet Tracker", highlight: true },
-  { text: "Closing EV in Bet Tracker", highlight: true },
+  { text: "Live EV in Bet Tracker" },
+  { text: "Closing EV in Bet Tracker" },
+  { text: "9 alert configurations" },
+];
+
+const PLATINUM_FEATURES: FeatureDef[] = [
+  { text: "Everything in Gold", highlight: true },
+  { text: "Push notifications on app", highlight: true },
+  { text: "20 alert configurations", highlight: true },
+  { text: "Current CLV & Current CV" },
+  { text: "More coming…" },
 ];
 
 interface StripePrice {
@@ -182,13 +190,9 @@ export default function PricingPage() {
             transition={{ duration: 0.5 }}
             className="text-center mb-16"
           >
-            <span className="text-[10px] font-mono text-primary uppercase tracking-widest mb-3 block">Pricing</span>
-            <h1 className="text-4xl md:text-5xl font-sans font-bold text-foreground mb-4 leading-tight">
-              Simple, honest pricing.
+            <h1 className="text-4xl md:text-5xl font-sans font-bold text-foreground mb-0 leading-tight">
+              Pricing
             </h1>
-            <p className="text-foreground/60 text-base max-w-xl mx-auto leading-relaxed">
-              Start with Silver to get the core edge. Upgrade to Gold when you're ready to go all in.
-            </p>
           </motion.div>
 
           {error && (
@@ -259,10 +263,9 @@ export default function PricingPage() {
               </div>
 
               <div className="mb-5">
-                <p className="text-[10px] font-mono text-muted-foreground uppercase tracking-widest mb-2">Bookmakers</p>
+                <p className="text-[10px] font-mono text-muted-foreground uppercase tracking-widest mb-2">Bookmaker</p>
                 <div className="flex flex-wrap gap-2">
                   <BookmakerBadge name="Pinnacle" icon={<PinnacleIcon />} />
-                  <BookmakerBadge name="FanDuel" icon={<FanDuelIcon />} />
                 </div>
               </div>
 
@@ -284,35 +287,33 @@ export default function PricingPage() {
               initial={{ opacity: 0, y: 24 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.45, delay: 0.3 }}
-              className="rounded-2xl border border-border/30 bg-card/30 p-7 flex flex-col opacity-55"
+              className="rounded-2xl border border-violet-500/30 bg-violet-500/5 p-7 flex flex-col"
             >
               <div className="mb-5">
-                <span className="text-[10px] font-mono text-muted-foreground uppercase tracking-widest">Platinum</span>
+                <span className="text-[10px] font-mono text-violet-400 uppercase tracking-widest">Platinum</span>
                 <div className="mt-2 flex items-end gap-1">
-                  <span className="text-4xl font-bold text-foreground/40 font-sans">€114</span>
-                  <span className="text-xl font-bold text-foreground/25 font-sans mb-0.5">.99</span>
+                  <span className="text-4xl font-bold text-foreground font-sans">€114</span>
+                  <span className="text-xl font-bold text-foreground/60 font-sans mb-0.5">.99</span>
                 </div>
-                <p className="text-foreground/25 text-xs mt-0.5 font-mono">not yet available</p>
+                <p className="text-foreground/40 text-xs mt-0.5 font-mono">per month</p>
               </div>
 
               <div className="mb-5">
-                <p className="text-[10px] font-mono text-muted-foreground/50 uppercase tracking-widest mb-2">Bookmakers</p>
-                <div className="h-7 rounded-md bg-foreground/5 border border-border/20 w-24" />
+                <p className="text-[10px] font-mono text-muted-foreground uppercase tracking-widest mb-2">Bookmaker</p>
+                <div className="flex flex-wrap gap-2">
+                  <BookmakerBadge name="Pinnacle" icon={<PinnacleIcon />} />
+                </div>
               </div>
 
               <ul className="space-y-3 flex-1 mb-8">
-                {["Everything in Gold", "Advanced filters", "API access", "Priority support", "More coming"].map(f => (
-                  <li key={f} className="flex items-start gap-2.5 text-sm text-foreground/25">
-                    <Lock className="w-4 h-4 mt-0.5 shrink-0 text-foreground/20" />
-                    <span>{f}</span>
-                  </li>
-                ))}
+                {PLATINUM_FEATURES.map(f => <PlatinumFeatureLine key={f.text} {...f} />)}
               </ul>
 
               <button
                 disabled
-                className="w-full py-3 rounded-lg border border-border/20 text-foreground/20 font-mono text-sm cursor-not-allowed"
+                className="w-full py-3 rounded-lg border border-violet-500/20 text-violet-400/40 font-mono text-sm cursor-not-allowed flex items-center justify-center gap-2"
               >
+                <Lock className="w-3.5 h-3.5" />
                 Coming Soon
               </button>
             </motion.div>

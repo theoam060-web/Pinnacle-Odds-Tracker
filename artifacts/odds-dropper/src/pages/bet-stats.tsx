@@ -9,8 +9,9 @@ import type { TooltipProps } from "recharts";
 import { Layout } from "@/components/layout";
 import { useBetStore, CURRENCIES, getCurrencySymbol, calcEVCurrency, LoggedBet } from "@/lib/bet-store";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { BarChart2, TrendingUp, CalendarDays, ChevronLeft, ChevronRight } from "lucide-react";
+import { BarChart2, TrendingUp, CalendarDays, ChevronLeft, ChevronRight, Lock } from "lucide-react";
 import { formatOdds } from "@/lib/format";
+import { usePlan } from "@/lib/plan-context";
 
 type TimeFilter = "all" | "today" | "7d" | "30d" | "this_month";
 
@@ -136,6 +137,7 @@ function SectionEmpty({ message }: { message: string }) {
 export default function BetStatsPage() {
   const { bets, currency, setCurrency } = useBetStore();
   const sym = getCurrencySymbol(currency);
+  const tier = usePlan();
   const [timeFilter, setTimeFilter] = useState<TimeFilter>("all");
   const [calendarMonth, setCalendarMonth] = useState<{ year: number; month: number }>(() => {
     const now = new Date();
@@ -303,9 +305,54 @@ export default function BetStatsPage() {
       .slice(0, 8);
   }, [filteredBets]);
 
+  // Platinum-only: Current CLV (rolling 10-bet average CLV) and Current CV (cumulative closing value in currency)
+  const last10CLVBets = useMemo(() => {
+    return bets
+      .filter(b => b.closingOdds && b.closingOdds > 1)
+      .slice(-10);
+  }, [bets]);
+
+  const currentCLV = useMemo(() => {
+    if (last10CLVBets.length === 0) return null;
+    const avg = last10CLVBets.reduce((s, b) => s + (b.bettingOdds / b.closingOdds! - 1) * 100, 0) / last10CLVBets.length;
+    return avg;
+  }, [last10CLVBets]);
+
+  const currentCV = useMemo(() => {
+    const cvBets = filteredBets.filter(b => b.closingOdds && b.closingOdds > 1);
+    if (cvBets.length === 0) return null;
+    return cvBets.reduce((s, b) => s + b.stake * (b.bettingOdds / b.closingOdds! - 1), 0);
+  }, [filteredBets]);
+
   const isEmpty = bets.length === 0;
   const today = new Date();
   const visibleMarkets = showAllMarkets ? marketData : marketData.slice(0, 5);
+
+  if (tier === "silver") {
+    return (
+      <Layout>
+        <div className="flex flex-col items-center justify-center min-h-[60vh] text-center gap-6 px-4">
+          <div className="w-16 h-16 rounded-2xl bg-primary/10 border border-primary/20 flex items-center justify-center">
+            <Lock className="w-8 h-8 text-primary/60" />
+          </div>
+          <div>
+            <h2 className="text-xl font-bold mb-2">Bet Stats</h2>
+            <p className="text-muted-foreground text-sm max-w-xs">
+              Bet Stats is available on the <span className="text-primary font-semibold">Gold</span> and{" "}
+              <span className="text-violet-400 font-semibold">Platinum</span> plans.
+              Upgrade to access full performance analytics.
+            </p>
+          </div>
+          <a
+            href="/"
+            className="inline-flex items-center gap-2 bg-primary text-primary-foreground font-mono text-sm font-bold px-6 py-2.5 rounded-lg hover:bg-primary/90 transition-colors"
+          >
+            Upgrade Plan
+          </a>
+        </div>
+      </Layout>
+    );
+  }
 
   return (
     <Layout>
@@ -391,6 +438,43 @@ export default function BetStatsPage() {
               color={avgCLV !== null && avgCLV >= 0 ? "text-sky-400" : "text-red-400"}
               sub={avgCLV === null ? "Enter closing odds" : `${clvBets.length} bet${clvBets.length !== 1 ? "s" : ""}`}
             />
+          </div>
+
+          {/* ── Platinum-only stat cards: Current CLV & Current CV ─────── */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-5">
+            {/* Current CLV */}
+            <div className={`relative bg-card border rounded-md px-4 py-3 ${tier !== "platinum" ? "overflow-hidden" : ""}`}>
+              {tier !== "platinum" && (
+                <div className="absolute inset-0 backdrop-blur-sm bg-card/80 flex flex-col items-center justify-center gap-1 z-10">
+                  <Lock className="w-4 h-4 text-violet-400/60" />
+                  <span className="text-[10px] font-mono text-violet-400/60 uppercase tracking-widest">Platinum only</span>
+                </div>
+              )}
+              <div className="text-[10px] uppercase tracking-wider text-muted-foreground mb-1">Current CLV <span className="text-violet-400/70 font-mono">(last 10 bets)</span></div>
+              <div className={`text-xl font-mono font-bold ${currentCLV !== null && currentCLV >= 0 ? "text-violet-400" : "text-red-400"}`}>
+                {currentCLV === null ? "—" : `${currentCLV >= 0 ? "+" : ""}${currentCLV.toFixed(2)}%`}
+              </div>
+              <div className="text-[10px] text-muted-foreground mt-0.5">
+                {currentCLV === null ? "Enter closing odds on recent bets" : `Rolling avg on ${last10CLVBets.length} bets`}
+              </div>
+            </div>
+
+            {/* Current CV */}
+            <div className={`relative bg-card border rounded-md px-4 py-3 ${tier !== "platinum" ? "overflow-hidden" : ""}`}>
+              {tier !== "platinum" && (
+                <div className="absolute inset-0 backdrop-blur-sm bg-card/80 flex flex-col items-center justify-center gap-1 z-10">
+                  <Lock className="w-4 h-4 text-violet-400/60" />
+                  <span className="text-[10px] font-mono text-violet-400/60 uppercase tracking-widest">Platinum only</span>
+                </div>
+              )}
+              <div className="text-[10px] uppercase tracking-wider text-muted-foreground mb-1">Current CV <span className="text-violet-400/70 font-mono">(closing value)</span></div>
+              <div className={`text-xl font-mono font-bold ${currentCV !== null && currentCV >= 0 ? "text-violet-400" : "text-red-400"}`}>
+                {currentCV === null ? "—" : `${currentCV >= 0 ? "+" : ""}${sym}${Math.abs(currentCV).toFixed(2)}`}
+              </div>
+              <div className="text-[10px] text-muted-foreground mt-0.5">
+                {currentCV === null ? "Enter closing odds to calculate" : "Total closing line edge in currency"}
+              </div>
+            </div>
           </div>
 
           {/* ── Profit comparison chart ── */}

@@ -8,8 +8,9 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { BookMarked, Trash2, CalendarDays, Pencil } from "lucide-react";
+import { BookMarked, Trash2, CalendarDays, Pencil, Lock } from "lucide-react";
 import { formatOdds, formatDate, formatTime } from "@/lib/format";
+import { usePlan } from "@/lib/plan-context";
 
 type TimeFilter = "all" | "today" | "7d" | "30d" | "this_month";
 
@@ -105,8 +106,35 @@ export default function BetTrackerPage() {
   const sym = getCurrencySymbol(currency);
   const [timeFilter, setTimeFilter] = useState<TimeFilter>("all");
   const [editBet, setEditBet] = useState<LoggedBet | null>(null);
+  const tier = usePlan();
 
   const filteredBets = filterByTime(bets, timeFilter);
+
+  if (tier === "silver") {
+    return (
+      <Layout>
+        <div className="flex flex-col items-center justify-center min-h-[60vh] text-center gap-6 px-4">
+          <div className="w-16 h-16 rounded-2xl bg-primary/10 border border-primary/20 flex items-center justify-center">
+            <Lock className="w-8 h-8 text-primary/60" />
+          </div>
+          <div>
+            <h2 className="text-xl font-bold mb-2">Bet Tracker</h2>
+            <p className="text-muted-foreground text-sm max-w-xs">
+              Bet Tracker is available on the <span className="text-primary font-semibold">Gold</span> and{" "}
+              <span className="text-violet-400 font-semibold">Platinum</span> plans.
+              Upgrade to start tracking your bets and analyzing performance.
+            </p>
+          </div>
+          <a
+            href="/"
+            className="inline-flex items-center gap-2 bg-primary text-primary-foreground font-mono text-sm font-bold px-6 py-2.5 rounded-lg hover:bg-primary/90 transition-colors"
+          >
+            Upgrade Plan
+          </a>
+        </div>
+      </Layout>
+    );
+  }
 
   return (
     <Layout>
