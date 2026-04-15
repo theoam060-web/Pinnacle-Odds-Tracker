@@ -41,3 +41,9 @@ id = "w6wTUFnj28L_DBeESo4TC"
 uri = "file://.canvas/assets/push-notification-mockup.png"
 type = "image"
 title = "SharpTracker — Push Notification Design"
+
+[[outputs]]
+id = "Af_kvss6OU6E-26J80hE1"
+uri = "file://artifacts/landing/public/sharptracker-logo.svg"
+type = "image"
+title = "SharpTracker Logo (SVG)"

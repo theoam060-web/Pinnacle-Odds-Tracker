@@ -1,0 +1,30 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 280 56" fill="none">
+  <!-- Activity / ECG icon -->
+  <polyline
+    points="4,28 20,28 26,12 34,44 42,20 50,28 68,28"
+    stroke="#00e5ff"
+    stroke-width="3"
+    stroke-linecap="round"
+    stroke-linejoin="round"
+  />
+  <!-- "Sharp" in white -->
+  <text
+    x="84"
+    y="38"
+    font-family="'JetBrains Mono', 'Courier New', monospace"
+    font-size="28"
+    font-weight="700"
+    fill="#ffffff"
+    letter-spacing="-0.5"
+  >Sharp</text>
+  <!-- "Tracker" in cyan -->
+  <text
+    x="192"
+    y="38"
+    font-family="'JetBrains Mono', 'Courier New', monospace"
+    font-size="28"
+    font-weight="700"
+    fill="#00e5ff"
+    letter-spacing="-0.5"
+  >Tracker</text>
+</svg>
