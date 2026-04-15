@@ -429,7 +429,7 @@ export default function BetStatsPage() {
       ) : (
         <>
           {/* ── Stats cards ───────────────────────────────────────────────── */}
-          <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-3 mb-5">
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 mb-5">
             <StatCard
               label="Total Bets"
               value={String(filteredBets.length)}
@@ -467,13 +467,6 @@ export default function BetStatsPage() {
               color={roi >= 0 ? "text-green-400" : "text-red-400"}
               glowColor={roi >= 0 ? "#4ade80" : "#f87171"}
               sub={resolved.length === 0 ? "No resolved bets" : `${resolved.length} resolved`}
-            />
-            <StatCard
-              label="Avg CLV"
-              value={avgCLV === null ? "—" : `${avgCLV >= 0 ? "+" : ""}${avgCLV.toFixed(2)}%`}
-              color={avgCLV !== null && avgCLV >= 0 ? "text-sky-400" : "text-red-400"}
-              glowColor={avgCLV !== null && avgCLV >= 0 ? "#38bdf8" : "#f87171"}
-              sub={avgCLV === null ? "Enter closing odds" : `${clvBets.length} bet${clvBets.length !== 1 ? "s" : ""}`}
             />
           </div>
 
