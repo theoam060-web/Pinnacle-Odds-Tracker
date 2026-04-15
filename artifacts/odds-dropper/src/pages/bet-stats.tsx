@@ -320,22 +320,26 @@ export default function BetStatsPage() {
     return parseFloat((sum / clvBets.length).toFixed(2));
   }, [bets]);
 
-  // Chart data: cumulative +EV and +CLV in currency per bet (since start)
+  // Chart data: running average EV% and CLV% per bet (same metric as the stat cards)
   const evClvChartData = useMemo(() => {
     const sorted = bets
       .slice()
       .sort((a, b) => new Date(a.loggedAt).getTime() - new Date(b.loggedAt).getTime());
-    let cumEV = 0;
-    let cumCLV = 0;
+    let sumEV = 0; let countEV = 0;
+    let sumCLV = 0; let countCLV = 0;
     return sorted.map((b, i) => {
-      cumEV = parseFloat((cumEV + calcEVCurrency(b.bettingOdds, b.novigOdds, b.stake)).toFixed(2));
+      if (b.novigOdds && b.novigOdds > 1) {
+        sumEV += calcEV(b.bettingOdds, b.novigOdds);
+        countEV++;
+      }
       if (b.closingOdds && b.closingOdds > 1) {
-        cumCLV = parseFloat((cumCLV + b.stake * (b.bettingOdds / b.closingOdds - 1)).toFixed(2));
+        sumCLV += (b.bettingOdds / b.closingOdds - 1) * 100;
+        countCLV++;
       }
       return {
         betNum: i + 1,
-        ev: cumEV,
-        clv: cumCLV,
+        ev: countEV > 0 ? parseFloat((sumEV / countEV).toFixed(2)) : null,
+        clv: countCLV > 0 ? parseFloat((sumCLV / countCLV).toFixed(2)) : null,
       };
     });
   }, [bets]);
@@ -519,7 +523,7 @@ export default function BetStatsPage() {
                 <span className="text-[10px] text-muted-foreground ml-auto">{bets.length} spel</span>
               </div>
               <p className="text-[10px] text-muted-foreground mb-3">
-                Kumulativ utveckling från ditt första spel med SharpTracker.
+                Löpande genomsnitt EV% och CLV% — ska matcha kortens värden vid sista spelet.
               </p>
               <div className="h-[200px]">
                 <ResponsiveContainer width="100%" height="100%">
@@ -543,7 +547,7 @@ export default function BetStatsPage() {
                     />
                     <YAxis
                       tick={{ fontSize: 10, fill: "#4b5563" }}
-                      tickFormatter={(v: number) => `${sym}${v}`}
+                      tickFormatter={(v: number) => `${v >= 0 ? "+" : ""}${v.toFixed(1)}%`}
                       tickLine={false}
                       axisLine={false}
                     />
@@ -551,8 +555,8 @@ export default function BetStatsPage() {
                       contentStyle={{ background: "#0d1117", border: "1px solid #333", borderRadius: 8, fontSize: 11 }}
                       labelFormatter={(v: number) => `Spel ${v}`}
                       formatter={(value: number, name: string) => [
-                        `${value >= 0 ? "+" : ""}${sym}${Math.abs(value).toFixed(2)}`,
-                        name === "ev" ? "+EV" : "+CLV",
+                        `${value >= 0 ? "+" : ""}${value.toFixed(2)}%`,
+                        name === "ev" ? "Snitt +EV%" : "Snitt +CLV%",
                       ]}
                     />
                     <ReferenceLine y={0} stroke="#374151" />
