@@ -212,7 +212,7 @@ export default function PricingPage() {
               className="rounded-2xl border border-border/50 bg-card/60 p-7 flex flex-col"
             >
               <div className="mb-5">
-                <span className="text-[10px] font-mono text-muted-foreground uppercase tracking-widest">Silver</span>
+                <span className="text-xl font-bold tracking-wide" style={{ color: "#9ca3af" }}>Silver</span>
                 <div className="mt-2 flex items-end gap-1">
                   <span className="text-4xl font-bold text-foreground font-sans">€34</span>
                   <span className="text-xl font-bold text-foreground/60 font-sans mb-0.5">.99</span>
@@ -254,7 +254,7 @@ export default function PricingPage() {
               </div>
 
               <div className="mb-5">
-                <span className="text-[10px] font-mono text-primary uppercase tracking-widest">Gold</span>
+                <span className="text-xl font-bold tracking-wide" style={{ color: "#f59e0b" }}>Gold</span>
                 <div className="mt-2 flex items-end gap-1">
                   <span className="text-4xl font-bold text-foreground font-sans">€84</span>
                   <span className="text-xl font-bold text-foreground/60 font-sans mb-0.5">.99</span>
@@ -290,7 +290,7 @@ export default function PricingPage() {
               className="rounded-2xl border border-violet-500/30 bg-violet-500/5 p-7 flex flex-col"
             >
               <div className="mb-5">
-                <span className="text-[10px] font-mono text-violet-400 uppercase tracking-widest">Platinum</span>
+                <span className="text-xl font-bold tracking-wide text-violet-400">Platinum</span>
                 <div className="mt-2 flex items-end gap-1">
                   <span className="text-4xl font-bold text-foreground font-sans">€114</span>
                   <span className="text-xl font-bold text-foreground/60 font-sans mb-0.5">.99</span>
