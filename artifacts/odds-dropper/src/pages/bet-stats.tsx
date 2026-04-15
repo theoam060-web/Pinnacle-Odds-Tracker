@@ -52,14 +52,23 @@ function filterByTime(bets: LoggedBet[], filter: TimeFilter): LoggedBet[] {
   });
 }
 
-function StatCard({ label, value, sub, color }: {
-  label: string; value: string; sub?: string; color?: string;
+function StatCard({ label, value, sub, color, glowColor }: {
+  label: string; value: string; sub?: string; color?: string; glowColor?: string;
 }) {
   return (
-    <div className="bg-card border rounded-md px-4 py-3">
-      <div className="text-[10px] uppercase tracking-wider text-muted-foreground mb-1">{label}</div>
-      <div className={`text-xl font-mono font-bold ${color ?? "text-foreground"}`}>{value}</div>
-      {sub && <div className="text-[10px] text-muted-foreground mt-0.5">{sub}</div>}
+    <div
+      className="relative bg-card border rounded-xl px-4 py-4 overflow-hidden flex flex-col gap-1"
+      style={glowColor ? { borderColor: `${glowColor}30`, boxShadow: `0 0 18px ${glowColor}12` } : undefined}
+    >
+      {glowColor && (
+        <div
+          className="absolute top-0 left-0 right-0 h-[2px]"
+          style={{ background: `linear-gradient(90deg, transparent, ${glowColor}80, transparent)` }}
+        />
+      )}
+      <div className="text-[9px] uppercase tracking-widest text-muted-foreground font-semibold">{label}</div>
+      <div className={`text-2xl font-mono font-bold leading-none ${color ?? "text-foreground"}`}>{value}</div>
+      {sub && <div className="text-[11px] text-muted-foreground">{sub}</div>}
     </div>
   );
 }
@@ -411,31 +420,49 @@ export default function BetStatsPage() {
         <>
           {/* ── Stats cards ───────────────────────────────────────────────── */}
           <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-3 mb-5">
-            <StatCard label="Total bets" value={String(filteredBets.length)} sub={`${pending.length} pending`} />
-            <StatCard label="Wins" value={String(wins.length)} color="text-green-400" />
-            <StatCard label="Losses" value={String(losses.length)} color="text-red-400" />
             <StatCard
-              label="Win rate"
+              label="Total Bets"
+              value={String(filteredBets.length)}
+              sub={`${pending.length} pending`}
+            />
+            <StatCard
+              label="Wins"
+              value={String(wins.length)}
+              color="text-green-400"
+              glowColor="#4ade80"
+            />
+            <StatCard
+              label="Losses"
+              value={String(losses.length)}
+              color="text-red-400"
+              glowColor="#f87171"
+            />
+            <StatCard
+              label="Win Rate"
               value={winRate === null ? "—" : `${winRate.toFixed(1)}%`}
               color={winRate !== null && winRate >= 50 ? "text-green-400" : "text-red-400"}
+              glowColor={winRate !== null && winRate >= 50 ? "#4ade80" : "#f87171"}
               sub={resolved.length > 0 ? `${resolved.length} settled` : "No settled bets"}
             />
             <StatCard
               label="Profit / Loss"
-              value={`${totalPL >= 0 ? "+" : ""}${sym}${Math.abs(totalPL).toFixed(2)}`}
+              value={`${totalPL < 0 ? "-" : ""}${sym}${Math.abs(totalPL).toFixed(2)}`}
               color={totalPL >= 0 ? "text-green-400" : "text-red-400"}
+              glowColor={totalPL >= 0 ? "#4ade80" : "#f87171"}
               sub={`Staked: ${sym}${totalStake.toFixed(2)}`}
             />
             <StatCard
               label="ROI"
               value={resolved.length === 0 ? "—" : `${roi >= 0 ? "+" : ""}${roi.toFixed(1)}%`}
               color={roi >= 0 ? "text-green-400" : "text-red-400"}
+              glowColor={roi >= 0 ? "#4ade80" : "#f87171"}
               sub={resolved.length === 0 ? "No resolved bets" : `${resolved.length} resolved`}
             />
             <StatCard
               label="Avg CLV"
               value={avgCLV === null ? "—" : `${avgCLV >= 0 ? "+" : ""}${avgCLV.toFixed(2)}%`}
               color={avgCLV !== null && avgCLV >= 0 ? "text-sky-400" : "text-red-400"}
+              glowColor={avgCLV !== null && avgCLV >= 0 ? "#38bdf8" : "#f87171"}
               sub={avgCLV === null ? "Enter closing odds" : `${clvBets.length} bet${clvBets.length !== 1 ? "s" : ""}`}
             />
           </div>
