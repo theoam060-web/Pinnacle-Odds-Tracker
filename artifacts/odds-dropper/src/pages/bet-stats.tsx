@@ -203,16 +203,6 @@ export default function BetStatsPage() {
     });
   }, [filteredBets]);
 
-  // Detect whether EV and CLV data are actually meaningful
-  const hasValidEV = useMemo(() =>
-    filteredBets.some(b =>
-      b.novigOdds && b.novigOdds > 1 && Math.abs(b.novigOdds - b.bettingOdds) > 0.005
-    ),
-  [filteredBets]);
-
-  const hasClosingOdds = useMemo(() =>
-    filteredBets.some(b => b.closingOdds && b.closingOdds > 1),
-  [filteredBets]);
 
   // ─── DAILY PERFORMANCE CALENDAR ────────────────────────────────────────────
   const dailyPL = useMemo(() => {
@@ -330,20 +320,22 @@ export default function BetStatsPage() {
     return parseFloat((sum / clvBets.length).toFixed(2));
   }, [bets]);
 
-  // Chart data: running average +EV% and +CLV% per bet (since start)
+  // Chart data: cumulative +EV and +CLV in currency per bet (since start)
   const evClvChartData = useMemo(() => {
     const sorted = bets
       .slice()
       .sort((a, b) => new Date(a.loggedAt).getTime() - new Date(b.loggedAt).getTime());
-    let sumEV = 0; let countEV = 0;
-    let sumCLV = 0; let countCLV = 0;
+    let cumEV = 0;
+    let cumCLV = 0;
     return sorted.map((b, i) => {
-      if (b.novigOdds && b.novigOdds > 1) { sumEV += calcEV(b.bettingOdds, b.novigOdds); countEV++; }
-      if (b.closingOdds && b.closingOdds > 1) { sumCLV += (b.bettingOdds / b.closingOdds - 1) * 100; countCLV++; }
+      cumEV = parseFloat((cumEV + calcEVCurrency(b.bettingOdds, b.novigOdds, b.stake)).toFixed(2));
+      if (b.closingOdds && b.closingOdds > 1) {
+        cumCLV = parseFloat((cumCLV + b.stake * (b.bettingOdds / b.closingOdds - 1)).toFixed(2));
+      }
       return {
         betNum: i + 1,
-        ev:  countEV  > 0 ? parseFloat((sumEV  / countEV).toFixed(2))  : null,
-        clv: countCLV > 0 ? parseFloat((sumCLV / countCLV).toFixed(2)) : null,
+        ev: cumEV,
+        clv: cumCLV,
       };
     });
   }, [bets]);
@@ -482,7 +474,7 @@ export default function BetStatsPage() {
               style={{ borderColor: "rgba(6,182,212,0.25)", boxShadow: "0 0 18px rgba(6,182,212,0.07)" }}>
               <div className="absolute top-0 left-0 right-0 h-[2px]"
                 style={{ background: "linear-gradient(90deg, transparent, rgba(6,182,212,0.6), transparent)" }} />
-              <div className="text-[9px] uppercase tracking-widest text-muted-foreground font-semibold mb-1">+EV sedan start</div>
+              <div className="text-[9px] uppercase tracking-widest text-muted-foreground font-semibold mb-1">+EV</div>
               <div className={`text-2xl font-mono font-bold leading-none ${
                 totalEVSinceStart === null ? "text-muted-foreground"
                 : totalEVSinceStart >= 0 ? "text-cyan-400" : "text-red-400"
@@ -502,7 +494,7 @@ export default function BetStatsPage() {
               style={{ borderColor: "rgba(167,139,250,0.25)", boxShadow: "0 0 18px rgba(167,139,250,0.07)" }}>
               <div className="absolute top-0 left-0 right-0 h-[2px]"
                 style={{ background: "linear-gradient(90deg, transparent, rgba(167,139,250,0.6), transparent)" }} />
-              <div className="text-[9px] uppercase tracking-widest text-muted-foreground font-semibold mb-1">+CLV sedan start</div>
+              <div className="text-[9px] uppercase tracking-widest text-muted-foreground font-semibold mb-1">+CLV</div>
               <div className={`text-2xl font-mono font-bold leading-none ${
                 totalCLVSinceStart === null ? "text-muted-foreground"
                 : totalCLVSinceStart >= 0 ? "text-violet-400" : "text-red-400"
@@ -523,7 +515,7 @@ export default function BetStatsPage() {
             <div className="bg-card border rounded-xl p-4 mb-5">
               <div className="flex items-center gap-2 mb-1">
                 <TrendingUp className="w-4 h-4 text-cyan-400" />
-                <span className="text-sm font-medium">+EV & +CLV sedan start</span>
+                <span className="text-sm font-medium">+EV & +CLV</span>
                 <span className="text-[10px] text-muted-foreground ml-auto">{bets.length} spel</span>
               </div>
               <p className="text-[10px] text-muted-foreground mb-3">
@@ -551,7 +543,7 @@ export default function BetStatsPage() {
                     />
                     <YAxis
                       tick={{ fontSize: 10, fill: "#4b5563" }}
-                      tickFormatter={(v: number) => `${v >= 0 ? "+" : ""}${v.toFixed(1)}%`}
+                      tickFormatter={(v: number) => `${sym}${v}`}
                       tickLine={false}
                       axisLine={false}
                     />
@@ -559,8 +551,8 @@ export default function BetStatsPage() {
                       contentStyle={{ background: "#0d1117", border: "1px solid #333", borderRadius: 8, fontSize: 11 }}
                       labelFormatter={(v: number) => `Spel ${v}`}
                       formatter={(value: number, name: string) => [
-                        `${value >= 0 ? "+" : ""}${value.toFixed(2)}%`,
-                        name === "ev" ? "Snitt +EV%" : "Snitt +CLV%",
+                        `${value >= 0 ? "+" : ""}${sym}${Math.abs(value).toFixed(2)}`,
+                        name === "ev" ? "+EV" : "+CLV",
                       ]}
                     />
                     <ReferenceLine y={0} stroke="#374151" />
@@ -642,23 +634,12 @@ export default function BetStatsPage() {
                         tickLine={false}
                         axisLine={false}
                       />
-                      {(hasValidEV || hasClosingOdds) && (
-                        <YAxis
-                          yAxisId="right"
-                          orientation="right"
-                          tick={{ fontSize: 10, fill: "#4b5563" }}
-                          tickFormatter={(v: number) => `${sym}${v}`}
-                          tickLine={false}
-                          axisLine={false}
-                          width={48}
-                        />
-                      )}
                       <Tooltip
                         contentStyle={{ background: "#1a1a1a", border: "1px solid #333", borderRadius: 6, fontSize: 11 }}
                         labelFormatter={(v: number) => `Bet ${v}`}
-                        formatter={(value: number, name: string) => [
-                          `${value >= 0 ? "+" : ""}${sym}${value.toFixed(2)}`,
-                          name === "actual" ? "Actual Profit" : "Expected Profit (EV)",
+                        formatter={(value: number) => [
+                          `${value >= 0 ? "+" : ""}${sym}${Math.abs(value).toFixed(2)}`,
+                          "Actual Profit",
                         ]}
                       />
                       <ReferenceLine yAxisId="left" y={0} stroke="#374151" />
@@ -672,17 +653,6 @@ export default function BetStatsPage() {
                         dot={false}
                         isAnimationActive={false}
                       />
-                      <Line
-                        yAxisId={hasValidEV || hasClosingOdds ? "right" : "left"}
-                        type="monotone"
-                        dataKey="expected"
-                        stroke="#06b6d4"
-                        strokeWidth={1.5}
-                        dot={false}
-                        isAnimationActive={false}
-                        strokeDasharray={hasValidEV ? undefined : "4 3"}
-                        strokeOpacity={hasValidEV ? 1 : 0.4}
-                      />
                     </ComposedChart>
                   </ResponsiveContainer>
                 </div>
@@ -693,25 +663,7 @@ export default function BetStatsPage() {
                     <span className="w-2.5 h-2.5 rounded-full bg-indigo-500 inline-block" />
                     <span className="text-indigo-400 font-medium">Actual Profit</span>
                   </span>
-                  <span className="flex items-center gap-1.5">
-                    <span className={`w-2.5 h-2.5 rounded-full inline-block ${hasValidEV ? "bg-cyan-400" : "bg-cyan-400/30"}`} />
-                    <span className={`font-medium ${hasValidEV ? "text-cyan-400" : "text-cyan-400/50"}`}>
-                      Expected Profit (EV){!hasValidEV && " — no-vig data saknas"}
-                    </span>
-                  </span>
                 </div>
-
-                {/* Info notices */}
-                {!hasValidEV && (
-                  <div className="mt-3">
-                    <div className="flex items-start gap-2 bg-cyan-950/30 border border-cyan-900/40 rounded px-3 py-2 text-[11px] text-cyan-300/80">
-                      <span className="shrink-0 mt-0.5">ℹ</span>
-                      <span>
-                        <span className="font-semibold text-cyan-300">Expected Profit</span>: no-vig-odds saknas för dina sparade spel — logga nya spel direkt från flödet för korrekt EV.
-                      </span>
-                    </div>
-                  </div>
-                )}
               </>
             )}
           </div>
