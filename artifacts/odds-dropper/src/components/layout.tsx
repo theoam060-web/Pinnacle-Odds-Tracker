@@ -68,12 +68,12 @@ export function Layout({ children, notificationFilters }: LayoutProps) {
 
       <aside className="w-52 shrink-0 flex flex-col border-r border-border/60 bg-card/60 sticky top-0 h-screen overflow-y-auto">
         {/* Brand */}
-        <div className="flex items-center gap-2 px-4 py-5 border-b border-border/40">
+        <a href="/" className="flex items-center gap-2 px-4 py-5 border-b border-border/40 hover:opacity-80 transition-opacity">
           <Activity className="h-5 w-5 text-primary shrink-0" />
           <span className="font-bold tracking-tight text-sm leading-tight">
             Sharp<span className="text-primary">Tracker</span>
           </span>
-        </div>
+        </a>
 
         {/* Nav */}
         <nav className="flex flex-col gap-1 px-2 py-4">
