@@ -1,12 +1,13 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect, useRef } from "react";
 import { Link, useLocation } from "wouter";
-import { Activity, TrendingDown, BookMarked, BellRing, Volume2, VolumeX, Cog, BarChart2, Zap } from "lucide-react";
+import { Activity, TrendingDown, BookMarked, BellRing, Volume2, VolumeX, Cog, BarChart2, Zap, Smartphone, X } from "lucide-react";
 import { useAlertStore } from "@/lib/alert-context";
 import { useGetOddsSummary, getGetOddsSummaryQueryKey } from "@workspace/api-client-react";
 import { SettingsModal } from "@/components/settings-modal";
 import { useOddsStream, type OddsDropEvent, type OddsStreamFilters } from "@/hooks/use-odds-stream";
 import { useBetStore, getCurrencySymbol, calcEVCurrency } from "@/lib/bet-store";
 import { playChime } from "@/lib/chime";
+import { QRCodeSVG } from "qrcode.react";
 
 const NAV_ITEMS = [
   { href: "/", label: "Live Feed", icon: TrendingDown },
@@ -36,6 +37,65 @@ function OddsStreamListener({
 interface LayoutProps {
   children: React.ReactNode;
   notificationFilters?: OddsStreamFilters;
+}
+
+function DownloadAppButton() {
+  const [open, setOpen] = useState(false);
+  const [appUrl, setAppUrl] = useState("");
+  const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    setAppUrl(window.location.origin + "/app/");
+  }, []);
+
+  useEffect(() => {
+    if (!open) return;
+    const handler = (e: MouseEvent) => {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, [open]);
+
+  return (
+    <div ref={ref} className="mx-3 mb-3 relative">
+      <button
+        onClick={() => setOpen(o => !o)}
+        className="w-full flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-mono text-muted-foreground/60 border border-border/20 hover:border-primary/25 hover:text-primary/70 hover:bg-primary/5 transition-all"
+      >
+        <Smartphone className="w-3.5 h-3.5 shrink-0" />
+        Download the app
+      </button>
+
+      {open && (
+        <div className="absolute bottom-full left-0 mb-2 w-52 rounded-xl border border-border/40 shadow-2xl z-50 overflow-hidden"
+          style={{ background: "#0d0e14" }}>
+          <div className="flex items-center justify-between px-3 py-2 border-b border-border/30">
+            <span className="text-[10px] font-mono uppercase tracking-widest text-muted-foreground">Skanna för att öppna</span>
+            <button onClick={() => setOpen(false)} className="text-muted-foreground/40 hover:text-muted-foreground transition-colors">
+              <X className="w-3 h-3" />
+            </button>
+          </div>
+          <div className="flex flex-col items-center py-4 gap-2">
+            <div className="bg-white rounded-xl p-2.5 shadow-lg">
+              {appUrl && (
+                <QRCodeSVG
+                  value={appUrl}
+                  size={140}
+                  bgColor="#ffffff"
+                  fgColor="#0a0b0f"
+                  level="H"
+                />
+              )}
+            </div>
+            <p className="text-[10px] font-mono text-muted-foreground/50 text-center px-3">
+              Öppna SharpTracker på din telefon
+            </p>
+          </div>
+        </div>
+      )}
+    </div>
+  );
 }
 
 export function Layout({ children, notificationFilters }: LayoutProps) {
@@ -182,6 +242,8 @@ export function Layout({ children, notificationFilters }: LayoutProps) {
             </div>
           </div>
         </div>
+
+        <DownloadAppButton />
 
         {/* Footer settings */}
         <div className="mt-auto border-t border-border/30">
