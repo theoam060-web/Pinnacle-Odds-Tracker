@@ -7,7 +7,7 @@ import {
 } from "recharts";
 import type { TooltipProps } from "recharts";
 import { Layout } from "@/components/layout";
-import { useBetStore, CURRENCIES, getCurrencySymbol, calcEVCurrency, LoggedBet } from "@/lib/bet-store";
+import { useBetStore, CURRENCIES, getCurrencySymbol, calcEV, calcEVCurrency, LoggedBet } from "@/lib/bet-store";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { BarChart2, TrendingUp, CalendarDays, ChevronLeft, ChevronRight, Lock } from "lucide-react";
 import { formatOdds } from "@/lib/format";
@@ -314,32 +314,37 @@ export default function BetStatsPage() {
       .slice(0, 8);
   }, [filteredBets]);
 
-  // +EV since start (all bets ever, not time-filtered)
+  // +EV % since start — running average EV% per bet (all bets, not time-filtered)
   const totalEVSinceStart = useMemo(() => {
-    if (bets.length === 0) return null;
-    const sum = bets.reduce((s, b) => s + calcEVCurrency(b.bettingOdds, b.novigOdds, b.stake), 0);
-    return sum;
+    const validBets = bets.filter(b => b.novigOdds && b.novigOdds > 1);
+    if (validBets.length === 0) return null;
+    const sum = validBets.reduce((s, b) => s + calcEV(b.bettingOdds, b.novigOdds), 0);
+    return parseFloat((sum / validBets.length).toFixed(2));
   }, [bets]);
 
-  // +CLV since start (all bets ever with closing odds, not time-filtered)
+  // +CLV % since start — average CLV% across bets with closing odds (all bets, not time-filtered)
   const totalCLVSinceStart = useMemo(() => {
     const clvBets = bets.filter(b => b.closingOdds && b.closingOdds > 1);
     if (clvBets.length === 0) return null;
-    return clvBets.reduce((s, b) => s + b.stake * (b.bettingOdds / b.closingOdds! - 1), 0);
+    const sum = clvBets.reduce((s, b) => s + (b.bettingOdds / b.closingOdds! - 1) * 100, 0);
+    return parseFloat((sum / clvBets.length).toFixed(2));
   }, [bets]);
 
-  // Chart data: cumulative +EV and +CLV across all bets since start
+  // Chart data: running average +EV% and +CLV% per bet (since start)
   const evClvChartData = useMemo(() => {
     const sorted = bets
       .slice()
       .sort((a, b) => new Date(a.loggedAt).getTime() - new Date(b.loggedAt).getTime());
-    let cumEV = 0;
-    let cumCLV = 0;
+    let sumEV = 0; let countEV = 0;
+    let sumCLV = 0; let countCLV = 0;
     return sorted.map((b, i) => {
-      cumEV = parseFloat((cumEV + calcEVCurrency(b.bettingOdds, b.novigOdds, b.stake)).toFixed(2));
-      const clvDelta = (b.closingOdds && b.closingOdds > 1) ? b.stake * (b.bettingOdds / b.closingOdds - 1) : 0;
-      cumCLV = parseFloat((cumCLV + clvDelta).toFixed(2));
-      return { betNum: i + 1, ev: cumEV, clv: cumCLV };
+      if (b.novigOdds && b.novigOdds > 1) { sumEV += calcEV(b.bettingOdds, b.novigOdds); countEV++; }
+      if (b.closingOdds && b.closingOdds > 1) { sumCLV += (b.bettingOdds / b.closingOdds - 1) * 100; countCLV++; }
+      return {
+        betNum: i + 1,
+        ev:  countEV  > 0 ? parseFloat((sumEV  / countEV).toFixed(2))  : null,
+        clv: countCLV > 0 ? parseFloat((sumCLV / countCLV).toFixed(2)) : null,
+      };
     });
   }, [bets]);
 
@@ -483,12 +488,12 @@ export default function BetStatsPage() {
                 : totalEVSinceStart >= 0 ? "text-cyan-400" : "text-red-400"
               }`}>
                 {totalEVSinceStart === null ? "—"
-                  : `${totalEVSinceStart >= 0 ? "+" : ""}${sym}${Math.abs(totalEVSinceStart).toFixed(2)}`}
+                  : `${totalEVSinceStart >= 0 ? "+" : ""}${totalEVSinceStart.toFixed(2)}%`}
               </div>
               <div className="text-[11px] text-muted-foreground mt-1">
                 {totalEVSinceStart === null
                   ? "Logga spel med no-vig-odds för att beräkna EV"
-                  : `Kumulativt förväntad vinst från ${bets.length} spel`}
+                  : `Snitt EV% per spel (${bets.filter(b => b.novigOdds && b.novigOdds > 1).length} spel)`}
               </div>
             </div>
 
@@ -503,12 +508,12 @@ export default function BetStatsPage() {
                 : totalCLVSinceStart >= 0 ? "text-violet-400" : "text-red-400"
               }`}>
                 {totalCLVSinceStart === null ? "—"
-                  : `${totalCLVSinceStart >= 0 ? "+" : ""}${sym}${Math.abs(totalCLVSinceStart).toFixed(2)}`}
+                  : `${totalCLVSinceStart >= 0 ? "+" : ""}${totalCLVSinceStart.toFixed(2)}%`}
               </div>
               <div className="text-[11px] text-muted-foreground mt-1">
                 {totalCLVSinceStart === null
                   ? "Fyll i stängningskurser för att beräkna CLV"
-                  : `Kumulativt closing line edge sedan start`}
+                  : `Snitt CLV% per spel (${bets.filter(b => b.closingOdds && b.closingOdds > 1).length} spel)`}
               </div>
             </div>
           </div>
@@ -546,7 +551,7 @@ export default function BetStatsPage() {
                     />
                     <YAxis
                       tick={{ fontSize: 10, fill: "#4b5563" }}
-                      tickFormatter={(v: number) => `${sym}${v}`}
+                      tickFormatter={(v: number) => `${v >= 0 ? "+" : ""}${v.toFixed(1)}%`}
                       tickLine={false}
                       axisLine={false}
                     />
@@ -554,8 +559,8 @@ export default function BetStatsPage() {
                       contentStyle={{ background: "#0d1117", border: "1px solid #333", borderRadius: 8, fontSize: 11 }}
                       labelFormatter={(v: number) => `Spel ${v}`}
                       formatter={(value: number, name: string) => [
-                        `${value >= 0 ? "+" : ""}${sym}${value.toFixed(2)}`,
-                        name === "ev" ? "+EV" : "+CLV",
+                        `${value >= 0 ? "+" : ""}${value.toFixed(2)}%`,
+                        name === "ev" ? "Snitt +EV%" : "Snitt +CLV%",
                       ]}
                     />
                     <ReferenceLine y={0} stroke="#374151" />
