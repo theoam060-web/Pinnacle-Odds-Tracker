@@ -390,7 +390,7 @@ function SubscriptionGate({ children }: { children: React.ReactNode }) {
   }, [getToken]);
 
   useEffect(() => {
-    if (bypassAuth || isAdmin) { setPlanTier("gold"); setStatus("active"); return; }
+    if (bypassAuth || isAdmin) { setPlanTier("platinum"); setStatus("active"); return; }
     check();
   }, [bypassAuth, isAdmin, check]);
 
