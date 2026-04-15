@@ -53,7 +53,7 @@ function load(): LoggedBet[] {
 }
 
 function loadCurrency(): string {
-  try { return localStorage.getItem(CURRENCY_KEY) ?? "USD"; } catch { return "USD"; }
+  try { return localStorage.getItem(CURRENCY_KEY) ?? "SEK"; } catch { return "SEK"; }
 }
 
 export function BetStoreProvider({ children }: { children: ReactNode }) {
@@ -110,13 +110,18 @@ export function useBetStore(): BetStoreValue {
 }
 
 export const CURRENCIES = [
-  { code: "USD", symbol: "$", label: "US Dollar" },
+  { code: "SEK", symbol: "kr", label: "Svensk krona" },
   { code: "EUR", symbol: "€", label: "Euro" },
+  { code: "USD", symbol: "$", label: "US Dollar" },
   { code: "GBP", symbol: "£", label: "British Pound" },
-  { code: "JPY", symbol: "¥", label: "Japanese Yen" },
+  { code: "NOK", symbol: "kr", label: "Norsk krone" },
+  { code: "DKK", symbol: "kr", label: "Dansk krone" },
+  { code: "CHF", symbol: "Fr", label: "Swiss Franc" },
   { code: "AUD", symbol: "A$", label: "Australian Dollar" },
   { code: "CAD", symbol: "C$", label: "Canadian Dollar" },
-  { code: "CHF", symbol: "Fr", label: "Swiss Franc" },
+  { code: "JPY", symbol: "¥", label: "Japanese Yen" },
+  { code: "PLN", symbol: "zł", label: "Polish Złoty" },
+  { code: "BRL", symbol: "R$", label: "Brazilian Real" },
 ];
 
 export function getCurrencySymbol(code: string): string {
