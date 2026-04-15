@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { Link, useLocation } from "wouter";
-import { Activity, Check, Lock, Loader2, Star } from "lucide-react";
+import { Activity, Check, Loader2, Star } from "lucide-react";
 import { useUser } from "@clerk/react";
 
 const API_BASE = "https://84e61830-7611-4d35-8623-77d057b02e4e-00-30ovvqhxka0d5.kirk.replit.dev";
@@ -82,6 +82,7 @@ function PlatinumFeatureLine({ text, highlight = false }: FeatureDef) {
 
 const SILVER_FEATURES: FeatureDef[] = [
   { text: "Dropping odds alerts", highlight: true },
+  { text: "3 alert configurations" },
   { text: "Bet size calculator" },
   { text: "3 sports" },
   { text: "3 markets per sport" },
@@ -90,21 +91,21 @@ const SILVER_FEATURES: FeatureDef[] = [
 
 const GOLD_FEATURES: FeatureDef[] = [
   { text: "Everything in Silver", highlight: true },
+  { text: "9 alert configurations", highlight: true },
   { text: "ALL sports — every league covered", highlight: true },
   { text: "ALL markets", highlight: true },
   { text: "Bet Tracker & Bet Stats", highlight: true },
   { text: "Odds movement history" },
   { text: "Live EV in Bet Tracker" },
   { text: "Closing EV in Bet Tracker" },
-  { text: "9 alert configurations" },
 ];
 
 const PLATINUM_FEATURES: FeatureDef[] = [
   { text: "Everything in Gold", highlight: true },
-  { text: "Push notifications on app", highlight: true },
   { text: "20 alert configurations", highlight: true },
+  { text: "Bookmaker comparison" },
+  { text: "Push notifications on app", highlight: true },
   { text: "Current CLV & Current CV" },
-  { text: "More coming…" },
 ];
 
 interface StripePrice {
@@ -175,6 +176,7 @@ export default function PricingPage() {
 
   const silverLoading = loading["silver"];
   const goldLoading = loading["gold"];
+  const platinumLoading = loading["platinum"];
 
   return (
     <div className="min-h-[100dvh] bg-background text-foreground font-sans">
@@ -282,12 +284,12 @@ export default function PricingPage() {
               </button>
             </motion.div>
 
-            {/* Platinum — coming soon */}
+            {/* Platinum */}
             <motion.div
               initial={{ opacity: 0, y: 24 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.45, delay: 0.3 }}
-              className="rounded-2xl border border-violet-500/30 bg-violet-500/5 p-7 flex flex-col"
+              className="rounded-2xl border border-violet-500/40 bg-violet-500/5 p-7 flex flex-col shadow-[0_0_50px_rgba(139,92,246,0.08)]"
             >
               <div className="mb-5">
                 <span className="text-xl font-bold tracking-wide text-violet-400">Platinum</span>
@@ -310,11 +312,11 @@ export default function PricingPage() {
               </ul>
 
               <button
-                disabled
-                className="w-full py-3 rounded-lg border border-violet-500/20 text-violet-400/40 font-mono text-sm cursor-not-allowed flex items-center justify-center gap-2"
+                onClick={() => handleCheckout("platinum")}
+                disabled={platinumLoading}
+                className="w-full py-3 rounded-lg bg-violet-600 text-white font-mono text-sm font-bold hover:bg-violet-500 transition-all shadow-[0_0_20px_rgba(139,92,246,0.25)] disabled:opacity-60 flex items-center justify-center gap-2"
               >
-                <Lock className="w-3.5 h-3.5" />
-                Coming Soon
+                {platinumLoading ? <><Loader2 className="w-4 h-4 animate-spin" /> Processing…</> : isSignedIn ? "Subscribe" : "Get Started"}
               </button>
             </motion.div>
 
