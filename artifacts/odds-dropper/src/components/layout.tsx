@@ -46,11 +46,7 @@ function DownloadModal({ onClose }: { onClose: () => void }) {
   const plan = usePlan();
   const isPlatinum = plan === "platinum";
   const { permission, isSubscribed, isLoading, subscribe, unsubscribe } = usePushNotifications();
-  const [appUrl, setAppUrl] = useState("");
-
-  useEffect(() => {
-    setAppUrl(window.location.origin + "/app/");
-  }, []);
+  const appUrl = "https://sharptracker.io/app/";
 
   useEffect(() => {
     const handler = (e: KeyboardEvent) => { if (e.key === "Escape") onClose(); };

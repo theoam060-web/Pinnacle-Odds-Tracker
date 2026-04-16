@@ -18,12 +18,8 @@ interface Props {
 const BASE = import.meta.env.BASE_URL || "/";
 
 export default function InstallAppModal({ open, onClose, deferredPrompt, onNativeInstall }: Props) {
-  const [appUrl, setAppUrl] = useState("");
+  const appUrl = "https://sharptracker.io/app/";
   const [installing, setInstalling] = useState(false);
-
-  useEffect(() => {
-    setAppUrl(window.location.origin + "/app/");
-  }, []);
 
   useEffect(() => {
     if (!open) return;
