@@ -3,6 +3,8 @@ import {
   ReferenceLine, Area, AreaChart, CartesianGrid
 } from "recharts";
 import { Switch, Route, Router as WouterRouter, Link, useLocation } from "wouter";
+import { LanguageProvider, useLang } from "./LanguageContext";
+import { LANGUAGES, t } from "./i18n";
 import { QueryClient, QueryClientProvider, useQueryClient } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -480,12 +482,64 @@ function NavUserMenu({ closePanel }: { closePanel: () => void }) {
   );
 }
 
+function LangDropdown() {
+  const { lang, setLang } = useLang();
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+  const current = LANGUAGES.find(l => l.code === lang) ?? LANGUAGES[0];
+
+  useEffect(() => {
+    const handler = (e: MouseEvent) => {
+      if (!ref.current?.contains(e.target as Node)) setOpen(false);
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, []);
+
+  return (
+    <div ref={ref} className="relative">
+      <button
+        onClick={() => setOpen(v => !v)}
+        className="flex items-center gap-1.5 text-sm font-mono text-muted-foreground hover:text-primary transition-colors px-2 py-1 rounded-md hover:bg-primary/5"
+        aria-label="Select language"
+      >
+        <span className="text-base leading-none">{current.flag}</span>
+        <span className="hidden sm:inline">{current.name}</span>
+        <svg className={`w-3 h-3 transition-transform ${open ? "rotate-180" : ""}`} viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="2">
+          <path d="M2 4l4 4 4-4" strokeLinecap="round" strokeLinejoin="round"/>
+        </svg>
+      </button>
+      {open && (
+        <div className="absolute right-0 top-full mt-1 w-52 bg-background/95 backdrop-blur-xl border border-border/60 rounded-xl shadow-[0_8px_40px_rgba(0,0,0,0.6)] z-50 py-1 overflow-hidden">
+          {LANGUAGES.map(l => (
+            <button
+              key={l.code}
+              onClick={() => { setLang(l.code); setOpen(false); }}
+              className={`w-full flex items-center gap-3 px-4 py-2.5 text-sm font-mono transition-colors ${
+                l.code === lang
+                  ? "bg-primary/10 text-primary"
+                  : "text-muted-foreground hover:text-foreground hover:bg-white/5"
+              }`}
+            >
+              <span className="text-base w-5 shrink-0">{l.flag}</span>
+              <span className="flex-1 text-left">{l.name}</span>
+              <span className="text-[10px] text-muted-foreground/60">{l.currency}</span>
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 function Navbar() {
   const [scrolled, setScrolled] = useState(false);
   const [featuresOpen, setFeaturesOpen] = useState(false);
   const triggerRef = useRef<HTMLButtonElement>(null);
   const panelRef = useRef<HTMLDivElement>(null);
   const [, navigate] = useLocation();
+  const { lang } = useLang();
+  const tr = t(lang);
 
   useEffect(() => {
     const handleScroll = () => setScrolled(window.scrollY > 50);
@@ -528,7 +582,7 @@ function Navbar() {
             onClick={() => setFeaturesOpen(v => !v)}
             className={`flex items-center gap-1.5 hover:text-primary transition-colors ${featuresOpen ? "text-primary" : ""}`}
           >
-            Features
+            {tr.nav.features}
             <svg
               className={`w-3 h-3 transition-transform duration-200 ${featuresOpen ? "rotate-180" : ""}`}
               viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="2"
@@ -537,8 +591,8 @@ function Navbar() {
             </svg>
           </button>
 
-          <button onClick={() => { closePanel(); navigate("/why"); }} className="hover:text-primary transition-colors">Why SharpTracker?</button>
-          <button onClick={() => { closePanel(); navigate("/pricing"); }} className="hover:text-primary transition-colors">Pricing</button>
+          <button onClick={() => { closePanel(); navigate("/why"); }} className="hover:text-primary transition-colors">{tr.nav.why}</button>
+          <button onClick={() => { closePanel(); navigate("/pricing"); }} className="hover:text-primary transition-colors">{tr.nav.pricing}</button>
           <button
             onClick={() => {
               closePanel();
@@ -550,16 +604,17 @@ function Navbar() {
               }
             }}
             className="hover:text-primary transition-colors"
-          >FAQ</button>
+          >{tr.nav.faq}</button>
         </div>
 
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-3">
+          <LangDropdown />
           <Show when="signed-out">
-            <button onClick={() => { closePanel(); window.location.href = "/app/"; }} className="hidden md:block text-sm font-mono text-foreground hover:text-primary transition-colors" data-testid="btn-login">Log In</button>
+            <button onClick={() => { closePanel(); window.location.href = "/app/"; }} className="hidden md:block text-sm font-mono text-foreground hover:text-primary transition-colors" data-testid="btn-login">{tr.nav.login}</button>
             <div className="flex flex-col items-center gap-0.5">
-              <span className="text-[11px] font-bold text-green-400 leading-none tracking-wide">14 days free</span>
+              <span className="text-[11px] font-bold text-green-400 leading-none tracking-wide">{tr.nav.trialBadge}</span>
               <button onClick={() => { closePanel(); window.location.href = "/app/"; }} className="bg-primary/10 text-primary border border-primary/30 hover:bg-primary hover:text-primary-foreground px-5 py-2 rounded-md font-mono text-sm transition-all shadow-[0_0_15px_rgba(0,255,255,0.1)] hover:shadow-[0_0_20px_rgba(0,255,255,0.3)]" data-testid="btn-get-access">
-                Sign Up
+                {tr.nav.signup}
               </button>
             </div>
           </Show>
@@ -569,7 +624,7 @@ function Navbar() {
                 closePanel={closePanel}
                 className="hidden md:inline-flex items-center gap-1.5 bg-primary/10 text-primary border border-primary/30 hover:bg-primary hover:text-primary-foreground px-4 py-2 rounded-md font-mono text-sm transition-all shadow-[0_0_15px_rgba(0,255,255,0.08)] hover:shadow-[0_0_20px_rgba(0,255,255,0.3)] disabled:opacity-50"
               >
-                Prenumerationer
+                {tr.nav.subscriptions}
               </SubscriptionButton>
               <NavUserMenu closePanel={closePanel} />
             </div>
@@ -619,17 +674,24 @@ function Navbar() {
   );
 }
 
-const HERO_STATS = [
-  { value: "€2.6B", label: "Made every year by private bettors who follow sharp money" },
-  { value: "< 1s",  label: "From the moment a line moves to the moment you get alerted" },
-  { value: "10K+",  label: "Sharp odds drops tracked and logged every single day" },
-];
+function useHeroStats() {
+  const { lang } = useLang();
+  const tr = t(lang);
+  return [
+    { value: "€2.6B", label: tr.hero.stat1 },
+    { value: "< 1s",  label: tr.hero.stat2 },
+    { value: "10K+",  label: tr.hero.stat3 },
+  ];
+}
 
 const API_BASE = "https://84e61830-7611-4d35-8623-77d057b02e4e-00-30ovvqhxka0d5.kirk.replit.dev";
 
 function Hero() {
   const [, navigate] = useLocation();
   const [liveCount, setLiveCount] = useState<number | null>(null);
+  const { lang } = useLang();
+  const tr = t(lang);
+  const heroStats = useHeroStats();
 
   useEffect(() => {
     const load = () =>
@@ -664,8 +726,8 @@ function Hero() {
           >
             <span className="w-2 h-2 rounded-full bg-green-400 animate-pulse shrink-0" />
             {liveCount !== null
-              ? <>Monitoring <span className="font-bold text-green-300">{liveCount.toLocaleString()}</span> live events right now</>
-              : "Connecting to live markets…"}
+              ? <>{tr.hero.monitoring(liveCount.toLocaleString())}</>
+              : tr.hero.connecting}
           </motion.div>
 
           {/* Headline */}
@@ -675,7 +737,7 @@ function Hero() {
             transition={{ duration: 0.55, delay: 0.08 }}
             className="text-5xl sm:text-6xl md:text-8xl font-bold font-sans tracking-tighter leading-[1.05] mb-6 text-foreground"
           >
-            When the market moves.<br />
+            {tr.hero.headline1}<br />
             <span
               style={{
                 background: "linear-gradient(90deg, hsl(186 100% 50%), hsl(186 100% 80%), hsl(186 100% 50%))",
@@ -684,7 +746,7 @@ function Hero() {
                 WebkitTextFillColor: "transparent",
                 animation: "shimmer 3s linear infinite",
               }}
-            >You move first.</span>
+            >{tr.hero.headline2}</span>
           </motion.h1>
 
           {/* Subtitle — simple, direct */}
@@ -694,7 +756,7 @@ function Hero() {
             transition={{ duration: 0.5, delay: 0.18 }}
             className="text-xl md:text-2xl text-foreground/70 font-sans leading-relaxed mb-10 max-w-2xl"
           >
-            Always bet at the right price. We watch the world's sharpest bookmaker 24/7 and alert you the moment the odds drop.
+            {tr.hero.subtitle}
           </motion.p>
 
           {/* Stat cards */}
@@ -704,7 +766,7 @@ function Hero() {
             transition={{ duration: 0.5, delay: 0.28 }}
             className="flex flex-col sm:flex-row gap-4 justify-center mb-10 w-full max-w-3xl"
           >
-            {HERO_STATS.map((s, i) => (
+            {heroStats.map((s, i) => (
               <div key={i} className="flex-1 bg-card border border-border/60 rounded-xl px-5 py-5 text-left">
                 <div className="text-3xl font-bold font-sans text-primary mb-2">{s.value}</div>
                 <div className="text-sm font-sans text-foreground/70 leading-snug">{s.label}</div>
@@ -724,7 +786,7 @@ function Hero() {
               className="bg-primary text-primary-foreground px-10 py-4 rounded-md font-mono font-bold tracking-wide flex items-center justify-center gap-2 hover:bg-primary/90 transition-colors shadow-[0_0_30px_hsl(var(--primary)/0.35)]"
               data-testid="btn-sign-up"
             >
-              Sign Up <ChevronRight className="w-5 h-5" />
+              {tr.hero.cta} <ChevronRight className="w-5 h-5" />
             </button>
             <div className="flex items-center gap-3">
               <button
@@ -732,9 +794,9 @@ function Hero() {
                 className="bg-secondary text-secondary-foreground border border-border px-8 py-4 rounded-md font-mono tracking-wide hover:bg-secondary/80 transition-colors"
                 data-testid="btn-pricing"
               >
-                Pricing
+                {tr.nav.pricing}
               </button>
-              <span className="text-green-400 text-sm font-mono font-bold whitespace-nowrap">14 days free</span>
+              <span className="text-green-400 text-sm font-mono font-bold whitespace-nowrap">{tr.nav.trialBadge}</span>
             </div>
           </motion.div>
 
@@ -2492,15 +2554,17 @@ function ClerkProviderWithRoutes() {
       routerPush={(to) => setLocation(stripBase(to))}
       routerReplace={(to) => setLocation(stripBase(to), { replace: true })}
     >
-      <QueryClientProvider client={queryClient}>
-        <ClerkQueryClientCacheInvalidator />
-        <TooltipProvider>
-          <ScrollToTop />
-          <Router />
-          <ChatWidget />
-          <Toaster />
-        </TooltipProvider>
-      </QueryClientProvider>
+      <LanguageProvider>
+        <QueryClientProvider client={queryClient}>
+          <ClerkQueryClientCacheInvalidator />
+          <TooltipProvider>
+            <ScrollToTop />
+            <Router />
+            <ChatWidget />
+            <Toaster />
+          </TooltipProvider>
+        </QueryClientProvider>
+      </LanguageProvider>
     </ClerkProvider>
   );
 }
