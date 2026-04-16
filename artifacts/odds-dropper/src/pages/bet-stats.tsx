@@ -304,44 +304,53 @@ export default function BetStatsPage() {
       .slice(0, 8);
   }, [filteredBets]);
 
-  // +EV % since start — running average EV% per bet (all bets, not time-filtered)
+  // +EV % since start — cumulative sum of EV% across all valid bets
   const totalEVSinceStart = useMemo(() => {
     const validBets = bets.filter(b => b.novigOdds && b.novigOdds > 1);
     if (validBets.length === 0) return null;
     const sum = validBets.reduce((s, b) => s + calcEV(b.bettingOdds, b.novigOdds), 0);
-    return parseFloat((sum / validBets.length).toFixed(2));
+    return parseFloat(sum.toFixed(2));
   }, [bets]);
 
-  // +CLV % since start — average CLV% across bets with closing odds (all bets, not time-filtered)
+  // +CLV % since start — cumulative sum of CLV% across bets with closing odds
   const totalCLVSinceStart = useMemo(() => {
     const clvBets = bets.filter(b => b.closingOdds && b.closingOdds > 1);
     if (clvBets.length === 0) return null;
     const sum = clvBets.reduce((s, b) => s + (b.bettingOdds / b.closingOdds! - 1) * 100, 0);
-    return parseFloat((sum / clvBets.length).toFixed(2));
+    return parseFloat(sum.toFixed(2));
   }, [bets]);
 
-  // Chart data: running average EV% and CLV% per bet (same metric as the stat cards)
+  // Chart data: cumulative EV% and CLV% — starts at origin (0,0), only dips on negative bets
   const evClvChartData = useMemo(() => {
     const sorted = bets
       .slice()
       .sort((a, b) => new Date(a.loggedAt).getTime() - new Date(b.loggedAt).getTime());
-    let sumEV = 0; let countEV = 0;
-    let sumCLV = 0; let countCLV = 0;
-    return sorted.map((b, i) => {
+    let cumEV = 0;
+    let cumCLV = 0;
+    let hasEV = false;
+    let hasCLV = false;
+    const points: { betNum: number; ev: number | null; clv: number | null }[] = [
+      { betNum: 0, ev: null, clv: null },
+    ];
+    sorted.forEach((b, i) => {
       if (b.novigOdds && b.novigOdds > 1) {
-        sumEV += calcEV(b.bettingOdds, b.novigOdds);
-        countEV++;
+        cumEV = parseFloat((cumEV + calcEV(b.bettingOdds, b.novigOdds)).toFixed(2));
+        hasEV = true;
       }
       if (b.closingOdds && b.closingOdds > 1) {
-        sumCLV += (b.bettingOdds / b.closingOdds - 1) * 100;
-        countCLV++;
+        cumCLV = parseFloat((cumCLV + (b.bettingOdds / b.closingOdds - 1) * 100).toFixed(2));
+        hasCLV = true;
       }
-      return {
+      points.push({
         betNum: i + 1,
-        ev: countEV > 0 ? parseFloat((sumEV / countEV).toFixed(2)) : null,
-        clv: countCLV > 0 ? parseFloat((sumCLV / countCLV).toFixed(2)) : null,
-      };
+        ev: hasEV ? cumEV : null,
+        clv: hasCLV ? cumCLV : null,
+      });
     });
+    // set origin point to 0 (not null) once we know at least one line has data
+    if (hasEV) points[0].ev = 0;
+    if (hasCLV) points[0].clv = 0;
+    return points;
   }, [bets]);
 
   const isEmpty = bets.length === 0;
@@ -489,7 +498,7 @@ export default function BetStatsPage() {
               <div className="text-[11px] text-muted-foreground mt-1">
                 {totalEVSinceStart === null
                   ? "Logga spel med no-vig-odds för att beräkna EV"
-                  : `Snitt EV% per spel (${bets.filter(b => b.novigOdds && b.novigOdds > 1).length} spel)`}
+                  : "sedan start"}
               </div>
             </div>
 
@@ -509,7 +518,7 @@ export default function BetStatsPage() {
               <div className="text-[11px] text-muted-foreground mt-1">
                 {totalCLVSinceStart === null
                   ? "Fyll i stängningskurser för att beräkna CLV"
-                  : `Snitt CLV% per spel (${bets.filter(b => b.closingOdds && b.closingOdds > 1).length} spel)`}
+                  : "sedan start"}
               </div>
             </div>
           </div>
@@ -523,7 +532,7 @@ export default function BetStatsPage() {
                 <span className="text-[10px] text-muted-foreground ml-auto">{bets.length} spel</span>
               </div>
               <p className="text-[10px] text-muted-foreground mb-3">
-                Löpande genomsnitt EV% och CLV% — ska matcha kortens värden vid sista spelet.
+                Kumulativ EV% och CLV% sedan start — stiger vid positivt spel, dippar vid negativt.
               </p>
               <div className="h-[200px]">
                 <ResponsiveContainer width="100%" height="100%">
@@ -538,7 +547,7 @@ export default function BetStatsPage() {
                     <XAxis
                       dataKey="betNum"
                       type="number"
-                      domain={[1, evClvChartData.length]}
+                      domain={[0, evClvChartData.length - 1]}
                       tickFormatter={(v: number) => `Spel ${v}`}
                       tick={{ fontSize: 10, fill: "#4b5563" }}
                       tickLine={false}
@@ -556,7 +565,7 @@ export default function BetStatsPage() {
                       labelFormatter={(v: number) => `Spel ${v}`}
                       formatter={(value: number, name: string) => [
                         `${value >= 0 ? "+" : ""}${value.toFixed(2)}%`,
-                        name === "ev" ? "Snitt +EV%" : "Snitt +CLV%",
+                        name === "ev" ? "+EV sedan start" : "+CLV sedan start",
                       ]}
                     />
                     <ReferenceLine y={0} stroke="#374151" />
