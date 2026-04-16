@@ -23,7 +23,6 @@ export const MARKET_TYPE_OPTIONS = [
 ];
 
 export const SPORT_OPTIONS = [
-  { slug: "all",               label: "All Sports" },
   { slug: "soccer",            label: "⚽ Football" },
   { slug: "basketball",        label: "🏀 Basketball" },
   { slug: "tennis",            label: "🎾 Tennis" },
@@ -130,7 +129,7 @@ export const DEFAULT_COMPARISON_BOOKMAKERS = ["williamhill", "unibet", "betway",
 
 export const DEFAULT_ALERT_CONFIG: Omit<AlertConfig, "id" | "name"> = {
   enabled: true,
-  sport: "all",
+  sport: "soccer",
   minDropPercent: 0.5,
   maxHoursUntilMatch: 48,
   minOdds: 1.01,
@@ -202,9 +201,9 @@ function loadStore(): AlertStore {
     );
     const configs = parsed.configs.map(sanitizeConfig).map(c => {
       // Migration: if a config was saved with sport "soccer" and minDropPercent 2
-      // (old defaults), upgrade to "all" + 0.5% so real Pinnacle drops show up
+      // (old defaults), upgrade to 0.5% so real Pinnacle drops show up
       if (c.sport === "soccer" && c.minDropPercent === 2 && c.minOdds === 1.3) {
-        return { ...c, sport: "all", minDropPercent: 0.5, minOdds: 1.01, maxOdds: 100 };
+        return { ...c, sport: "soccer", minDropPercent: 0.5, minOdds: 1.01, maxOdds: 100 };
       }
       return c;
     });
