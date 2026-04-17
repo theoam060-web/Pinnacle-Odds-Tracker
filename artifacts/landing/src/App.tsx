@@ -2437,7 +2437,7 @@ function AppContent() {
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
-    if (!params.has("install")) return;
+    if (params.get("install") !== "1") return;
     const isMobile = /Mobi|Android|iPhone|iPad|iPod/i.test(navigator.userAgent) || navigator.maxTouchPoints > 1;
     if (!isMobile) return;
     const timer = setTimeout(() => {
