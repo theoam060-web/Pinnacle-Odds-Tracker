@@ -1,18 +1,10 @@
 import { Router, type IRouter } from 'express';
-import { getAuth } from '@clerk/express';
 import { storage } from '../storage';
 import { stripeService } from '../stripeService';
 import { fulfillCheckout } from '../fulfillment';
+import { requireAuth } from '../middlewares/requireAuth';
 
 const router: IRouter = Router();
-
-const requireAuth = (req: any, res: any, next: any) => {
-  const auth = getAuth(req);
-  const userId = auth?.sessionClaims?.userId || auth?.userId;
-  if (!userId) return res.status(401).json({ error: 'Unauthorized' });
-  req.userId = userId;
-  next();
-};
 
 router.get('/stripe/products', async (_req, res) => {
   try {
@@ -52,8 +44,7 @@ router.post('/stripe/checkout', requireAuth, async (req: any, res) => {
   try {
     let user = await storage.getUser(req.userId);
     if (!user) {
-      const auth = getAuth(req);
-      user = await storage.createUser(req.userId, auth?.sessionClaims?.email as string | undefined);
+      user = await storage.createUser(req.userId, undefined);
     }
 
     let customerId = user?.stripeCustomerId;
