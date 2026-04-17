@@ -45,6 +45,11 @@ export interface Translations {
     cta: string;
     ctaSub: string;
   };
+  mobile: {
+    badge: string;
+    comingSoon: string;
+    desc: string;
+  };
 }
 
 const T: Record<LangCode, Translations> = {
@@ -71,6 +76,11 @@ const T: Record<LangCode, Translations> = {
       cta: "Get access",
       ctaSub: "See how it works",
     },
+    mobile: {
+      badge: "Mobile App",
+      comingSoon: "Mobile app — coming soon",
+      desc: "The mobile app is on its way. You'll be able to get push notifications directly on your phone the moment an odds drop occurs.",
+    },
   },
   sv: {
     nav: {
@@ -94,6 +104,11 @@ const T: Record<LangCode, Translations> = {
       stat3: "Skarpa oddsrörelser spårade och loggade varje dag",
       cta: "Kom igång",
       ctaSub: "Se hur det fungerar",
+    },
+    mobile: {
+      badge: "Mobilapp",
+      comingSoon: "Mobilapp — lanseras snart",
+      desc: "Mobilappen är på väg. Du kommer att kunna få push-notiser direkt på din telefon så fort en odds-drop inträffar.",
     },
   },
   no: {
@@ -119,6 +134,11 @@ const T: Record<LangCode, Translations> = {
       cta: "Kom i gang",
       ctaSub: "Se hvordan det fungerer",
     },
+    mobile: {
+      badge: "Mobilapp",
+      comingSoon: "Mobilapp — kommer snart",
+      desc: "Mobilappen er på vei. Du vil kunne motta push-varsler direkte på telefonen din i det øyeblikket en odds-drop inntreffer.",
+    },
   },
   da: {
     nav: {
@@ -142,6 +162,11 @@ const T: Record<LangCode, Translations> = {
       stat3: "Skarpe oddsanfald sporet og logget hver eneste dag",
       cta: "Kom i gang",
       ctaSub: "Se hvordan det virker",
+    },
+    mobile: {
+      badge: "Mobilapp",
+      comingSoon: "Mobilapp — kommer snart",
+      desc: "Mobilappen er på vej. Du vil kunne modtage push-notifikationer direkte på din telefon, så snart et odds-drop sker.",
     },
   },
   de: {
@@ -167,6 +192,11 @@ const T: Record<LangCode, Translations> = {
       cta: "Zugang erhalten",
       ctaSub: "Wie es funktioniert",
     },
+    mobile: {
+      badge: "Mobile App",
+      comingSoon: "Mobile App — demnächst verfügbar",
+      desc: "Die mobile App ist auf dem Weg. Du wirst direkt auf deinem Telefon benachrichtigt, sobald ein Odds-Drop eintritt.",
+    },
   },
   fr: {
     nav: {
@@ -190,6 +220,11 @@ const T: Record<LangCode, Translations> = {
       stat3: "Chutes de cotes sharps suivies et enregistrées chaque jour",
       cta: "Accéder",
       ctaSub: "Voir comment ça marche",
+    },
+    mobile: {
+      badge: "Application mobile",
+      comingSoon: "Application mobile — bientôt disponible",
+      desc: "L'application mobile est en route. Vous pourrez recevoir des notifications push directement sur votre téléphone dès qu'une chute de cote se produit.",
     },
   },
   es: {
@@ -215,6 +250,11 @@ const T: Record<LangCode, Translations> = {
       cta: "Obtener acceso",
       ctaSub: "Ver cómo funciona",
     },
+    mobile: {
+      badge: "App móvil",
+      comingSoon: "App móvil — próximamente",
+      desc: "La app móvil está en camino. Podrás recibir notificaciones push directamente en tu teléfono en el momento en que caigan las cuotas.",
+    },
   },
   it: {
     nav: {
@@ -238,6 +278,11 @@ const T: Record<LangCode, Translations> = {
       stat3: "Cali di quote sharp tracciati e registrati ogni giorno",
       cta: "Ottieni accesso",
       ctaSub: "Guarda come funziona",
+    },
+    mobile: {
+      badge: "App mobile",
+      comingSoon: "App mobile — prossimamente",
+      desc: "L'app mobile è in arrivo. Potrai ricevere notifiche push direttamente sul telefono nel momento in cui le quote scendono.",
     },
   },
   ja: {
@@ -263,6 +308,11 @@ const T: Record<LangCode, Translations> = {
       cta: "アクセスする",
       ctaSub: "仕組みを見る",
     },
+    mobile: {
+      badge: "モバイルアプリ",
+      comingSoon: "モバイルアプリ — 近日公開",
+      desc: "モバイルアプリは開発中です。オッズドロップが発生した瞬間に、スマートフォンにプッシュ通知が届くようになります。",
+    },
   },
   pl: {
     nav: {
@@ -287,6 +337,11 @@ const T: Record<LangCode, Translations> = {
       cta: "Uzyskaj dostęp",
       ctaSub: "Zobacz jak to działa",
     },
+    mobile: {
+      badge: "Aplikacja mobilna",
+      comingSoon: "Aplikacja mobilna — wkrótce",
+      desc: "Aplikacja mobilna jest w drodze. Będziesz mógł otrzymywać powiadomienia push bezpośrednio na telefon w momencie pojawienia się odds-drop.",
+    },
   },
   pt: {
     nav: {
@@ -310,6 +365,11 @@ const T: Record<LangCode, Translations> = {
       stat3: "Quedas de odds sharp rastreadas e registradas todos os dias",
       cta: "Obter acesso",
       ctaSub: "Ver como funciona",
+    },
+    mobile: {
+      badge: "App mobile",
+      comingSoon: "App mobile — em breve",
+      desc: "O app móvel está a caminho. Você poderá receber notificações push diretamente no seu telefone no momento em que ocorrer uma queda de odds.",
     },
   },
 };

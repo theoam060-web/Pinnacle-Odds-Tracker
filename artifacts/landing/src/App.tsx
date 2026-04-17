@@ -1397,6 +1397,8 @@ function Footer() {
 }
 
 function AlertConfigSection() {
+  const { lang } = useLang();
+  const tr = t(lang);
   return (
     <section id="alerts" className="py-28 bg-card border-y border-border/20 overflow-hidden relative">
       <div className="absolute inset-0 pointer-events-none">
@@ -1415,7 +1417,7 @@ function AlertConfigSection() {
             className="flex-1 text-center lg:text-left space-y-7"
           >
             <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary/10 text-primary text-xs font-mono border border-primary/20">
-              <Bell className="w-3.5 h-3.5" /> Mobile App
+              <Bell className="w-3.5 h-3.5" /> {tr.mobile.badge}
             </div>
 
             <h2 className="text-4xl md:text-6xl font-bold font-sans tracking-tight leading-none">
@@ -1423,7 +1425,7 @@ function AlertConfigSection() {
             </h2>
 
             <p className="text-muted-foreground text-xl leading-relaxed max-w-md mx-auto lg:mx-0">
-              Mobilappen är på väg. Du kommer att kunna få push-notiser direkt på din telefon så fort en odds-drop inträffar.
+              {tr.mobile.desc}
             </p>
 
             {/* Notification preview pills */}
@@ -1455,7 +1457,7 @@ function AlertConfigSection() {
             <div className="flex flex-col sm:flex-row gap-3 justify-center lg:justify-start pt-2">
               <div className="inline-flex items-center gap-3 border border-amber-400/25 bg-amber-400/5 text-amber-300 font-mono text-sm px-6 py-3 rounded-xl">
                 <span className="w-2 h-2 rounded-full bg-amber-400 animate-pulse shrink-0" />
-                Mobilapp lanseras snart
+                {tr.mobile.comingSoon}
               </div>
             </div>
           </motion.div>

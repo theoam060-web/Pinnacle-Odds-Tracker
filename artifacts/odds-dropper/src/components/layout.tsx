@@ -40,9 +40,11 @@ interface LayoutProps {
 function MobileAppComingSoon() {
   return (
     <div className="mx-3 mb-3">
-      <div className="w-full flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-mono text-muted-foreground/40 border border-border/15">
-        <span className="w-1.5 h-1.5 rounded-full bg-amber-400/70 shrink-0" />
-        Mobile app — coming soon
+      <div className="w-full flex items-center gap-2 px-3 py-2.5 rounded-xl text-xs font-mono bg-amber-400/[0.04] border border-amber-400/20 text-amber-300/60">
+        <span className="relative flex-shrink-0">
+          <span className="w-1.5 h-1.5 rounded-full bg-amber-400/80 block animate-pulse" />
+        </span>
+        <span>Mobile app — coming soon</span>
       </div>
     </div>
   );
