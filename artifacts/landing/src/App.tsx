@@ -691,6 +691,7 @@ function Hero() {
   const { lang } = useLang();
   const tr = t(lang);
   const heroStats = useHeroStats();
+  const { isSignedIn } = useUser();
 
   useEffect(() => {
     const load = () =>
@@ -780,23 +781,44 @@ function Hero() {
             transition={{ duration: 0.5, delay: 0.36 }}
             className="flex flex-col sm:flex-row items-center gap-4"
           >
-            <button
-              onClick={() => window.location.href = "/app/"}
-              className="bg-primary text-primary-foreground px-10 py-4 rounded-md font-mono font-bold tracking-wide flex items-center justify-center gap-2 hover:bg-primary/90 transition-colors shadow-[0_0_30px_hsl(var(--primary)/0.35)]"
-              data-testid="btn-sign-up"
-            >
-              {tr.hero.cta} <ChevronRight className="w-5 h-5" />
-            </button>
-            <div className="flex items-center gap-3">
-              <button
-                onClick={() => navigate("/pricing")}
-                className="bg-secondary text-secondary-foreground border border-border px-8 py-4 rounded-md font-mono tracking-wide hover:bg-secondary/80 transition-colors"
-                data-testid="btn-pricing"
-              >
-                {tr.nav.pricing}
-              </button>
-              <span className="text-green-400 text-sm font-mono font-bold whitespace-nowrap">{tr.nav.trialBadge}</span>
-            </div>
+            {isSignedIn ? (
+              <>
+                <button
+                  onClick={() => navigate("/pricing")}
+                  className="bg-primary text-primary-foreground px-10 py-4 rounded-md font-mono font-bold tracking-wide flex items-center justify-center gap-2 hover:bg-primary/90 transition-colors shadow-[0_0_30px_hsl(var(--primary)/0.35)]"
+                  data-testid="btn-plans"
+                >
+                  {tr.nav.pricing} <ChevronRight className="w-5 h-5" />
+                </button>
+                <button
+                  onClick={() => window.location.href = "/app/"}
+                  className="bg-secondary text-secondary-foreground border border-border px-8 py-4 rounded-md font-mono tracking-wide hover:bg-secondary/80 transition-colors"
+                  data-testid="btn-dashboard"
+                >
+                  Dashboard
+                </button>
+              </>
+            ) : (
+              <>
+                <button
+                  onClick={() => window.location.href = "/app/"}
+                  className="bg-primary text-primary-foreground px-10 py-4 rounded-md font-mono font-bold tracking-wide flex items-center justify-center gap-2 hover:bg-primary/90 transition-colors shadow-[0_0_30px_hsl(var(--primary)/0.35)]"
+                  data-testid="btn-sign-up"
+                >
+                  {tr.hero.cta} <ChevronRight className="w-5 h-5" />
+                </button>
+                <div className="flex items-center gap-3">
+                  <button
+                    onClick={() => navigate("/pricing")}
+                    className="bg-secondary text-secondary-foreground border border-border px-8 py-4 rounded-md font-mono tracking-wide hover:bg-secondary/80 transition-colors"
+                    data-testid="btn-pricing"
+                  >
+                    {tr.nav.pricing}
+                  </button>
+                  <span className="text-green-400 text-sm font-mono font-bold whitespace-nowrap">{tr.nav.trialBadge}</span>
+                </div>
+              </>
+            )}
           </motion.div>
 
         </div>
@@ -1297,6 +1319,8 @@ function ProfitCalculatorSection() {
 }
 
 function CTASection() {
+  const [, navigate] = useLocation();
+  const { isSignedIn } = useUser();
   return (
     <section className="py-32 relative overflow-hidden bg-card border-t border-border">
       <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,var(--tw-gradient-stops))] from-primary/10 via-background to-background"></div>
@@ -1312,10 +1336,33 @@ function CTASection() {
         <p className="text-xl text-muted-foreground mb-10">
           Join the sharpest bettors leveraging real-time sharp market data to find better prices before the market closes.
         </p>
-        <div className="flex justify-center">
-          <button onClick={() => window.location.href = "/app/"} className="bg-primary text-primary-foreground px-10 py-4 rounded-md font-mono font-bold tracking-wide text-lg hover:bg-primary/90 transition-colors shadow-[0_0_30px_hsl(var(--primary)/0.3)]" data-testid="btn-footer-signup">
-            Start 14-Day Free Trial
-          </button>
+        <div className="flex justify-center gap-4">
+          {isSignedIn ? (
+            <>
+              <button
+                onClick={() => navigate("/pricing")}
+                className="bg-primary text-primary-foreground px-10 py-4 rounded-md font-mono font-bold tracking-wide text-lg hover:bg-primary/90 transition-colors shadow-[0_0_30px_hsl(var(--primary)/0.3)]"
+                data-testid="btn-view-plans"
+              >
+                View Plans
+              </button>
+              <button
+                onClick={() => window.location.href = "/app/"}
+                className="bg-secondary text-secondary-foreground border border-border px-8 py-4 rounded-md font-mono tracking-wide text-lg hover:bg-secondary/80 transition-colors"
+                data-testid="btn-open-app"
+              >
+                Open App
+              </button>
+            </>
+          ) : (
+            <button
+              onClick={() => window.location.href = "/app/"}
+              className="bg-primary text-primary-foreground px-10 py-4 rounded-md font-mono font-bold tracking-wide text-lg hover:bg-primary/90 transition-colors shadow-[0_0_30px_hsl(var(--primary)/0.3)]"
+              data-testid="btn-footer-signup"
+            >
+              Start 14-Day Free Trial
+            </button>
+          )}
         </div>
       </motion.div>
     </section>
@@ -1323,6 +1370,7 @@ function CTASection() {
 }
 
 function Footer() {
+  const { isSignedIn } = useUser();
   return (
     <footer className="bg-background py-12 border-t border-border/50 text-center md:text-left">
       <div className="container mx-auto px-6">
@@ -1347,7 +1395,10 @@ function Footer() {
             <ul className="space-y-2 font-mono text-sm text-muted-foreground">
               <li><Link href="/pricing" className="hover:text-primary">Pricing</Link></li>
               <li><Link href="/why" className="hover:text-primary">Why SharpTracker?</Link></li>
-              <li><a href="/app/" className="hover:text-primary">Sign Up</a></li>
+              {isSignedIn
+                ? <li><a href="/app/" className="hover:text-primary">Dashboard</a></li>
+                : <li><a href="/app/" className="hover:text-primary">Sign Up</a></li>
+              }
             </ul>
           </div>
           <div>
