@@ -6,6 +6,8 @@ import { createServer } from "node:http";
 import { WebSocketServer } from "ws";
 import { registerWsClient, unregisterWsClient } from "./lib/sseManager";
 import type WebSocket from "ws";
+import { runMigrations } from "stripe-replit-sync";
+import { getStripeSync } from "./stripeClient";
 
 const rawPort = process.env["PORT"];
 
@@ -28,6 +30,36 @@ logger.info(
   { POLL_INTERVAL_MS, MIN_DROP_PERCENT, hasPinnacleKeyOverride: !!PINNACLE_API_KEY, wsEnabled: ENABLE_WS },
   "Server config",
 );
+
+async function initStripe() {
+  const databaseUrl = process.env.DATABASE_URL;
+  if (!databaseUrl) {
+    logger.warn("DATABASE_URL not set — skipping Stripe init");
+    return;
+  }
+  try {
+    logger.info("Running Stripe migrations…");
+    await runMigrations({ databaseUrl });
+
+    logger.info("Initialising StripeSync…");
+    const stripeSync = await getStripeSync();
+
+    const domain = process.env.REPLIT_DOMAINS?.split(",")[0];
+    if (domain) {
+      const webhookUrl = `https://${domain}/api/stripe/webhook`;
+      logger.info({ webhookUrl }, "Setting up managed Stripe webhook…");
+      await stripeSync.findOrCreateManagedWebhook(webhookUrl);
+    } else {
+      logger.warn("REPLIT_DOMAINS not set — skipping managed webhook setup");
+    }
+
+    logger.info("Syncing Stripe data (backfill)…");
+    await stripeSync.syncBackfill();
+    logger.info("Stripe init complete.");
+  } catch (err) {
+    logger.error({ err }, "Stripe init failed — continuing without Stripe");
+  }
+}
 
 const server = createServer(app);
 let wsServer: WebSocketServer | null = null;
@@ -57,8 +89,6 @@ server.listen(port, () => {
     logger.warn("WebSocket subscriptions are disabled via ENABLE_WS=false");
   }
 
-  // Poller auto-discovers the Arcadia guest key from Pinnacle frontend config.
-  // If both discovery and requests fail consistently, we fallback to mock data.
   startOddsPoller(PINNACLE_API_KEY, POLL_INTERVAL_MS, MIN_DROP_PERCENT);
 
   if (!PINNACLE_API_KEY) {
@@ -66,4 +96,6 @@ server.listen(port, () => {
       "PINNACLE_API_KEY override not set — using auto-discovered guest key from Pinnacle app config.",
     );
   }
+
+  initStripe();
 });

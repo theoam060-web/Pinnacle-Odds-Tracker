@@ -2,9 +2,9 @@ import React, { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { Link, useLocation } from "wouter";
 import { Activity, Check, Loader2, Star } from "lucide-react";
-import { useUser } from "@clerk/react";
+import { useUser, useAuth } from "@clerk/react";
 
-const API_BASE = "https://84e61830-7611-4d35-8623-77d057b02e4e-00-30ovvqhxka0d5.kirk.replit.dev";
+const API_BASE = "";
 
 function PricingNav() {
   const [, navigate] = useLocation();
@@ -126,6 +126,7 @@ interface StripeProduct {
 export default function PricingPage() {
   const [, navigate] = useLocation();
   const { isSignedIn } = useUser();
+  const { getToken } = useAuth();
   const [products, setProducts] = useState<StripeProduct[]>([]);
   const [loading, setLoading] = useState<Record<string, boolean>>({});
   const [error, setError] = useState<string | null>(null);
@@ -149,17 +150,20 @@ export default function PricingPage() {
     }
     const priceId = getPriceId(plan);
     if (!priceId) {
-      setError("Plan not available yet — products not configured. Run seed-products script.");
+      setError("Plan not available yet — please try again in a moment.");
       return;
     }
     setLoading(l => ({ ...l, [plan]: true }));
     setError(null);
     try {
+      const token = await getToken();
       const res = await fetch(`${API_BASE}/api/stripe/checkout`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        credentials: "include",
-        body: JSON.stringify({ priceId }),
+        headers: {
+          "Content-Type": "application/json",
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
+        body: JSON.stringify({ priceId, redirectAfter: "/app/" }),
       });
       const data = await res.json();
       if (data.url) {
