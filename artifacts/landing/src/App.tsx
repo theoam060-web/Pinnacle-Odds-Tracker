@@ -9,14 +9,14 @@ import { QueryClient, QueryClientProvider, useQueryClient } from "@tanstack/reac
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { motion, useScroll, useTransform, AnimatePresence } from "framer-motion";
-import React, { useEffect, useState, useRef, useContext } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import { ClerkProvider, Show, useClerk, useUser, useAuth } from "@clerk/react";
 import { 
   Activity, Bell,
   LineChart as LineChartIcon, Radar,
   TrendingUp, ChevronRight, ChevronLeft, CheckCircle2,
   Database, TrendingDown, ClipboardList, BarChart2,
-  Calculator, CalendarDays, Wallet, Smartphone
+  Calculator, CalendarDays, Wallet
 } from "lucide-react";
 import {
   IconOddsDrop, IconBetTracker, IconBookmakerComparison, IconStake,
@@ -32,7 +32,6 @@ import PrivacyPage from "./PrivacyPage";
 import ChatWidget from "./ChatWidget";
 
 import NotFound from "@/pages/not-found";
-import InstallAppModal from "./InstallAppModal";
 
 const queryClient = new QueryClient();
 
@@ -1398,7 +1397,6 @@ function Footer() {
 }
 
 function AlertConfigSection() {
-  const openInstall = useContext(InstallModalContext);
   return (
     <section id="alerts" className="py-28 bg-card border-y border-border/20 overflow-hidden relative">
       <div className="absolute inset-0 pointer-events-none">
@@ -1425,7 +1423,7 @@ function AlertConfigSection() {
             </h2>
 
             <p className="text-muted-foreground text-xl leading-relaxed max-w-md mx-auto lg:mx-0">
-              Download for free. Get a push notification the moment a sharp odds drop hits — act before the line moves.
+              Mobilappen är på väg. Du kommer att kunna få push-notiser direkt på din telefon så fort en odds-drop inträffar.
             </p>
 
             {/* Notification preview pills */}
@@ -1453,20 +1451,13 @@ function AlertConfigSection() {
               ))}
             </div>
 
-            {/* CTA button */}
+            {/* Coming soon badge */}
             <div className="flex flex-col sm:flex-row gap-3 justify-center lg:justify-start pt-2">
-              <motion.button
-                onClick={openInstall}
-                whileHover={{ scale: 1.03 }}
-                whileTap={{ scale: 0.97 }}
-                className="inline-flex items-center justify-center gap-3 bg-primary text-primary-foreground font-bold font-sans text-base px-8 py-4 rounded-xl shadow-[0_0_40px_-8px_hsl(var(--primary)/0.6)] hover:shadow-[0_0_60px_-8px_hsl(var(--primary)/0.8)] transition-shadow"
-              >
-                <Smartphone className="w-5 h-5" />
-                Install App
-              </motion.button>
+              <div className="inline-flex items-center gap-3 border border-amber-400/25 bg-amber-400/5 text-amber-300 font-mono text-sm px-6 py-3 rounded-xl">
+                <span className="w-2 h-2 rounded-full bg-amber-400 animate-pulse shrink-0" />
+                Mobilapp lanseras snart
+              </div>
             </div>
-
-            <p className="text-xs font-mono text-muted-foreground/50">Free download · No credit card required</p>
           </motion.div>
 
           {/* Right — phone mockup */}
@@ -2403,102 +2394,23 @@ function SharpDataSection() {
   );
 }
 
-export const InstallModalContext = React.createContext<() => void>(() => {});
-
-interface BeforeInstallPromptEvent extends Event {
-  prompt(): Promise<void>;
-  userChoice: Promise<{ outcome: "accepted" | "dismissed" }>;
-}
-
 function AppContent() {
-  const [installOpen, setInstallOpen] = useState(false);
-  const [deferredPrompt, setDeferredPrompt] = useState<BeforeInstallPromptEvent | null>(null);
-  const [isInstalled, setIsInstalled] = useState(false);
-
-  useEffect(() => {
-    const handler = (e: Event) => {
-      e.preventDefault();
-      setDeferredPrompt(e as BeforeInstallPromptEvent);
-    };
-    window.addEventListener("beforeinstallprompt", handler);
-
-    const installedHandler = () => setIsInstalled(true);
-    window.addEventListener("appinstalled", installedHandler);
-
-    if (window.matchMedia("(display-mode: standalone)").matches) {
-      setIsInstalled(true);
-    }
-
-    return () => {
-      window.removeEventListener("beforeinstallprompt", handler);
-      window.removeEventListener("appinstalled", installedHandler);
-    };
-  }, []);
-
-  useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    if (params.get("install") !== "1") return;
-    const isMobile = /Mobi|Android|iPhone|iPad|iPod/i.test(navigator.userAgent) || navigator.maxTouchPoints > 1;
-    if (!isMobile) return;
-    const timer = setTimeout(() => {
-      setInstallOpen(true);
-      const url = new URL(window.location.href);
-      url.searchParams.delete("install");
-      window.history.replaceState({}, "", url.pathname + (url.search || ""));
-    }, 600);
-    return () => clearTimeout(timer);
-  }, []);
-
-  const openInstall = () => setInstallOpen(true);
-
-  const handleInstallClick = async () => {
-    if (deferredPrompt) {
-      await deferredPrompt.prompt();
-      const { outcome } = await deferredPrompt.userChoice;
-      if (outcome === "accepted") {
-        setDeferredPrompt(null);
-        setIsInstalled(true);
-      }
-    } else {
-      setInstallOpen(true);
-    }
-  };
-
   return (
-    <InstallModalContext.Provider value={openInstall}>
-      <div className="min-h-[100dvh] bg-background text-foreground font-sans selection:bg-primary/30 selection:text-primary">
-
-        <Navbar />
-        <main>
-          <Hero />
-          <FeaturesGrid />
-          <FeatureStripSection />
-          <BankrollFeatureCards />
-          <ProfitCalculatorSection />
-          <AlertConfigSection />
-          <TestimonialsSection />
-          <FAQSection />
-          <CTASection />
-        </main>
-        <Footer />
-        <InstallAppModal
-          open={installOpen}
-          onClose={() => setInstallOpen(false)}
-          deferredPrompt={deferredPrompt}
-          onNativeInstall={async () => {
-            if (deferredPrompt) {
-              await deferredPrompt.prompt();
-              const { outcome } = await deferredPrompt.userChoice;
-              if (outcome === "accepted") {
-                setDeferredPrompt(null);
-                setIsInstalled(true);
-                setInstallOpen(false);
-              }
-            }
-          }}
-        />
-      </div>
-    </InstallModalContext.Provider>
+    <div className="min-h-[100dvh] bg-background text-foreground font-sans selection:bg-primary/30 selection:text-primary">
+      <Navbar />
+      <main>
+        <Hero />
+        <FeaturesGrid />
+        <FeatureStripSection />
+        <BankrollFeatureCards />
+        <ProfitCalculatorSection />
+        <AlertConfigSection />
+        <TestimonialsSection />
+        <FAQSection />
+        <CTASection />
+      </main>
+      <Footer />
+    </div>
   );
 }
 
