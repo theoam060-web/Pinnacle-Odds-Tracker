@@ -2435,6 +2435,20 @@ function AppContent() {
     };
   }, []);
 
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (!params.has("install")) return;
+    const isMobile = /Mobi|Android|iPhone|iPad|iPod/i.test(navigator.userAgent) || navigator.maxTouchPoints > 1;
+    if (!isMobile) return;
+    const timer = setTimeout(() => {
+      setInstallOpen(true);
+      const url = new URL(window.location.href);
+      url.searchParams.delete("install");
+      window.history.replaceState({}, "", url.pathname + (url.search || ""));
+    }, 600);
+    return () => clearTimeout(timer);
+  }, []);
+
   const openInstall = () => setInstallOpen(true);
 
   const handleInstallClick = async () => {
