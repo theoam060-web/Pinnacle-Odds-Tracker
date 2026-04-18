@@ -3,6 +3,27 @@ import Stripe from 'stripe';
 
 let connectionSettings: any;
 
+async function fetchConnection(hostname: string, xReplitToken: string, environment: string) {
+  const url = new URL(`https://${hostname}/api/v2/connection`);
+  url.searchParams.set('include_secrets', 'true');
+  url.searchParams.set('connector_names', 'stripe');
+  url.searchParams.set('environment', environment);
+
+  const response = await fetch(url.toString(), {
+    headers: {
+      'Accept': 'application/json',
+      'X-Replit-Token': xReplitToken,
+    },
+  });
+
+  const data = await response.json();
+  const item = data.items?.[0];
+  if (item?.settings?.publishable && item?.settings?.secret) {
+    return item;
+  }
+  return null;
+}
+
 async function getCredentials() {
   const hostname = process.env.REPLIT_CONNECTORS_HOSTNAME;
   const xReplitToken = process.env.REPL_IDENTITY
@@ -15,33 +36,25 @@ async function getCredentials() {
     throw new Error('X-Replit-Token not found for repl/depl');
   }
 
-  const connectorName = 'stripe';
   const isProduction = process.env.REPLIT_DEPLOYMENT === '1';
-  const targetEnvironment = isProduction ? 'production' : 'development';
 
-  const url = new URL(`https://${hostname}/api/v2/connection`);
-  url.searchParams.set('include_secrets', 'true');
-  url.searchParams.set('connector_names', connectorName);
-  url.searchParams.set('environment', targetEnvironment);
+  // Try the target environment first, then fall back to 'development'
+  const envOrder = isProduction
+    ? ['production', 'development']
+    : ['development'];
 
-  const response = await fetch(url.toString(), {
-    headers: {
-      'Accept': 'application/json',
-      'X-Replit-Token': xReplitToken,
-    },
-  });
-
-  const data = await response.json();
-  connectionSettings = data.items?.[0];
-
-  if (!connectionSettings || (!connectionSettings.settings.publishable || !connectionSettings.settings.secret)) {
-    throw new Error(`Stripe ${targetEnvironment} connection not found`);
+  for (const env of envOrder) {
+    const item = await fetchConnection(hostname!, xReplitToken, env);
+    if (item) {
+      connectionSettings = item;
+      return {
+        publishableKey: connectionSettings.settings.publishable as string,
+        secretKey: connectionSettings.settings.secret as string,
+      };
+    }
   }
 
-  return {
-    publishableKey: connectionSettings.settings.publishable,
-    secretKey: connectionSettings.settings.secret,
-  };
+  throw new Error('Stripe connection not found (tried: ' + envOrder.join(', ') + ')');
 }
 
 // WARNING: Never cache this client — always call to get a fresh one
