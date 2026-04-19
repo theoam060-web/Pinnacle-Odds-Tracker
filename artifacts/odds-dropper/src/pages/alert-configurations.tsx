@@ -341,23 +341,26 @@ export default function AlertConfigurationsPage() {
   const { configs, novigMethod, setNovigMethod, addConfig, comparisonBookmakers, setComparisonBookmakers } = useAlertStore();
   const tier = usePlan();
   const maxConfigs = PLAN_LIMITS[tier].maxConfigs;
-  const [selectedId, setSelectedId] = useState<string>(() => configs[0]?.id ?? "");
-  const prevCountRef = useRef<number>(configs.length);
+  // Cap visible configs to tier limit so downgraded users can't access extra configs
+  const visibleConfigs = configs.slice(0, maxConfigs);
+
+  const [selectedId, setSelectedId] = useState<string>(() => visibleConfigs[0]?.id ?? "");
+  const prevCountRef = useRef<number>(visibleConfigs.length);
   useEffect(() => {
-    if (configs.length > prevCountRef.current) {
-      const newest = configs[configs.length - 1];
+    if (visibleConfigs.length > prevCountRef.current) {
+      const newest = visibleConfigs[visibleConfigs.length - 1];
       if (newest) setSelectedId(newest.id);
     }
-    prevCountRef.current = configs.length;
-  }, [configs.length]);
+    prevCountRef.current = visibleConfigs.length;
+  }, [visibleConfigs.length]);
 
   useEffect(() => {
-    if (!configs.find(c => c.id === selectedId) && configs.length > 0) {
-      setSelectedId(configs[0].id);
+    if (!visibleConfigs.find(c => c.id === selectedId) && visibleConfigs.length > 0) {
+      setSelectedId(visibleConfigs[0].id);
     }
-  }, [configs, selectedId]);
+  }, [visibleConfigs, selectedId]);
 
-  const selectedConfig = configs.find(c => c.id === selectedId) ?? configs[0];
+  const selectedConfig = visibleConfigs.find(c => c.id === selectedId) ?? visibleConfigs[0];
 
   return (
     <Layout>
@@ -430,7 +433,7 @@ export default function AlertConfigurationsPage() {
         {/* Left sidebar: config list */}
         <div className="w-56 shrink-0 border-r bg-card flex flex-col">
           <div className="flex-1 overflow-y-auto">
-            {configs.map(config => (
+            {visibleConfigs.map(config => (
               <button
                 key={config.id}
                 onClick={() => setSelectedId(config.id)}
@@ -459,7 +462,7 @@ export default function AlertConfigurationsPage() {
 
           {/* Add Config button */}
           <div className="p-3 border-t border-border/50 space-y-2">
-            {configs.length < maxConfigs ? (
+            {visibleConfigs.length < maxConfigs ? (
               <Button
                 variant="outline"
                 size="sm"

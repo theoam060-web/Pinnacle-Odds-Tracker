@@ -581,12 +581,15 @@ export default function FeedPage() {
   const tier = usePlan();
   const isPlatinum = tier === "platinum";
 
-  // Enforce market restrictions at read-time so Silver users (moneyline only)
-  // are not exposed to drops for markets they didn't pay for, even from persisted configs
+  // Enforce plan tier limits at read-time:
+  // 1. Cap number of active configs to the tier's maxConfigs (3/9/20)
+  // 2. Force market restrictions (Silver = moneyline only) even on persisted configs
   const effectiveConfigs = useMemo(() => {
-    const allowedMarkets = PLAN_LIMITS[tier]?.markets ?? null;
-    if (allowedMarkets === null) return configs; // Gold/Platinum: all markets allowed
-    return configs.map(c => ({ ...c, markets: allowedMarkets as string[] }));
+    const limits = PLAN_LIMITS[tier] ?? PLAN_LIMITS.none;
+    const capped = configs.slice(0, limits.maxConfigs);
+    const allowedMarkets = limits.markets;
+    if (allowedMarkets === null) return capped; // Gold/Platinum: all markets allowed
+    return capped.map(c => ({ ...c, markets: allowedMarkets as string[] }));
   }, [configs, tier]);
   const [logBetRow, setLogBetRow] = useState<(FeedRow & { novigOdds: number }) | null>(null);
   const [oddsMatchupId, setOddsMatchupId] = useState<number | null>(null);
