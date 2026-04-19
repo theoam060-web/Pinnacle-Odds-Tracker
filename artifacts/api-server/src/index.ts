@@ -74,7 +74,8 @@ async function initStripe() {
           const result = await db.execute(
             sql`SELECT status FROM stripe.subscriptions WHERE id = ${u.stripeSubscriptionId} LIMIT 1`
           );
-          const stripeStatus: string = (result.rows[0] as any)?.status ?? '';
+          const row = result.rows[0] as { status?: string } | undefined;
+          const stripeStatus: string = row?.status ?? '';
           const localStatus =
             stripeStatus === 'active' || stripeStatus === 'trialing' ? 'active' :
             stripeStatus === 'past_due' ? 'past_due' :

@@ -147,6 +147,7 @@ export default function BetStatsPage() {
   const { bets, currency, setCurrency } = useBetStore();
   const sym = getCurrencySymbol(currency);
   const tier = usePlan();
+  const isPlatinum = tier === "platinum";
   const [timeFilter, setTimeFilter] = useState<TimeFilter>("all");
   const [calendarMonth, setCalendarMonth] = useState<{ year: number; month: number }>(() => {
     const now = new Date();
@@ -502,25 +503,36 @@ export default function BetStatsPage() {
               </div>
             </div>
 
-            {/* +CLV since start */}
-            <div className="relative bg-card border rounded-xl px-4 py-4 overflow-hidden"
-              style={{ borderColor: "rgba(167,139,250,0.25)", boxShadow: "0 0 18px rgba(167,139,250,0.07)" }}>
-              <div className="absolute top-0 left-0 right-0 h-[2px]"
-                style={{ background: "linear-gradient(90deg, transparent, rgba(167,139,250,0.6), transparent)" }} />
-              <div className="text-[9px] uppercase tracking-widest text-muted-foreground font-semibold mb-1">+CLV</div>
-              <div className={`text-2xl font-mono font-bold leading-none ${
-                totalCLVSinceStart === null ? "text-muted-foreground"
-                : totalCLVSinceStart >= 0 ? "text-violet-400" : "text-red-400"
-              }`}>
-                {totalCLVSinceStart === null ? "—"
-                  : `${totalCLVSinceStart >= 0 ? "+" : ""}${totalCLVSinceStart.toFixed(2)}%`}
+            {/* +CLV since start — Platinum only */}
+            {isPlatinum ? (
+              <div className="relative bg-card border rounded-xl px-4 py-4 overflow-hidden"
+                style={{ borderColor: "rgba(167,139,250,0.25)", boxShadow: "0 0 18px rgba(167,139,250,0.07)" }}>
+                <div className="absolute top-0 left-0 right-0 h-[2px]"
+                  style={{ background: "linear-gradient(90deg, transparent, rgba(167,139,250,0.6), transparent)" }} />
+                <div className="text-[9px] uppercase tracking-widest text-muted-foreground font-semibold mb-1">+CLV</div>
+                <div className={`text-2xl font-mono font-bold leading-none ${
+                  totalCLVSinceStart === null ? "text-muted-foreground"
+                  : totalCLVSinceStart >= 0 ? "text-violet-400" : "text-red-400"
+                }`}>
+                  {totalCLVSinceStart === null ? "—"
+                    : `${totalCLVSinceStart >= 0 ? "+" : ""}${totalCLVSinceStart.toFixed(2)}%`}
+                </div>
+                <div className="text-[11px] text-muted-foreground mt-1">
+                  {totalCLVSinceStart === null
+                    ? "Fyll i stängningskurser för att beräkna CLV"
+                    : "sedan start"}
+                </div>
               </div>
-              <div className="text-[11px] text-muted-foreground mt-1">
-                {totalCLVSinceStart === null
-                  ? "Fyll i stängningskurser för att beräkna CLV"
-                  : "sedan start"}
+            ) : (
+              <div className="relative bg-card border rounded-xl px-4 py-4 overflow-hidden flex flex-col items-center justify-center text-center"
+                style={{ borderColor: "rgba(167,139,250,0.15)", boxShadow: "0 0 18px rgba(167,139,250,0.04)" }}>
+                <Lock className="w-4 h-4 text-violet-400/60 mb-1.5" />
+                <div className="text-[10px] text-muted-foreground font-semibold uppercase tracking-widest mb-0.5">+CLV</div>
+                <p className="text-[11px] text-muted-foreground">
+                  Tillgänglig på <span className="text-violet-400 font-medium">Platinum</span>
+                </p>
               </div>
-            </div>
+            )}
           </div>
 
           {/* ── +EV & +CLV chart ────────────────────────────────────────────── */}
@@ -578,16 +590,18 @@ export default function BetStatsPage() {
                       dot={false}
                       isAnimationActive={false}
                     />
-                    <Line
-                      type="monotone"
-                      dataKey="clv"
-                      stroke="#a78bfa"
-                      strokeWidth={1.5}
-                      dot={false}
-                      isAnimationActive={false}
-                      strokeOpacity={totalCLVSinceStart !== null ? 1 : 0.3}
-                      strokeDasharray={totalCLVSinceStart !== null ? undefined : "4 3"}
-                    />
+                    {isPlatinum && (
+                      <Line
+                        type="monotone"
+                        dataKey="clv"
+                        stroke="#a78bfa"
+                        strokeWidth={1.5}
+                        dot={false}
+                        isAnimationActive={false}
+                        strokeOpacity={totalCLVSinceStart !== null ? 1 : 0.3}
+                        strokeDasharray={totalCLVSinceStart !== null ? undefined : "4 3"}
+                      />
+                    )}
                   </ComposedChart>
                 </ResponsiveContainer>
               </div>
@@ -596,12 +610,14 @@ export default function BetStatsPage() {
                   <span className="w-2.5 h-2.5 rounded-full bg-cyan-400 inline-block" />
                   <span className="text-cyan-400 font-medium">+EV (förväntad vinst)</span>
                 </span>
-                <span className="flex items-center gap-1.5">
-                  <span className={`w-2.5 h-2.5 rounded-full inline-block ${totalCLVSinceStart !== null ? "bg-violet-400" : "bg-violet-400/30"}`} />
-                  <span className={`font-medium ${totalCLVSinceStart !== null ? "text-violet-400" : "text-violet-400/40"}`}>
-                    +CLV{totalCLVSinceStart === null ? " — stängningskurser saknas" : ""}
+                {isPlatinum && (
+                  <span className="flex items-center gap-1.5">
+                    <span className={`w-2.5 h-2.5 rounded-full inline-block ${totalCLVSinceStart !== null ? "bg-violet-400" : "bg-violet-400/30"}`} />
+                    <span className={`font-medium ${totalCLVSinceStart !== null ? "text-violet-400" : "text-violet-400/40"}`}>
+                      +CLV{totalCLVSinceStart === null ? " — stängningskurser saknas" : ""}
+                    </span>
                   </span>
-                </span>
+                )}
               </div>
             </div>
           )}
