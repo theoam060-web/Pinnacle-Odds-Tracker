@@ -106,30 +106,18 @@ router.get('/stripe/subscription', requireAuth, async (req: any, res) => {
     const user = await storage.getUser(req.userId);
     if (!user?.stripeSubscriptionId) return res.json({ subscription: null, planTier: null });
 
-    // Block immediately when we know the subscription is cancelled or past_due
-    if (user.subscriptionStatus === 'cancelled' || user.subscriptionStatus === 'past_due') {
-      return res.json({ subscription: { status: user.subscriptionStatus }, planTier: null });
+    // Strict gate: only grant access when subscriptionStatus is explicitly 'active'.
+    // All other values (null, 'cancelled', 'past_due', etc.) return planTier: null.
+    // Pre-migration users without a status are backfilled at server startup, so
+    // null here reliably means "no active subscription."
+    if (user.subscriptionStatus !== 'active') {
+      return res.json({ subscription: { status: user.subscriptionStatus ?? 'unknown' }, planTier: null });
     }
 
-    // For 'active' or null (pre-migration users without a status yet), verify via Stripe schema
     const [sub, planTier] = await Promise.all([
       storage.getSubscription(user.stripeSubscriptionId),
       storage.getSubscriptionPlanTier(user.stripeSubscriptionId),
     ]);
-
-    // Lazily backfill subscriptionStatus for pre-migration users based on live Stripe state
-    if (user.subscriptionStatus === null && sub) {
-      const stripeStatus: string = (sub as any).status ?? '';
-      const localStatus =
-        stripeStatus === 'active' || stripeStatus === 'trialing' ? 'active' :
-        stripeStatus === 'past_due' ? 'past_due' :
-        stripeStatus === 'canceled' || stripeStatus === 'cancelled' ? 'cancelled' :
-        null;
-      if (localStatus) {
-        storage.updateUserStripeInfo(user.id, { subscriptionStatus: localStatus }).catch(() => {});
-      }
-    }
-
     res.json({ subscription: sub, planTier });
   } catch (err) {
     res.status(500).json({ error: 'Failed to fetch subscription' });

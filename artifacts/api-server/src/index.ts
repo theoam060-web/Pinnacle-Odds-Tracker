@@ -8,6 +8,8 @@ import { registerWsClient, unregisterWsClient } from "./lib/sseManager";
 import type WebSocket from "ws";
 import { runMigrations } from "stripe-replit-sync";
 import { getStripeSync } from "./stripeClient";
+import { db, usersTable } from "@workspace/db";
+import { sql } from "drizzle-orm";
 
 const rawPort = process.env["PORT"];
 
@@ -55,6 +57,41 @@ async function initStripe() {
 
     logger.info("Syncing Stripe data (backfill)…");
     await stripeSync.syncBackfill();
+
+    // One-time backfill: set subscriptionStatus for existing users whose
+    // subscriptionStatus is null but who have a Stripe subscription on record.
+    // This prevents locking out users who subscribed before the column was added.
+    try {
+      const usersToFix = await db
+        .select({ id: usersTable.id, stripeSubscriptionId: usersTable.stripeSubscriptionId })
+        .from(usersTable)
+        .where(sql`${usersTable.subscriptionStatus} IS NULL AND ${usersTable.stripeSubscriptionId} IS NOT NULL`);
+
+      if (usersToFix.length > 0) {
+        logger.info({ count: usersToFix.length }, "Backfilling subscriptionStatus for pre-migration users…");
+        for (const u of usersToFix) {
+          if (!u.stripeSubscriptionId) continue;
+          const result = await db.execute(
+            sql`SELECT status FROM stripe.subscriptions WHERE id = ${u.stripeSubscriptionId} LIMIT 1`
+          );
+          const stripeStatus: string = (result.rows[0] as any)?.status ?? '';
+          const localStatus =
+            stripeStatus === 'active' || stripeStatus === 'trialing' ? 'active' :
+            stripeStatus === 'past_due' ? 'past_due' :
+            stripeStatus === 'canceled' || stripeStatus === 'cancelled' ? 'cancelled' :
+            null;
+          if (localStatus) {
+            await db.update(usersTable)
+              .set({ subscriptionStatus: localStatus })
+              .where(sql`${usersTable.id} = ${u.id}`);
+          }
+        }
+        logger.info("subscriptionStatus backfill complete.");
+      }
+    } catch (backfillErr) {
+      logger.warn({ backfillErr }, "subscriptionStatus backfill failed — non-fatal");
+    }
+
     logger.info("Stripe init complete.");
   } catch (err) {
     logger.error({ err }, "Stripe init failed — continuing without Stripe");
