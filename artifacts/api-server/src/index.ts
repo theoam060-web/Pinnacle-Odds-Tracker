@@ -33,6 +33,17 @@ logger.info(
   "Server config",
 );
 
+async function runAppMigrations() {
+  try {
+    await db.execute(
+      sql`ALTER TABLE users ADD COLUMN IF NOT EXISTS subscription_status text`
+    );
+    logger.info("App schema migrations complete (users.subscription_status ensured).");
+  } catch (err) {
+    logger.error({ err }, "App schema migration failed — continuing");
+  }
+}
+
 async function initStripe() {
   const databaseUrl = process.env.DATABASE_URL;
   if (!databaseUrl) {
@@ -135,5 +146,5 @@ server.listen(port, () => {
     );
   }
 
-  initStripe();
+  runAppMigrations().then(() => initStripe());
 });
