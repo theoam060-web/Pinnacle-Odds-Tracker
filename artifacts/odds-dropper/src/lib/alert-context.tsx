@@ -222,7 +222,7 @@ interface AlertContextValue {
   setNovigMethod: (method: NovigMethod) => void;
   setSoundEnabled: (enabled: boolean) => void;
   setComparisonBookmakers: (keys: string[]) => void;
-  addConfig: () => void;
+  addConfig: (maxConfigs?: number) => void;
   removeConfig: (id: string) => void;
   updateConfig: (id: string, patch: Partial<AlertConfig>) => void;
 }
@@ -256,9 +256,9 @@ export function AlertStoreProvider({ children }: { children: ReactNode }) {
     setStore(s => ({ ...s, comparisonBookmakers }));
   }
 
-  function addConfig() {
+  function addConfig(maxConfigs = 9) {
     setStore(s => {
-      if (s.configs.length >= 9) return s;
+      if (s.configs.length >= maxConfigs) return s;
       const id = Date.now().toString();
       const name = `Config ${s.configs.length + 1}`;
       return { ...s, configs: [...s.configs, makeConfig(id, name)] };

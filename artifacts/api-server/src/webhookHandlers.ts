@@ -58,8 +58,11 @@ export class WebhookHandlers {
         if (subscriptionId) {
           const user = await storage.getUserByStripeSubscriptionId(subscriptionId);
           if (user) {
-            await storage.updateUserStripeInfo(user.id, { subscriptionStatus: 'cancelled' });
-            logger.info({ subscriptionId, userId: user.id }, 'Subscription cancelled — access revoked');
+            await storage.updateUserStripeInfo(user.id, {
+              stripeSubscriptionId: null,
+              subscriptionStatus: 'cancelled',
+            });
+            logger.info({ subscriptionId, userId: user.id }, 'Subscription cancelled — access revoked, subscriptionId cleared');
           }
         }
       }

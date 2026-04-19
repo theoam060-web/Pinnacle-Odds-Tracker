@@ -21,7 +21,7 @@ import { formatOdds, formatTime, formatDate } from "@/lib/format";
 import { computeNovig } from "@/lib/novig";
 import { useAlertStore, AlertConfig, BOOKMAKER_OPTIONS, type NovigMethod } from "@/lib/alert-context";
 import { useWsFeed, type WsOddsEventUpdate } from "@/hooks/use-ws-feed";
-import { usePlan } from "@/lib/plan-context";
+import { usePlan, PLAN_LIMITS } from "@/lib/plan-context";
 
 const SPORT_LABELS: Record<string, string> = {
   soccer: "⚽ Football",
@@ -580,6 +580,14 @@ export default function FeedPage() {
   const { configs, novigMethod, comparisonBookmakers } = useAlertStore();
   const tier = usePlan();
   const isPlatinum = tier === "platinum";
+
+  // Enforce market restrictions at read-time so Silver users (moneyline only)
+  // are not exposed to drops for markets they didn't pay for, even from persisted configs
+  const effectiveConfigs = useMemo(() => {
+    const allowedMarkets = PLAN_LIMITS[tier]?.markets ?? null;
+    if (allowedMarkets === null) return configs; // Gold/Platinum: all markets allowed
+    return configs.map(c => ({ ...c, markets: allowedMarkets as string[] }));
+  }, [configs, tier]);
   const [logBetRow, setLogBetRow] = useState<(FeedRow & { novigOdds: number }) | null>(null);
   const [oddsMatchupId, setOddsMatchupId] = useState<number | null>(null);
   const [graphModal, setGraphModal] = useState<{ eventId: string; selection: string } | null>(null);
@@ -606,9 +614,9 @@ export default function FeedPage() {
     pausedRef.current = paused;
   }, [paused]);
 
-  // Configs ref for WS callback (avoids stale closure, no re-subscribe needed)
-  const configsRef = useRef(configs);
-  useEffect(() => { configsRef.current = configs; }, [configs]);
+  // Configs ref for WS callback — uses effectiveConfigs so market restrictions are applied
+  const configsRef = useRef(effectiveConfigs);
+  useEffect(() => { configsRef.current = effectiveConfigs; }, [effectiveConfigs]);
 
 
   // ---------------------------------------------------------------------------
@@ -626,7 +634,7 @@ export default function FeedPage() {
   });
 
   // Build candidate rows from latest HTTP data (for initial load + fallback sync)
-  const liveRows = useMemo(() => buildRows(events, configs, "newest"), [events, configs]);
+  const liveRows = useMemo(() => buildRows(events, effectiveConfigs, "newest"), [events, effectiveConfigs]);
 
   useEffect(() => {
     if (!initializedRef.current) {
@@ -719,7 +727,7 @@ export default function FeedPage() {
   // ---------------------------------------------------------------------------
   const sortedShownRows = useMemo(() => {
     const filtered = shownRows.filter(row =>
-      configs.some(c =>
+      effectiveConfigs.some(c =>
         lineMatchesConfig(
           { sport: row.sport, marketType: row.marketType },
           { changePercent: row.changePercent, currentOdds: row.currentOdds },
@@ -729,7 +737,7 @@ export default function FeedPage() {
       )
     );
     return applySort(filtered, sortBy);
-  }, [shownRows, sortBy, configs]);
+  }, [shownRows, sortBy, effectiveConfigs]);
 
   // ---------------------------------------------------------------------------
   // Pause / resume
@@ -773,7 +781,7 @@ export default function FeedPage() {
   }, [sortBy]);
 
   const displayRows = paused && frozenRowsRef.current !== null ? frozenRowsRef.current : sortedShownRows;
-  const activeConfigs = configs.filter(c => c.enabled);
+  const activeConfigs = effectiveConfigs.filter(c => c.enabled);
 
   return (
     <Layout>

@@ -464,7 +464,7 @@ export default function AlertConfigurationsPage() {
                 variant="outline"
                 size="sm"
                 className="w-full h-8 text-xs gap-1.5"
-                onClick={() => { addConfig(); }}
+                onClick={() => { addConfig(maxConfigs); }}
               >
                 <Plus className="w-3.5 h-3.5" />
                 Add Config
