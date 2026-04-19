@@ -42,7 +42,10 @@ export async function fulfillCheckout(sessionId: string): Promise<{
     return { alreadyFulfilled: true };
   }
 
-  await storage.updateUserStripeInfo(user.id, { stripeSubscriptionId: subscriptionId ?? undefined });
+  await storage.updateUserStripeInfo(user.id, {
+    stripeSubscriptionId: subscriptionId ?? undefined,
+    subscriptionStatus: 'active',
+  });
 
   const firstItem = session.line_items?.data?.[0];
   const product = (firstItem?.price as any)?.product;

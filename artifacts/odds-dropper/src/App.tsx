@@ -377,10 +377,13 @@ function SubscriptionGate({ children }: { children: React.ReactNode }) {
       const sub = data.subscription;
       const isActive = sub?.status === "active" || sub?.status === "trialing";
       if (isActive) {
-        const t = data.planTier;
-        const tier: PlanTier = t === "silver" ? "silver" : t === "platinum" ? "platinum" : "gold";
-        setPlanTier(tier);
-        setStatus("active");
+        const t = data.planTier as PlanTier | null | undefined;
+        if (t === "silver" || t === "gold" || t === "platinum") {
+          setPlanTier(t);
+          setStatus("active");
+        } else {
+          setStatus("none");
+        }
       } else {
         setStatus("none");
       }

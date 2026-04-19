@@ -105,6 +105,13 @@ router.get('/stripe/subscription', requireAuth, async (req: any, res) => {
   try {
     const user = await storage.getUser(req.userId);
     if (!user?.stripeSubscriptionId) return res.json({ subscription: null, planTier: null });
+
+    // If our local record shows cancelled/past_due, block access immediately
+    // without waiting for stripe-replit-sync to reflect the latest state
+    if (user.subscriptionStatus === 'cancelled' || user.subscriptionStatus === 'past_due') {
+      return res.json({ subscription: { status: user.subscriptionStatus }, planTier: null });
+    }
+
     const [sub, planTier] = await Promise.all([
       storage.getSubscription(user.stripeSubscriptionId),
       storage.getSubscriptionPlanTier(user.stripeSubscriptionId),

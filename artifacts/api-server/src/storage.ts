@@ -75,8 +75,13 @@ export class Storage {
     return user;
   }
 
-  async updateUserStripeInfo(userId: string, info: { stripeCustomerId?: string; stripeSubscriptionId?: string }) {
+  async updateUserStripeInfo(userId: string, info: { stripeCustomerId?: string; stripeSubscriptionId?: string; subscriptionStatus?: string | null }) {
     const [user] = await db.update(usersTable).set(info).where(eq(usersTable.id, userId)).returning();
+    return user;
+  }
+
+  async getUserByStripeSubscriptionId(subscriptionId: string) {
+    const [user] = await db.select().from(usersTable).where(eq(usersTable.stripeSubscriptionId, subscriptionId));
     return user;
   }
 }

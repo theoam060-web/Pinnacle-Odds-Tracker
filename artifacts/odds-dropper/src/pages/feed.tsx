@@ -21,6 +21,7 @@ import { formatOdds, formatTime, formatDate } from "@/lib/format";
 import { computeNovig } from "@/lib/novig";
 import { useAlertStore, AlertConfig, BOOKMAKER_OPTIONS, type NovigMethod } from "@/lib/alert-context";
 import { useWsFeed, type WsOddsEventUpdate } from "@/hooks/use-ws-feed";
+import { usePlan } from "@/lib/plan-context";
 
 const SPORT_LABELS: Record<string, string> = {
   soccer: "⚽ Football",
@@ -454,7 +455,7 @@ interface FeedTableRowProps {
   onLogBet: (row: FeedRow & { novigOdds: number }) => void;
   onOddsModal: (id: number) => void;
   onGraphClick: (eventId: string, selection: string) => void;
-  onCompare: (row: FeedRow) => void;
+  onCompare?: (row: FeedRow) => void;
 }
 
 const FeedTableRow = memo(function FeedTableRow({
@@ -557,16 +558,18 @@ const FeedTableRow = memo(function FeedTableRow({
             <BookmarkPlus className="w-3 h-3" />
             Log
           </Button>
-          <Button
-            size="sm"
-            variant="outline"
-            className="h-7 text-xs px-2 gap-1"
-            onClick={() => onCompare(row)}
-            title="Compare odds across bookmakers"
-          >
-            <BarChart2 className="w-3 h-3" />
-            Compare
-          </Button>
+          {onCompare && (
+            <Button
+              size="sm"
+              variant="outline"
+              className="h-7 text-xs px-2 gap-1"
+              onClick={() => onCompare(row)}
+              title="Compare odds across bookmakers"
+            >
+              <BarChart2 className="w-3 h-3" />
+              Compare
+            </Button>
+          )}
         </div>
       </TableCell>
     </TableRow>
@@ -575,6 +578,8 @@ const FeedTableRow = memo(function FeedTableRow({
 
 export default function FeedPage() {
   const { configs, novigMethod, comparisonBookmakers } = useAlertStore();
+  const tier = usePlan();
+  const isPlatinum = tier === "platinum";
   const [logBetRow, setLogBetRow] = useState<(FeedRow & { novigOdds: number }) | null>(null);
   const [oddsMatchupId, setOddsMatchupId] = useState<number | null>(null);
   const [graphModal, setGraphModal] = useState<{ eventId: string; selection: string } | null>(null);
@@ -912,7 +917,7 @@ export default function FeedPage() {
                   onLogBet={setLogBetRow}
                   onOddsModal={setOddsMatchupId}
                   onGraphClick={(eventId, selection) => setGraphModal({ eventId, selection })}
-                  onCompare={setCompareRow}
+                  onCompare={isPlatinum ? setCompareRow : undefined}
                 />
               ))
             )}

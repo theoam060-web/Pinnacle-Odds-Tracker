@@ -391,21 +391,35 @@ export default function AlertConfigurationsPage() {
         </div>
       </div>
 
-      {/* Bookmaker Comparison section */}
+      {/* Bookmaker Comparison section — Platinum only */}
       <div className="bg-card border rounded-lg p-4 mb-6">
         <div className="flex items-center gap-2 mb-3">
           <BarChart2 className="w-4 h-4 text-primary" />
           <Label className="text-sm font-semibold">Bookmaker Comparison</Label>
+          {tier !== "platinum" && (
+            <span className="ml-auto inline-flex items-center gap-1 text-[10px] font-bold text-violet-400/90 bg-violet-400/10 border border-violet-400/20 px-2 py-0.5 rounded-full">
+              <Lock className="w-2.5 h-2.5" /> Platinum
+            </span>
+          )}
         </div>
-        <p className="text-[11px] text-muted-foreground mb-3">
-          Select bookmakers to compare against sharp odds in the live feed.
-        </p>
-        <BookmakerMultiSelect
-          selected={comparisonBookmakers}
-          onChange={setComparisonBookmakers}
-        />
-        {comparisonBookmakers.length === 0 && (
-          <p className="text-[11px] text-amber-400 mt-2">Inga spelbolag valda — jämförelse inaktiverad.</p>
+        {tier !== "platinum" ? (
+          <p className="text-[11px] text-muted-foreground">
+            Compare your bookmaker odds against sharp Pinnacle lines in the live feed.{" "}
+            <a href="/" className="text-violet-400 hover:underline">Upgrade to Platinum</a> to unlock this feature.
+          </p>
+        ) : (
+          <>
+            <p className="text-[11px] text-muted-foreground mb-3">
+              Select bookmakers to compare against sharp odds in the live feed.
+            </p>
+            <BookmakerMultiSelect
+              selected={comparisonBookmakers}
+              onChange={setComparisonBookmakers}
+            />
+            {comparisonBookmakers.length === 0 && (
+              <p className="text-[11px] text-amber-400 mt-2">Inga spelbolag valda — jämförelse inaktiverad.</p>
+            )}
+          </>
         )}
       </div>
 
