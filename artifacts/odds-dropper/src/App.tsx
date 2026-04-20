@@ -394,8 +394,30 @@ function SubscriptionGate({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     if (bypassAuth || isAdmin) { setPlanTier("platinum"); setStatus("active"); return; }
+
+    // If Stripe redirected back with a session_id, fulfill the checkout first
+    // then check subscription. This avoids relying on webhook timing.
+    const params = new URLSearchParams(window.location.search);
+    const sessionId = params.get("session_id");
+    if (sessionId) {
+      // Remove session_id from URL immediately so it doesn't re-trigger on refresh
+      params.delete("session_id");
+      const newSearch = params.toString();
+      const newUrl = window.location.pathname + (newSearch ? `?${newSearch}` : "");
+      window.history.replaceState({}, "", newUrl);
+
+      getToken().then((token) => {
+        fetch(`${API_BASE}/api/stripe/checkout/session?session_id=${encodeURIComponent(sessionId)}`, {
+          headers: { Authorization: `Bearer ${token ?? ""}` },
+        })
+          .catch(() => {})
+          .finally(() => check());
+      });
+      return;
+    }
+
     check();
-  }, [bypassAuth, isAdmin, check]);
+  }, [bypassAuth, isAdmin, check, getToken]);
 
   if (status === "loading") return <LoadingScreen label="Kontrollerar prenumeration…" />;
   if (status === "none") return <SubscriptionWall />;

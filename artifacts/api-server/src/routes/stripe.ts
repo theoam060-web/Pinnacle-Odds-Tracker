@@ -58,12 +58,12 @@ router.post('/stripe/checkout', requireAuth, async (req: any, res) => {
     const proto = req.headers['x-forwarded-proto'] || 'https';
     const baseUrl = `${proto}://${host}`;
 
-    // redirectAfter lets the client control where to go after fulfillment on the success page
-    const redirectParam = redirectAfter
-      ? `&redirect=${encodeURIComponent(redirectAfter)}`
-      : '';
-    const successUrl = `${baseUrl}/success?session_id={CHECKOUT_SESSION_ID}${redirectParam}`;
-    const cancelUrl = redirectAfter ? `${baseUrl}${redirectAfter}` : `${baseUrl}/pricing`;
+    // Success URL lands back in the app itself (at /app/) with the session_id as a query param.
+    // The SubscriptionGate on the frontend reads this, calls /api/stripe/checkout/session to
+    // fulfill the checkout immediately, then clears the param from the URL.
+    const appBase = `${baseUrl}/app/`;
+    const successUrl = `${appBase}?session_id={CHECKOUT_SESSION_ID}`;
+    const cancelUrl = redirectAfter ? `${baseUrl}${redirectAfter}` : `${appBase}`;
 
     const session = await stripeService.createCheckoutSession(customerId, priceId, successUrl, cancelUrl);
 
