@@ -368,9 +368,9 @@ export function SettingsModal({ onClose }: Props) {
           {/* ── ABOUT / LEGAL ── */}
           <TabsContent value="about" className="space-y-5 text-xs">
             <div className="space-y-2">
-              <h3 className="font-semibold text-sm">About PinnacleTracker</h3>
+              <h3 className="font-semibold text-sm">About SharpTracker</h3>
               <p className="text-muted-foreground leading-relaxed">
-                PinnacleTracker is a real-time Pinnacle odds monitoring dashboard designed for
+                SharpTracker is a real-time Pinnacle odds monitoring dashboard designed for
                 professional bettors and sharp syndicate members. It detects significant odds
                 drops, computes no-vig fair values, and helps you identify where sharp money is
                 moving in the market.
@@ -389,7 +389,7 @@ export function SettingsModal({ onClose }: Props) {
               <h3 className="font-semibold">Terms of Service</h3>
               <div className="text-muted-foreground leading-relaxed space-y-2">
                 <p>
-                  By using PinnacleTracker you agree that this tool is provided for informational
+                  By using SharpTracker you agree that this tool is provided for informational
                   purposes only. It does not constitute betting advice. You are solely responsible
                   for all betting decisions made using this application.
                 </p>
@@ -404,7 +404,7 @@ export function SettingsModal({ onClose }: Props) {
               <h3 className="font-semibold">Privacy Policy</h3>
               <div className="text-muted-foreground leading-relaxed space-y-2">
                 <p>
-                  PinnacleTracker stores all data exclusively in your browser's localStorage. No
+                  SharpTracker stores all data exclusively in your browser's localStorage. No
                   personal data, bets, or settings are ever transmitted to external servers beyond
                   the Pinnacle API calls used to retrieve live market data.
                 </p>

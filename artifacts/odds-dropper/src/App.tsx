@@ -462,7 +462,24 @@ function App() {
     return <AppContent />;
   }
   return (
-    <ClerkProvider publishableKey={clerkPubKey} proxyUrl={clerkProxyUrl}>
+    <ClerkProvider
+      publishableKey={clerkPubKey}
+      proxyUrl={clerkProxyUrl}
+      localization={{
+        signIn: {
+          start: {
+            title: "Sign in to SharpTracker",
+            subtitle: "Welcome back! Please sign in to continue",
+          },
+        },
+        signUp: {
+          start: {
+            title: "Create your SharpTracker account",
+            subtitle: "Sign up to get started with SharpTracker",
+          },
+        },
+      }}
+    >
       <AppContent />
     </ClerkProvider>
   );
