@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useClerk, useAuth } from "@clerk/react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Label } from "@/components/ui/label";
@@ -8,7 +9,7 @@ import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useSettings, Theme, BetSizeMethod, calcKellyStake, calcUnitStake } from "@/lib/settings-context";
 import { useBetStore, CURRENCIES } from "@/lib/bet-store";
-import { Eye, EyeOff, Shield, Info, Palette, Calculator, DollarSign } from "lucide-react";
+import { Info, Palette, Calculator, DollarSign, LogOut, CreditCard, Loader2 } from "lucide-react";
 
 interface Props {
   onClose: () => void;
@@ -23,21 +24,23 @@ const THEMES: { value: Theme; label: string; description: string }[] = [
 export function SettingsModal({ onClose }: Props) {
   const { settings, updateSettings } = useSettings();
   const { currency, setCurrency } = useBetStore();
-  const [showPassword, setShowPassword] = useState(false);
-  const [newPassword, setNewPassword] = useState("");
-  const [confirmPassword, setConfirmPassword] = useState("");
-  const [passwordError, setPasswordError] = useState("");
-  const [passwordSaved, setPasswordSaved] = useState(false);
+  const { signOut } = useClerk();
+  const { getToken } = useAuth();
+  const [portalLoading, setPortalLoading] = useState(false);
 
-  function handleSavePassword() {
-    if (newPassword.length < 6) { setPasswordError("Minimum 6 characters."); return; }
-    if (newPassword !== confirmPassword) { setPasswordError("Passwords do not match."); return; }
-    updateSettings({ passwordEnabled: true, password: newPassword });
-    setPasswordError("");
-    setPasswordSaved(true);
-    setNewPassword("");
-    setConfirmPassword("");
-    setTimeout(() => setPasswordSaved(false), 2000);
+  async function handleManageSubscription() {
+    setPortalLoading(true);
+    try {
+      const token = await getToken();
+      const res = await fetch("/api/stripe/portal", {
+        method: "POST",
+        headers: { Authorization: `Bearer ${token ?? ""}`, "Content-Type": "application/json" },
+      });
+      const data = await res.json() as { url?: string };
+      if (data.url) window.open(data.url, "_blank");
+    } finally {
+      setPortalLoading(false);
+    }
   }
 
   // Preview bet size calculation
@@ -55,7 +58,7 @@ export function SettingsModal({ onClose }: Props) {
         </DialogHeader>
 
         <Tabs defaultValue="preferences" className="mt-2">
-          <TabsList className="grid grid-cols-5 w-full mb-4 h-auto">
+          <TabsList className="grid grid-cols-4 w-full mb-4 h-auto">
             <TabsTrigger value="preferences" className="text-[11px] flex flex-col gap-0.5 py-2">
               <Palette className="w-3.5 h-3.5" />
               Prefs
@@ -67,10 +70,6 @@ export function SettingsModal({ onClose }: Props) {
             <TabsTrigger value="currency" className="text-[11px] flex flex-col gap-0.5 py-2">
               <DollarSign className="w-3.5 h-3.5" />
               Currency
-            </TabsTrigger>
-            <TabsTrigger value="security" className="text-[11px] flex flex-col gap-0.5 py-2">
-              <Shield className="w-3.5 h-3.5" />
-              Security
             </TabsTrigger>
             <TabsTrigger value="about" className="text-[11px] flex flex-col gap-0.5 py-2">
               <Info className="w-3.5 h-3.5" />
@@ -296,75 +295,6 @@ export function SettingsModal({ onClose }: Props) {
             </div>
           </TabsContent>
 
-          {/* ── SECURITY ── */}
-          <TabsContent value="security" className="space-y-5">
-            <div className="bg-amber-950/30 border border-amber-800/40 rounded-md px-4 py-3 text-xs text-amber-300">
-              All settings are stored locally in your browser. No account or server authentication is used.
-            </div>
-
-            <div className="space-y-3">
-              <Label className="text-xs font-semibold block">Set / Change Local Password</Label>
-              <p className="text-[10px] text-muted-foreground -mt-1">
-                A local password locks the UI on page load. Data is still in the browser.
-              </p>
-              <div className="relative">
-                <Input
-                  type={showPassword ? "text" : "password"}
-                  placeholder="New password (min 6 chars)"
-                  value={newPassword}
-                  onChange={e => setNewPassword(e.target.value)}
-                  className="h-8 text-xs pr-9"
-                />
-                <button
-                  className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-                  onClick={() => setShowPassword(p => !p)}
-                >
-                  {showPassword ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
-                </button>
-              </div>
-              <Input
-                type="password"
-                placeholder="Confirm password"
-                value={confirmPassword}
-                onChange={e => setConfirmPassword(e.target.value)}
-                className="h-8 text-xs"
-              />
-              {passwordError && <p className="text-xs text-red-400">{passwordError}</p>}
-              {passwordSaved && <p className="text-xs text-green-400">Password saved.</p>}
-              <div className="flex items-center gap-3">
-                <Button size="sm" className="h-7 text-xs" onClick={handleSavePassword}>
-                  Save Password
-                </Button>
-                {settings.passwordEnabled && (
-                  <Button
-                    size="sm"
-                    variant="ghost"
-                    className="h-7 text-xs text-destructive hover:text-destructive"
-                    onClick={() => updateSettings({ passwordEnabled: false, password: "" })}
-                  >
-                    Remove Password
-                  </Button>
-                )}
-              </div>
-              {settings.passwordEnabled && (
-                <p className="text-[10px] text-green-400">Password protection is active.</p>
-              )}
-            </div>
-
-            <div className="flex items-center justify-between">
-              <div>
-                <Label className="text-xs font-semibold">Two-Factor Authentication</Label>
-                <p className="text-[10px] text-muted-foreground mt-0.5">
-                  UI placeholder — no backend 2FA is implemented in this local build.
-                </p>
-              </div>
-              <Switch
-                checked={settings.twoFAEnabled}
-                onCheckedChange={v => updateSettings({ twoFAEnabled: v })}
-              />
-            </div>
-          </TabsContent>
-
           {/* ── ABOUT / LEGAL ── */}
           <TabsContent value="about" className="space-y-5 text-xs">
             <div className="space-y-2">
@@ -415,6 +345,35 @@ export function SettingsModal({ onClose }: Props) {
             </div>
           </TabsContent>
         </Tabs>
+
+        {/* ── ACCOUNT ACTIONS ── */}
+        <div className="mt-4 pt-4 border-t border-border flex items-center justify-between gap-3">
+          <div className="flex items-center gap-2">
+            <Button
+              variant="ghost"
+              size="sm"
+              className="h-8 text-xs text-muted-foreground hover:text-foreground gap-1.5"
+              onClick={() => signOut()}
+            >
+              <LogOut className="w-3.5 h-3.5" />
+              Sign out
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              className="h-8 text-xs text-muted-foreground hover:text-destructive gap-1.5"
+              onClick={handleManageSubscription}
+              disabled={portalLoading}
+            >
+              {portalLoading ? (
+                <Loader2 className="w-3.5 h-3.5 animate-spin" />
+              ) : (
+                <CreditCard className="w-3.5 h-3.5" />
+              )}
+              Manage / Cancel subscription
+            </Button>
+          </div>
+        </div>
       </DialogContent>
     </Dialog>
   );
