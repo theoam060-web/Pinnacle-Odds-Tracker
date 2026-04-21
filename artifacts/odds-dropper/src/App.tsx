@@ -78,7 +78,8 @@ const clerkAppearance = {
     headerSubtitle: { color: "rgba(255,255,255,0.65)", opacity: 1 },
     formFieldLabel: { color: "rgba(255,255,255,0.75)" },
     formButtonPrimary: "bg-cyan-400 text-black hover:bg-cyan-300 font-mono",
-    dividerRow: { display: "none" },
+    dividerText: { color: "rgba(255,255,255,0.4)" },
+    dividerLine: { background: "rgba(255,255,255,0.1)" },
     footerActionText: { color: "rgba(255,255,255,0.5)" },
     footerActionLink: { color: "#00e5ff" },
     identityPreviewText: { color: "#ffffff" },
@@ -471,11 +472,25 @@ function App() {
             title: "Sign in to SharpTracker",
             subtitle: "Welcome back! Please sign in to continue",
           },
+          emailCode: {
+            title: "Check your email",
+            subtitle: "to continue to SharpTracker",
+            formTitle: "Verification code",
+            formSubtitle: "Enter the verification code sent to your email address",
+            resendButton: "Didn't receive a code? Resend",
+          },
         },
         signUp: {
           start: {
             title: "Create your SharpTracker account",
             subtitle: "Sign up to get started with SharpTracker",
+          },
+          emailCode: {
+            title: "Verify your email",
+            subtitle: "to continue to SharpTracker",
+            formTitle: "Verification code",
+            formSubtitle: "Enter the verification code sent to your email address",
+            resendButton: "Didn't receive a code? Resend",
           },
         },
       }}
