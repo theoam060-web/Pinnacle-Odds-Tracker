@@ -30,7 +30,7 @@ function PricingNav() {
             onClick={() => navigate("/sign-in")}
             className="bg-primary/10 text-primary border border-primary/30 hover:bg-primary hover:text-primary-foreground px-5 py-2 rounded-md font-mono text-sm transition-all"
           >
-            Sign In
+            Sign in with Google
           </button>
         )}
       </div>
@@ -242,7 +242,7 @@ export default function PricingPage() {
                 disabled={silverLoading}
                 className="w-full py-3 rounded-lg border border-border/60 text-foreground/80 font-mono text-sm hover:border-primary/40 hover:text-primary transition-all disabled:opacity-60 flex items-center justify-center gap-2"
               >
-                {silverLoading ? <><Loader2 className="w-4 h-4 animate-spin" /> Processing…</> : isSignedIn ? "Subscribe" : "Get Started"}
+                {silverLoading ? <><Loader2 className="w-4 h-4 animate-spin" /> Processing…</> : isSignedIn ? "Subscribe" : "Sign in with Google"}
               </button>
             </motion.div>
 
@@ -284,7 +284,7 @@ export default function PricingPage() {
                 disabled={goldLoading}
                 className="w-full py-3 rounded-lg bg-primary text-primary-foreground font-mono text-sm font-bold hover:bg-primary/90 transition-all shadow-[0_0_20px_rgba(0,255,255,0.25)] disabled:opacity-60 flex items-center justify-center gap-2"
               >
-                {goldLoading ? <><Loader2 className="w-4 h-4 animate-spin" /> Processing…</> : isSignedIn ? "Subscribe" : "Get Started"}
+                {goldLoading ? <><Loader2 className="w-4 h-4 animate-spin" /> Processing…</> : isSignedIn ? "Subscribe" : "Sign in with Google"}
               </button>
             </motion.div>
 
@@ -320,7 +320,7 @@ export default function PricingPage() {
                 disabled={platinumLoading}
                 className="w-full py-3 rounded-lg bg-violet-600 text-white font-mono text-sm font-bold hover:bg-violet-500 transition-all shadow-[0_0_20px_rgba(139,92,246,0.25)] disabled:opacity-60 flex items-center justify-center gap-2"
               >
-                {platinumLoading ? <><Loader2 className="w-4 h-4 animate-spin" /> Processing…</> : isSignedIn ? "Subscribe" : "Get Started"}
+                {platinumLoading ? <><Loader2 className="w-4 h-4 animate-spin" /> Processing…</> : isSignedIn ? "Subscribe" : "Sign in with Google"}
               </button>
             </motion.div>
 
