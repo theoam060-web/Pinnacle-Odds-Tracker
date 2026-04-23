@@ -16,7 +16,7 @@ import AlertConfigurationsPage from "@/pages/alert-configurations";
 import TopMoversPage from "@/pages/top-movers";
 import MyBetsPage from "@/pages/my-bets";
 import React, { useEffect, useState, useCallback } from "react";
-import { Activity, ArrowRight, Loader2, CheckCircle2 } from "lucide-react";
+import { Activity, ArrowRight, Loader2, CheckCircle2, ExternalLink } from "lucide-react";
 import { PlanContext, type PlanTier } from "@/lib/plan-context";
 
 const clerkPubKey = import.meta.env.VITE_CLERK_PUBLISHABLE_KEY as string;
@@ -60,13 +60,44 @@ function LoadingScreen({ label = "Laddar…" }: { label?: string }) {
   );
 }
 
+const clerkAppearance = {
+  variables: {
+    colorPrimary: "#00e5ff",
+    colorBackground: "#111218",
+    colorText: "#ffffff",
+    colorTextSecondary: "rgba(255,255,255,0.65)",
+    colorInputBackground: "#1a1b22",
+    colorInputText: "#ffffff",
+    borderRadius: "0.75rem",
+    fontFamily: "JetBrains Mono, monospace",
+  },
+  elements: {
+    card: "shadow-none border border-white/10",
+    rootBox: "w-full",
+    headerTitle: { color: "#ffffff", opacity: 1 },
+    headerSubtitle: { color: "rgba(255,255,255,0.65)", opacity: 1 },
+    formFieldLabel: { color: "rgba(255,255,255,0.75)" },
+    formButtonPrimary: "bg-cyan-400 text-black hover:bg-cyan-300 font-mono",
+    dividerText: { color: "rgba(255,255,255,0.4)" },
+    dividerLine: { background: "rgba(255,255,255,0.1)" },
+    footerActionText: { color: "rgba(255,255,255,0.5)" },
+    footerActionLink: { color: "#00e5ff" },
+    identityPreviewText: { color: "#ffffff" },
+    formResendCodeLink: { color: "#00e5ff" },
+    socialButtonsBlockButton: "border border-white/25 bg-white/8 hover:bg-white/15 transition-colors",
+    socialButtonsBlockButtonText: { color: "#ffffff", fontWeight: "500" },
+    socialButtonsBlockButtonArrow: { color: "#ffffff" },
+    socialButtonsProviderIcon: { opacity: 1 },
+  },
+} as const;
+
 function AuthScreen() {
   const base = import.meta.env.BASE_URL?.replace(/\/$/, "") ?? "";
   const { signIn, isLoaded } = useSignIn();
   const [loading, setLoading] = useState(false);
 
   const handleGoogleSignIn = async () => {
-    if (!signIn || !isLoaded || loading) return;
+    if (!signIn || !isLoaded) return;
     setLoading(true);
     try {
       await signIn.authenticateWithRedirect({
@@ -91,8 +122,8 @@ function AuthScreen() {
       <div className="flex-1 flex flex-col items-center justify-center px-4 py-8">
         <div className="w-full max-w-[360px] space-y-6">
           <div className="text-center space-y-1">
-            <h1 className="text-2xl font-bold text-white tracking-tight">Välkommen tillbaka</h1>
-            <p className="text-sm text-white/50">Logga in med ditt Google-konto för att fortsätta</p>
+            <h1 className="text-2xl font-bold text-white tracking-tight">Sign in to SharpTracker</h1>
+            <p className="text-sm text-white/50">Continue with your Google account to get started</p>
           </div>
 
           <button
@@ -110,11 +141,11 @@ function AuthScreen() {
                 <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
               </svg>
             )}
-            {loading ? "Omdirigerar…" : "Fortsätt med Google"}
+            Continue with Google
           </button>
 
           <p className="text-center text-xs text-white/25 leading-relaxed">
-            Genom att fortsätta godkänner du SharpTrackers användarvillkor och integritetspolicy.
+            By continuing you agree to SharpTracker's Terms of Service and Privacy Policy.
           </p>
         </div>
       </div>
@@ -415,28 +446,19 @@ function AuthGate({ children }: { children: React.ReactNode }) {
 }
 
 function AppContent() {
-  const base = (import.meta.env.BASE_URL?.replace(/\/$/, "") ?? "");
-  const isSsoCallback = window.location.pathname === `${base}/sso-callback`;
-
   return (
     <QueryClientProvider client={queryClient}>
       <SettingsProvider>
         <AlertStoreProvider>
           <BetStoreProvider>
             <TooltipProvider>
-              {isSsoCallback ? (
-                <WouterRouter base={base}>
-                  <AuthenticateWithRedirectCallback />
+              <AuthGate>
+                <AppServices />
+                <WouterRouter base={import.meta.env.BASE_URL?.replace(/\/$/, "") || ""}>
+                  <Router />
                 </WouterRouter>
-              ) : (
-                <AuthGate>
-                  <AppServices />
-                  <WouterRouter base={base}>
-                    <Router />
-                  </WouterRouter>
-                  <Toaster />
-                </AuthGate>
-              )}
+                <Toaster />
+              </AuthGate>
             </TooltipProvider>
           </BetStoreProvider>
         </AlertStoreProvider>
@@ -453,6 +475,34 @@ function App() {
     <ClerkProvider
       publishableKey={clerkPubKey}
       proxyUrl={clerkProxyUrl}
+      localization={{
+        signIn: {
+          start: {
+            title: "Sign in to SharpTracker",
+            subtitle: "Welcome back! Please sign in to continue",
+          },
+          emailCode: {
+            title: "Check your email",
+            subtitle: "to continue to SharpTracker",
+            formTitle: "Verification code",
+            formSubtitle: "Enter the verification code sent to your email address",
+            resendButton: "Didn't receive a code? Resend",
+          },
+        },
+        signUp: {
+          start: {
+            title: "Create your SharpTracker account",
+            subtitle: "Sign up to get started with SharpTracker",
+          },
+          emailCode: {
+            title: "Verify your email",
+            subtitle: "to continue to SharpTracker",
+            formTitle: "Verification code",
+            formSubtitle: "Enter the verification code sent to your email address",
+            resendButton: "Didn't receive a code? Resend",
+          },
+        },
+      }}
     >
       <AppContent />
     </ClerkProvider>
