@@ -95,10 +95,12 @@ function AuthScreen() {
   const base = import.meta.env.BASE_URL?.replace(/\/$/, "") ?? "";
   const { signIn, isLoaded } = useSignIn();
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const handleGoogleSignIn = async () => {
     if (!signIn || !isLoaded) return;
     setLoading(true);
+    setError(null);
     try {
       await signIn.authenticateWithRedirect({
         strategy: "oauth_google",
@@ -107,6 +109,7 @@ function AuthScreen() {
       });
     } catch {
       setLoading(false);
+      setError("Inloggningen misslyckades. Försök igen.");
     }
   };
 
@@ -143,6 +146,12 @@ function AuthScreen() {
             )}
             Continue with Google
           </button>
+
+          {error && (
+            <p className="text-center text-sm text-red-400">
+              {error}
+            </p>
+          )}
 
           <p className="text-center text-xs text-white/25 leading-relaxed">
             By continuing you agree to SharpTracker's Terms of Service and Privacy Policy.
