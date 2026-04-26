@@ -124,6 +124,7 @@ export default function PricingPage() {
     }
     setLoading(l => ({ ...l, [plan]: true }));
     setError(null);
+    let url: string | null = null;
     try {
       const token = await getToken();
       const res = await fetch(`${API_BASE}/api/stripe/checkout`, {
@@ -135,15 +136,23 @@ export default function PricingPage() {
         body: JSON.stringify({ plan, redirectAfter: "/app/" }),
       });
       const data = await res.json();
-      if (data.url) {
-        (window.top || window).location.href = data.url;
-      } else {
+      if (!res.ok || !data.url) {
         setError(data.error ?? "Failed to start checkout");
+        return;
       }
+      url = data.url;
     } catch {
       setError("Network error — please try again");
+      return;
     } finally {
       setLoading(l => ({ ...l, [plan]: false }));
+    }
+    // Navigate outside of the iframe to avoid Stripe's iframe restrictions.
+    // Try top-level navigation first; fall back to new tab if cross-origin blocked.
+    try {
+      (window.top ?? window).location.href = url;
+    } catch {
+      window.open(url, "_blank", "noopener");
     }
   };
 
