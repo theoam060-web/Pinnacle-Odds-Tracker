@@ -95,7 +95,7 @@ function LoadingScreen({ label = "Laddar…" }: { label?: string }) {
 
 // ── Auth screen ───────────────────────────────────────────────────────────────
 
-function AuthScreen({ error: authError }: { error?: string }) {
+function AuthScreen({ error: authError, errorMsg }: { error?: string; errorMsg?: string }) {
   const handleGoogleSignIn = () => {
     window.location.href = `${API_BASE}/api/auth/google`;
   };
@@ -130,11 +130,16 @@ function AuthScreen({ error: authError }: { error?: string }) {
           </button>
 
           {authError && (
-            <p className="text-center text-sm text-red-400">
-              {authError === "cancelled"
-                ? "Inloggningen avbröts. Försök igen."
-                : "Inloggningen misslyckades. Försök igen."}
-            </p>
+            <div className="text-center text-sm text-red-400 space-y-1">
+              <p>
+                {authError === "google"
+                  ? "Google nekade inloggningen."
+                  : "Inloggningen misslyckades. Försök igen."}
+              </p>
+              {errorMsg && (
+                <p className="text-xs text-red-400/60 font-mono break-all">{errorMsg}</p>
+              )}
+            </div>
           )}
 
           <p className="text-center text-xs text-white/25 leading-relaxed">
@@ -410,11 +415,13 @@ function SubscriptionGate({ children }: { children: React.ReactNode }) {
 function AuthProvider({ children }: { children: React.ReactNode }) {
   const [token, setToken] = useState<string | null>(() => localStorage.getItem(TOKEN_KEY));
   const [authError, setAuthError] = useState<string | undefined>();
+  const [authErrorMsg, setAuthErrorMsg] = useState<string | undefined>();
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const sessionToken = params.get("session_token");
     const authErr = params.get("auth_error");
+    const authErrMsg = params.get("auth_error_msg");
 
     if (sessionToken) {
       localStorage.setItem(TOKEN_KEY, sessionToken);
@@ -426,7 +433,9 @@ function AuthProvider({ children }: { children: React.ReactNode }) {
 
     if (authErr) {
       setAuthError(authErr);
+      if (authErrMsg) setAuthErrorMsg(decodeURIComponent(authErrMsg));
       params.delete("auth_error");
+      params.delete("auth_error_msg");
       const newSearch = params.toString();
       window.history.replaceState({}, "", window.location.pathname + (newSearch ? `?${newSearch}` : ""));
     }
@@ -442,7 +451,7 @@ function AuthProvider({ children }: { children: React.ReactNode }) {
   const email = parsed?.email ?? null;
 
   if (!token) {
-    return <AuthScreen error={authError} />;
+    return <AuthScreen error={authError} errorMsg={authErrorMsg} />;
   }
 
   return (

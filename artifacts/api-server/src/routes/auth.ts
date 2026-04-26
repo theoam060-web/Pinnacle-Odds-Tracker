@@ -10,12 +10,11 @@ const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID!;
 const GOOGLE_CLIENT_SECRET = process.env.GOOGLE_CLIENT_SECRET!;
 const JWT_SECRET = process.env.SESSION_SECRET || "fallback-secret-change-me";
 
-function getCallbackUrl(req: any): string {
+function getCallbackUrl(_req: any): string {
+  if (process.env.GOOGLE_CALLBACK_URL) return process.env.GOOGLE_CALLBACK_URL;
   const domain = process.env.REPLIT_DOMAINS?.split(",")[0];
   if (domain) return `https://${domain}/api/auth/google/callback`;
-  const proto = req.headers["x-forwarded-proto"] || req.protocol || "https";
-  const host = req.headers["x-forwarded-host"] || req.headers.host;
-  return `${proto}://${host}/api/auth/google/callback`;
+  return `https://sharptracker.io/api/auth/google/callback`;
 }
 
 function getFrontendBase(req: any): string {
@@ -37,15 +36,20 @@ router.get("/auth/google", (req, res) => {
 });
 
 router.get("/auth/google/callback", async (req, res) => {
-  const { code, error } = req.query as { code?: string; error?: string };
+  const { code, error, error_description } = req.query as { code?: string; error?: string; error_description?: string };
   const frontendBase = getFrontendBase(req);
 
   if (error || !code) {
-    return res.redirect(`${frontendBase}/?auth_error=cancelled`);
+    console.error("Google OAuth error from Google:", error, error_description);
+    const msg = encodeURIComponent(error_description || error || "cancelled");
+    return res.redirect(`${frontendBase}/?auth_error=google&auth_error_msg=${msg}`);
   }
 
+  const callbackUrl = getCallbackUrl(req);
+  console.log("OAuth callback URL used:", callbackUrl);
+
   try {
-    const client = new OAuth2Client(GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET, getCallbackUrl(req));
+    const client = new OAuth2Client(GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET, callbackUrl);
     const { tokens } = await client.getToken(code);
     client.setCredentials(tokens);
 
@@ -70,9 +74,10 @@ router.get("/auth/google/callback", async (req, res) => {
     );
 
     res.redirect(`${frontendBase}/?session_token=${encodeURIComponent(sessionToken)}`);
-  } catch (err) {
-    console.error("Google OAuth callback error:", err);
-    res.redirect(`${frontendBase}/?auth_error=failed`);
+  } catch (err: any) {
+    console.error("Google OAuth callback error:", err?.message ?? err);
+    const msg = encodeURIComponent(err?.message ?? "unknown error");
+    res.redirect(`${frontendBase}/?auth_error=failed&auth_error_msg=${msg}`);
   }
 });
 
