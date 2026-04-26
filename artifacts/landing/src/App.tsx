@@ -2528,12 +2528,31 @@ function Router() {
 function ClerkProviderWithRoutes() {
   const [, setLocation] = useLocation();
 
+  const clerkRouterPush = (to: string) => {
+    // Paths outside this artifact (e.g. /app/) must use full page navigation
+    if (to.startsWith("/app") || to.startsWith("http")) {
+      window.location.href = to;
+    } else {
+      setLocation(stripBase(to));
+    }
+  };
+
+  const clerkRouterReplace = (to: string) => {
+    if (to.startsWith("/app") || to.startsWith("http")) {
+      window.location.replace(to);
+    } else {
+      setLocation(stripBase(to), { replace: true });
+    }
+  };
+
   return (
     <ClerkProvider
       publishableKey={clerkPubKey}
       proxyUrl={clerkProxyUrl}
-      routerPush={(to) => setLocation(stripBase(to))}
-      routerReplace={(to) => setLocation(stripBase(to), { replace: true })}
+      afterSignInUrl="/app/"
+      afterSignUpUrl="/app/"
+      routerPush={clerkRouterPush}
+      routerReplace={clerkRouterReplace}
     >
       <LanguageProvider>
         <QueryClientProvider client={queryClient}>
