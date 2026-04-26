@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
-import { useAuth } from "@clerk/react";
+import { getStoredToken } from "@/App";
 
 const VAPID_PUBLIC_KEY = "BNFtL8Llx7d_UNrd74MJ1ja7bzLlln6qFdJYdJ3qf2I6PtXob2s5NP9FW79okpFGWWtBzzRJ1jzK5dWkEXDWIRw";
 
@@ -22,7 +22,6 @@ interface UsePushNotificationsResult {
 }
 
 export function usePushNotifications(): UsePushNotificationsResult {
-  const { isSignedIn, getToken } = useAuth();
   const [permission, setPermission] = useState<PushPermission>("default");
   const [isSubscribed, setIsSubscribed] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
@@ -48,7 +47,8 @@ export function usePushNotifications(): UsePushNotificationsResult {
   }, []);
 
   const subscribe = useCallback(async () => {
-    if (!swRegistration || !isSignedIn) return;
+    const token = getStoredToken();
+    if (!swRegistration || !token) return;
     setIsLoading(true);
     try {
       const perm = await Notification.requestPermission();
@@ -60,7 +60,6 @@ export function usePushNotifications(): UsePushNotificationsResult {
         applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY),
       });
 
-      const token = await getToken();
       await fetch(`${API_BASE}/api/push/subscribe`, {
         method: "POST",
         headers: {
@@ -75,17 +74,17 @@ export function usePushNotifications(): UsePushNotificationsResult {
     } finally {
       setIsLoading(false);
     }
-  }, [swRegistration, isSignedIn, getToken, API_BASE]);
+  }, [swRegistration]);
 
   const unsubscribe = useCallback(async () => {
-    if (!swRegistration || !isSignedIn) return;
+    const token = getStoredToken();
+    if (!swRegistration || !token) return;
     setIsLoading(true);
     try {
       const existingSub = await swRegistration.pushManager.getSubscription();
       if (existingSub) {
         const endpoint = existingSub.endpoint;
         await existingSub.unsubscribe();
-        const token = await getToken();
         await fetch(`${API_BASE}/api/push/subscribe`, {
           method: "DELETE",
           headers: {
@@ -101,12 +100,12 @@ export function usePushNotifications(): UsePushNotificationsResult {
     } finally {
       setIsLoading(false);
     }
-  }, [swRegistration, isSignedIn, getToken, API_BASE]);
+  }, [swRegistration]);
 
   const sendTestNotification = useCallback(async () => {
-    if (!isSignedIn) return;
+    const token = getStoredToken();
+    if (!token) return;
     try {
-      const token = await getToken();
       const res = await fetch(`${API_BASE}/api/push/test`, {
         method: "POST",
         headers: { Authorization: `Bearer ${token}` },
@@ -119,7 +118,7 @@ export function usePushNotifications(): UsePushNotificationsResult {
       console.error("[Push] Test failed:", err);
       throw err;
     }
-  }, [isSignedIn, getToken, API_BASE]);
+  }, []);
 
   return { permission, isSubscribed, isLoading, subscribe, unsubscribe, sendTestNotification };
 }

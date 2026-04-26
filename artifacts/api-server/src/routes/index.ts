@@ -10,9 +10,11 @@ import stripeRouter from "./stripe";
 import softOddsRouter from "./soft-odds";
 import pushRouter from "./push";
 import chatRouter from "./chat";
+import authRouter from "./auth";
 
 const router: IRouter = Router();
 
+router.use(authRouter);
 router.use(healthRouter);
 router.use(oddsRouter);
 router.use(sportsRouter);
