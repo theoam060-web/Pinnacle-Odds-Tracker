@@ -97,6 +97,40 @@ Express 5 API server.
 2. Run `pnpm --filter @workspace/scripts run seed-products` to create Silver + Gold products
 3. Register Stripe webhook in the Stripe dashboard pointing to `/api/stripe/webhook`
 
+---
+
+## Google OAuth Setup (Custom Branding on Consent Screen)
+
+By default Clerk uses its own managed Google credentials, which shows a generic name on the Google consent screen. To display "SharpTracker" branding, configure custom credentials:
+
+### Step 1 — Create a Google Cloud OAuth client
+
+1. Go to [console.cloud.google.com](https://console.cloud.google.com) → create (or select) a project named **SharpTracker**
+2. **APIs & Services → OAuth consent screen**
+   - User type: External
+   - App name: `SharpTracker`
+   - Support email: your email
+   - Save and publish the app (or leave in Testing with test users during development)
+3. **APIs & Services → Credentials → Create Credentials → OAuth 2.0 Client ID**
+   - Application type: **Web application**
+   - Name: `SharpTracker Web`
+   - Leave redirect URIs blank for now (fill in step 2)
+
+### Step 2 — Get redirect URIs from Replit Auth pane
+
+1. Open the **Auth pane** in the Replit workspace toolbar (lock icon)
+2. Go to **Configure → Google → Edit**
+3. Copy all **Authorized redirect URIs** listed (e.g. `https://accounts.clerk.dev/v1/oauth_callback`)
+4. Paste those URIs into your Google Cloud OAuth client → **Authorized redirect URIs** → Save
+
+### Step 3 — Enter custom credentials in Clerk
+
+1. Back in Auth pane → Google → **Custom credentials**
+2. Paste the **Client ID** and **Client Secret** from your Google Cloud OAuth client
+3. Save
+
+After this, users clicking "Continue with Google" will see the SharpTracker app name and branding on Google's consent screen instead of generic Clerk branding.
+
 ### `artifacts/landing` (`@workspace/landing`)
 
 SharpTracker marketing landing page.
