@@ -78,14 +78,14 @@ export function Layout({ children, notificationFilters }: LayoutProps) {
         style={{ background: "linear-gradient(180deg, #0d0e14 0%, #0a0b0f 100%)" }}>
 
         {/* Brand */}
-        <Link href="/" className="flex items-center gap-2.5 px-5 py-5 border-b border-border/30 hover:opacity-80 transition-opacity group">
+        <a href="/" className="flex items-center gap-2.5 px-5 py-5 border-b border-border/30 hover:opacity-80 transition-opacity group">
           <div className="w-7 h-7 rounded-lg bg-primary/15 border border-primary/30 flex items-center justify-center shrink-0 group-hover:bg-primary/20 transition-colors">
             <Activity className="h-4 w-4 text-primary" />
           </div>
           <span className="font-bold tracking-tight text-[15px] leading-tight">
             Sharp<span className="text-primary">Tracker</span>
           </span>
-        </Link>
+        </a>
 
         {/* Nav */}
         <nav className="flex flex-col gap-0.5 px-2 pt-4 pb-2">

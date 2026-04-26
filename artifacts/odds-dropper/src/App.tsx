@@ -248,12 +248,12 @@ function SubscriptionWall() {
   return (
     <div className="min-h-screen bg-[#080809] flex flex-col">
       <div className="flex items-center justify-between px-6 py-5 border-b border-white/5">
-        <div className="flex items-center gap-2">
+        <a href="/" className="flex items-center gap-2 hover:opacity-80 transition-opacity">
           <Activity className="w-5 h-5 text-cyan-400" />
           <span className="font-bold text-lg text-white tracking-tight">
             Sharp<span className="text-cyan-400">Tracker</span>
           </span>
-        </div>
+        </a>
         <button
           onClick={() => signOut()}
           className="text-xs font-mono text-white/30 hover:text-white/60 transition-colors"
