@@ -1,3 +1,4 @@
+import { ClerkProvider, useUser, useAuth, useClerk, useSignIn, AuthenticateWithRedirectCallback } from "@clerk/react";
 import { Switch, Route, Router as WouterRouter } from "wouter";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
@@ -14,47 +15,13 @@ import BetStatsPage from "@/pages/bet-stats";
 import AlertConfigurationsPage from "@/pages/alert-configurations";
 import TopMoversPage from "@/pages/top-movers";
 import MyBetsPage from "@/pages/my-bets";
-import React, { useEffect, useState, useCallback, createContext, useContext } from "react";
-import { Activity, ArrowRight, Loader2, CheckCircle2 } from "lucide-react";
+import React, { useEffect, useState, useCallback } from "react";
+import { Activity, ArrowRight, Loader2, CheckCircle2, ExternalLink } from "lucide-react";
 import { PlanContext, type PlanTier } from "@/lib/plan-context";
 
+const clerkPubKey = import.meta.env.VITE_CLERK_PUBLISHABLE_KEY as string;
+const clerkProxyUrl = import.meta.env.VITE_CLERK_PROXY_URL as string | undefined;
 const API_BASE = "";
-
-// ── Auth context ──────────────────────────────────────────────────────────────
-
-interface AuthCtx {
-  token: string | null;
-  userId: string | null;
-  email: string | null;
-  signOut: () => void;
-}
-
-const AuthContext = createContext<AuthCtx>({
-  token: null, userId: null, email: null, signOut: () => {},
-});
-
-export function useAppAuth() {
-  return useContext(AuthContext);
-}
-
-const TOKEN_KEY = "st_session_token";
-
-function parseJwt(token: string): { sub: string; email: string } | null {
-  try {
-    const base64 = token.split(".")[1].replace(/-/g, "+").replace(/_/g, "/");
-    return JSON.parse(atob(base64));
-  } catch {
-    return null;
-  }
-}
-
-// ── Helper: get token for API calls ──────────────────────────────────────────
-
-export function getStoredToken(): string | null {
-  return localStorage.getItem(TOKEN_KEY);
-}
-
-// ── Misc components ───────────────────────────────────────────────────────────
 
 function AppServices() {
   useAutoSettle();
@@ -93,11 +60,74 @@ function LoadingScreen({ label = "Laddar…" }: { label?: string }) {
   );
 }
 
-// ── Auth screen ───────────────────────────────────────────────────────────────
+const clerkAppearance = {
+  variables: {
+    colorPrimary: "#00e5ff",
+    colorBackground: "#111218",
+    colorText: "#ffffff",
+    colorTextSecondary: "rgba(255,255,255,0.65)",
+    colorInputBackground: "#1a1b22",
+    colorInputText: "#ffffff",
+    borderRadius: "0.75rem",
+    fontFamily: "JetBrains Mono, monospace",
+  },
+  elements: {
+    card: "shadow-none border border-white/10",
+    rootBox: "w-full",
+    headerTitle: { color: "#ffffff", opacity: 1 },
+    headerSubtitle: { color: "rgba(255,255,255,0.65)", opacity: 1 },
+    formFieldLabel: { color: "rgba(255,255,255,0.75)" },
+    formButtonPrimary: "bg-cyan-400 text-black hover:bg-cyan-300 font-mono",
+    dividerText: { color: "rgba(255,255,255,0.4)" },
+    dividerLine: { background: "rgba(255,255,255,0.1)" },
+    footerActionText: { color: "rgba(255,255,255,0.5)" },
+    footerActionLink: { color: "#00e5ff" },
+    identityPreviewText: { color: "#ffffff" },
+    formResendCodeLink: { color: "#00e5ff" },
+    socialButtonsBlockButton: "border border-white/25 bg-white/8 hover:bg-white/15 transition-colors",
+    socialButtonsBlockButtonText: { color: "#ffffff", fontWeight: "500" },
+    socialButtonsBlockButtonArrow: { color: "#ffffff" },
+    socialButtonsProviderIcon: { opacity: 1 },
+  },
+} as const;
 
-function AuthScreen({ error: authError, errorMsg }: { error?: string; errorMsg?: string }) {
-  const handleGoogleSignIn = () => {
-    window.location.href = `${API_BASE}/api/auth/google`;
+function AuthScreen() {
+  const base = import.meta.env.BASE_URL?.replace(/\/$/, "") ?? "";
+  const { signIn, isLoaded } = useSignIn();
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    let timer: ReturnType<typeof setTimeout> | null = null;
+    if (loading) {
+      timer = setTimeout(() => {
+        setLoading(false);
+        setError("Inloggningen tog för lång tid. Försök igen.");
+      }, 8000);
+    }
+    return () => { if (timer) clearTimeout(timer); };
+  }, [loading]);
+
+  const handleGoogleSignIn = async () => {
+    if (!signIn || !isLoaded) return;
+    setLoading(true);
+    setError(null);
+    try {
+      await signIn.authenticateWithRedirect({
+        strategy: "oauth_google",
+        redirectUrl: `${window.location.origin}${base}/sso-callback`,
+        redirectUrlComplete: `${window.location.origin}${base}/`,
+      });
+      setLoading(false);
+    } catch (err: unknown) {
+      setLoading(false);
+      const msg = err instanceof Error ? err.message : "";
+      if (msg.toLowerCase().includes("not enabled") || msg.toLowerCase().includes("oauth")) {
+        setError("Google-inloggning är inte aktiverad ännu. Kontakta support.");
+      } else {
+        setError("Inloggningen misslyckades. Försök igen.");
+      }
+    }
   };
 
   return (
@@ -118,28 +148,26 @@ function AuthScreen({ error: authError, errorMsg }: { error?: string; errorMsg?:
 
           <button
             onClick={handleGoogleSignIn}
-            className="w-full flex items-center justify-center gap-3 bg-white text-black font-medium py-3.5 rounded-xl hover:bg-white/90 active:scale-[.98] transition-all"
+            disabled={!isLoaded || loading}
+            className="w-full flex items-center justify-center gap-3 bg-white text-black font-medium py-3.5 rounded-xl hover:bg-white/90 active:scale-[.98] transition-all disabled:opacity-60 disabled:cursor-not-allowed"
           >
-            <svg viewBox="0 0 24 24" className="w-5 h-5 shrink-0">
-              <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
-              <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
-              <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
-              <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
-            </svg>
+            {loading ? (
+              <Loader2 className="w-5 h-5 animate-spin" />
+            ) : (
+              <svg viewBox="0 0 24 24" className="w-5 h-5 shrink-0">
+                <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
+                <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
+                <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
+                <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
+              </svg>
+            )}
             Continue with Google
           </button>
 
-          {authError && (
-            <div className="text-center text-sm text-red-400 space-y-1">
-              <p>
-                {authError === "google"
-                  ? "Google nekade inloggningen."
-                  : "Inloggningen misslyckades. Försök igen."}
-              </p>
-              {errorMsg && (
-                <p className="text-xs text-red-400/60 font-mono break-all">{errorMsg}</p>
-              )}
-            </div>
+          {error && (
+            <p className="text-center text-sm text-red-400">
+              {error}
+            </p>
           )}
 
           <p className="text-center text-xs text-white/25 leading-relaxed">
@@ -151,8 +179,6 @@ function AuthScreen({ error: authError, errorMsg }: { error?: string; errorMsg?:
   );
 }
 
-// ── Subscription wall ─────────────────────────────────────────────────────────
-
 interface Plan {
   id: string;
   name: string;
@@ -162,7 +188,8 @@ interface Plan {
 }
 
 function SubscriptionWall() {
-  const { token, signOut } = useAppAuth();
+  const { getToken } = useAuth();
+  const { signOut } = useClerk();
   const [plans, setPlans] = useState<Plan[]>([]);
   const [loadingPlans, setLoadingPlans] = useState(true);
   const [checkingOut, setCheckingOut] = useState<string | null>(null);
@@ -185,6 +212,7 @@ function SubscriptionWall() {
     async (priceId: string) => {
       setCheckingOut(priceId);
       try {
+        const token = await getToken();
         const res = await fetch(`${API_BASE}/api/stripe/checkout`, {
           method: "POST",
           headers: {
@@ -194,12 +222,14 @@ function SubscriptionWall() {
           body: JSON.stringify({ priceId, redirectAfter: "/app/" }),
         });
         const data = await res.json();
-        if (data.url) window.location.href = data.url;
+        if (data.url) {
+          window.location.href = data.url;
+        }
       } catch {
         setCheckingOut(null);
       }
     },
-    [token],
+    [getToken],
   );
 
   const PLAN_FEATURES: Record<string, string[]> = {
@@ -236,7 +266,7 @@ function SubscriptionWall() {
           </span>
         </div>
         <button
-          onClick={signOut}
+          onClick={() => signOut()}
           className="text-xs font-mono text-white/30 hover:text-white/60 transition-colors"
         >
           Logga ut
@@ -262,7 +292,7 @@ function SubscriptionWall() {
             </div>
           ) : (
             <div className="flex flex-col gap-4">
-              {plans.map((plan) => {
+              {plans.map((plan, i) => {
                 const planKey = plan.metadata?.plan ?? "";
                 const price = plan.prices?.[0];
                 const priceId = price?.id;
@@ -270,6 +300,7 @@ function SubscriptionWall() {
                 const features = PLAN_FEATURES[planKey] ?? [];
                 const isGold = planKey === "gold";
                 const isPlatinum = planKey === "platinum";
+                const isHighlighted = isGold || isPlatinum;
                 const isLoading = checkingOut === priceId;
 
                 return (
@@ -290,6 +321,7 @@ function SubscriptionWall() {
                         </span>
                       </div>
                     )}
+
                     <div className="flex items-start justify-between mb-4">
                       <div>
                         <h2 className="text-base font-bold text-white">{plan.name}</h2>
@@ -301,6 +333,7 @@ function SubscriptionWall() {
                         </div>
                       </div>
                     </div>
+
                     <ul className="space-y-2 mb-5">
                       {features.map((f) => (
                         <li key={f} className="flex items-center gap-2 text-sm text-white/70">
@@ -309,6 +342,7 @@ function SubscriptionWall() {
                         </li>
                       ))}
                     </ul>
+
                     <button
                       onClick={() => priceId && handleCheckout(priceId)}
                       disabled={!priceId || !!checkingOut}
@@ -334,6 +368,7 @@ function SubscriptionWall() {
               })}
             </div>
           )}
+
           <p className="text-center text-white/20 text-xs font-mono mt-6">
             Avbryt när som helst · Säker betalning via Stripe
           </p>
@@ -343,12 +378,11 @@ function SubscriptionWall() {
   );
 }
 
-// ── Subscription gate ─────────────────────────────────────────────────────────
-
 type SubStatus = "loading" | "active" | "none";
 
 function SubscriptionGate({ children }: { children: React.ReactNode }) {
-  const { token, email } = useAppAuth();
+  const { getToken } = useAuth();
+  const { user } = useUser();
   const [status, setStatus] = useState<SubStatus>("loading");
   const [planTier, setPlanTier] = useState<PlanTier>("none");
   const bypassAuth = import.meta.env.VITE_DEV_BYPASS_AUTH === "true";
@@ -356,10 +390,13 @@ function SubscriptionGate({ children }: { children: React.ReactNode }) {
     .split(",")
     .map((e: string) => e.trim())
     .filter(Boolean);
-  const isAdmin = adminEmails.length > 0 && adminEmails.includes(email ?? "");
+  const isAdmin =
+    adminEmails.length > 0 &&
+    adminEmails.includes(user?.primaryEmailAddress?.emailAddress ?? "");
 
   const check = useCallback(async () => {
     try {
+      const token = await getToken();
       const res = await fetch(`${API_BASE}/api/stripe/subscription`, {
         headers: { Authorization: `Bearer ${token}` },
       });
@@ -381,87 +418,58 @@ function SubscriptionGate({ children }: { children: React.ReactNode }) {
     } catch {
       setStatus("none");
     }
-  }, [token]);
+  }, [getToken]);
 
   useEffect(() => {
     if (bypassAuth || isAdmin) { setPlanTier("platinum"); setStatus("active"); return; }
 
+    // If Stripe redirected back with a session_id, fulfill the checkout first
+    // then check subscription. This avoids relying on webhook timing.
     const params = new URLSearchParams(window.location.search);
     const sessionId = params.get("session_id");
     if (sessionId) {
+      // Remove session_id from URL immediately so it doesn't re-trigger on refresh
       params.delete("session_id");
       const newSearch = params.toString();
       const newUrl = window.location.pathname + (newSearch ? `?${newSearch}` : "");
       window.history.replaceState({}, "", newUrl);
 
-      fetch(`${API_BASE}/api/stripe/checkout/session?session_id=${encodeURIComponent(sessionId)}`, {
-        headers: { Authorization: `Bearer ${token ?? ""}` },
-      })
-        .catch(() => {})
-        .finally(() => check());
+      getToken().then((token) => {
+        fetch(`${API_BASE}/api/stripe/checkout/session?session_id=${encodeURIComponent(sessionId)}`, {
+          headers: { Authorization: `Bearer ${token ?? ""}` },
+        })
+          .catch(() => {})
+          .finally(() => check());
+      });
       return;
     }
 
     check();
-  }, [bypassAuth, isAdmin, check, token]);
+  }, [bypassAuth, isAdmin, check, getToken]);
 
   if (status === "loading") return <LoadingScreen label="Kontrollerar prenumeration…" />;
   if (status === "none") return <SubscriptionWall />;
   return <PlanContext.Provider value={planTier}>{children}</PlanContext.Provider>;
 }
 
-// ── Auth provider (token storage) ─────────────────────────────────────────────
+function AuthGate({ children }: { children: React.ReactNode }) {
+  const bypassAuth = import.meta.env.VITE_DEV_BYPASS_AUTH === "true";
+  const { isLoaded, isSignedIn } = useUser();
+  const base = import.meta.env.BASE_URL?.replace(/\/$/, "") ?? "";
 
-function AuthProvider({ children }: { children: React.ReactNode }) {
-  const [token, setToken] = useState<string | null>(() => localStorage.getItem(TOKEN_KEY));
-  const [authError, setAuthError] = useState<string | undefined>();
-  const [authErrorMsg, setAuthErrorMsg] = useState<string | undefined>();
+  if (bypassAuth) return <>{children}</>;
 
-  useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    const sessionToken = params.get("session_token");
-    const authErr = params.get("auth_error");
-    const authErrMsg = params.get("auth_error_msg");
-
-    if (sessionToken) {
-      localStorage.setItem(TOKEN_KEY, sessionToken);
-      setToken(sessionToken);
-      params.delete("session_token");
-      const newSearch = params.toString();
-      window.history.replaceState({}, "", window.location.pathname + (newSearch ? `?${newSearch}` : ""));
-    }
-
-    if (authErr) {
-      setAuthError(authErr);
-      if (authErrMsg) setAuthErrorMsg(decodeURIComponent(authErrMsg));
-      params.delete("auth_error");
-      params.delete("auth_error_msg");
-      const newSearch = params.toString();
-      window.history.replaceState({}, "", window.location.pathname + (newSearch ? `?${newSearch}` : ""));
-    }
-  }, []);
-
-  const signOut = useCallback(() => {
-    localStorage.removeItem(TOKEN_KEY);
-    setToken(null);
-  }, []);
-
-  const parsed = token ? parseJwt(token) : null;
-  const userId = parsed?.sub ?? null;
-  const email = parsed?.email ?? null;
-
-  if (!token) {
-    return <AuthScreen error={authError} errorMsg={authErrorMsg} />;
+  // Handle Google OAuth callback before auth state is resolved
+  const path = window.location.pathname;
+  if (path === `${base}/sso-callback` || path.startsWith(`${base}/sso-callback/`)) {
+    return <AuthenticateWithRedirectCallback />;
   }
 
-  return (
-    <AuthContext.Provider value={{ token, userId, email, signOut }}>
-      {children}
-    </AuthContext.Provider>
-  );
-}
+  if (!isLoaded) return <LoadingScreen />;
+  if (!isSignedIn) return <AuthScreen />;
 
-// ── App shell ─────────────────────────────────────────────────────────────────
+  return <SubscriptionGate>{children}</SubscriptionGate>;
+}
 
 function AppContent() {
   return (
@@ -470,15 +478,13 @@ function AppContent() {
         <AlertStoreProvider>
           <BetStoreProvider>
             <TooltipProvider>
-              <AuthProvider>
-                <SubscriptionGate>
-                  <AppServices />
-                  <WouterRouter base={import.meta.env.BASE_URL?.replace(/\/$/, "") || ""}>
-                    <Router />
-                  </WouterRouter>
-                  <Toaster />
-                </SubscriptionGate>
-              </AuthProvider>
+              <AuthGate>
+                <AppServices />
+                <WouterRouter base={import.meta.env.BASE_URL?.replace(/\/$/, "") || ""}>
+                  <Router />
+                </WouterRouter>
+                <Toaster />
+              </AuthGate>
             </TooltipProvider>
           </BetStoreProvider>
         </AlertStoreProvider>
@@ -487,6 +493,46 @@ function AppContent() {
   );
 }
 
-export default function App() {
-  return <AppContent />;
+function App() {
+  if (!clerkPubKey) {
+    return <AppContent />;
+  }
+  return (
+    <ClerkProvider
+      publishableKey={clerkPubKey}
+      proxyUrl={clerkProxyUrl}
+      localization={{
+        signIn: {
+          start: {
+            title: "Sign in to SharpTracker",
+            subtitle: "Welcome back! Please sign in to continue",
+          },
+          emailCode: {
+            title: "Check your email",
+            subtitle: "to continue to SharpTracker",
+            formTitle: "Verification code",
+            formSubtitle: "Enter the verification code sent to your email address",
+            resendButton: "Didn't receive a code? Resend",
+          },
+        },
+        signUp: {
+          start: {
+            title: "Create your SharpTracker account",
+            subtitle: "Sign up to get started with SharpTracker",
+          },
+          emailCode: {
+            title: "Verify your email",
+            subtitle: "to continue to SharpTracker",
+            formTitle: "Verification code",
+            formSubtitle: "Enter the verification code sent to your email address",
+            resendButton: "Didn't receive a code? Resend",
+          },
+        },
+      }}
+    >
+      <AppContent />
+    </ClerkProvider>
+  );
 }
+
+export default App;

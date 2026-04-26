@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useAppAuth } from "@/App";
+import { useClerk, useAuth } from "@clerk/react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Label } from "@/components/ui/label";
@@ -24,12 +24,14 @@ const THEMES: { value: Theme; label: string; description: string }[] = [
 export function SettingsModal({ onClose }: Props) {
   const { settings, updateSettings } = useSettings();
   const { currency, setCurrency } = useBetStore();
-  const { signOut, token } = useAppAuth();
+  const { signOut } = useClerk();
+  const { getToken } = useAuth();
   const [portalLoading, setPortalLoading] = useState(false);
 
   async function handleManageSubscription() {
     setPortalLoading(true);
     try {
+      const token = await getToken();
       const res = await fetch("/api/stripe/portal", {
         method: "POST",
         headers: { Authorization: `Bearer ${token ?? ""}`, "Content-Type": "application/json" },
