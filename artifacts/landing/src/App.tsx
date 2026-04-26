@@ -620,15 +620,7 @@ function Navbar() {
             </div>
           </Show>
           <Show when="signed-in">
-            <div className="flex items-center gap-3">
-              <SubscriptionButton
-                closePanel={closePanel}
-                className="hidden md:inline-flex items-center gap-1.5 bg-primary/10 text-primary border border-primary/30 hover:bg-primary hover:text-primary-foreground px-4 py-2 rounded-md font-mono text-sm transition-all shadow-[0_0_15px_rgba(0,255,255,0.08)] hover:shadow-[0_0_20px_rgba(0,255,255,0.3)] disabled:opacity-50"
-              >
-                {tr.nav.subscriptions}
-              </SubscriptionButton>
-              <NavUserMenu closePanel={closePanel} />
-            </div>
+            <NavUserMenu closePanel={closePanel} />
           </Show>
         </div>
       </div>
