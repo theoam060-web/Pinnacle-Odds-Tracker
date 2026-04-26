@@ -246,14 +246,9 @@ function SubscriptionWall() {
         </button>
       </div>
 
-      <div className="flex-1 flex flex-col items-center justify-center px-4 py-10">
-        <div className="w-full max-w-lg">
-          <div className="text-center mb-8">
-            <h1 className="text-2xl font-bold text-white mb-2">Välj din plan</h1>
-            <p className="text-white/40 text-sm font-mono">
-              Välj ett abonnemang för att komma åt SharpTracker
-            </p>
-          </div>
+      <div className="flex-1 flex flex-col items-center justify-center px-4 py-12">
+        <div className="w-full max-w-5xl">
+          <h1 className="text-3xl font-bold text-white text-center mb-10 tracking-tight">Pricing</h1>
 
           {loadingPlans ? (
             <div className="flex justify-center py-12">
@@ -264,8 +259,8 @@ function SubscriptionWall() {
               Kunde inte ladda prenumerationer. Försök igen.
             </div>
           ) : (
-            <div className="flex flex-col gap-4">
-              {plans.map((plan, i) => {
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+              {plans.map((plan) => {
                 const planKey = plan.metadata?.plan ?? "";
                 const price = plan.prices?.[0];
                 const priceId = price?.id;
@@ -273,45 +268,40 @@ function SubscriptionWall() {
                 const features = PLAN_FEATURES[planKey] ?? [];
                 const isGold = planKey === "gold";
                 const isPlatinum = planKey === "platinum";
-                const isHighlighted = isGold || isPlatinum;
                 const isLoading = checkingOut === priceId;
+                const shortName = plan.name.replace("SharpTracker ", "");
 
                 return (
                   <div
                     key={plan.id}
-                    className={`relative rounded-2xl border p-5 transition-all ${
-                      isPlatinum
-                        ? "border-violet-400/40 bg-violet-400/5"
-                        : isGold
-                        ? "border-cyan-400/40 bg-cyan-400/5"
-                        : "border-white/10 bg-white/3"
+                    className={`relative flex flex-col rounded-2xl border p-6 transition-all ${
+                      isGold
+                        ? "border-blue-500/70 bg-[#0d1520]"
+                        : "border-white/10 bg-[#111218]"
                     }`}
                   >
                     {isGold && (
-                      <div className="absolute -top-3 left-1/2 -translate-x-1/2">
-                        <span className="bg-cyan-400 text-black text-[10px] font-bold font-mono px-3 py-0.5 rounded-full uppercase tracking-wider">
+                      <div className="absolute -top-3 right-5">
+                        <span className="bg-blue-600 text-white text-[10px] font-bold px-3 py-1 rounded-full uppercase tracking-wider">
                           Mest populär
                         </span>
                       </div>
                     )}
 
-                    <div className="flex items-start justify-between mb-4">
-                      <div>
-                        <h2 className="text-base font-bold text-white">{plan.name}</h2>
-                        <div className="flex items-baseline gap-1 mt-1">
-                          <span className={`text-2xl font-bold font-mono ${isPlatinum ? "text-violet-400" : isGold ? "text-cyan-400" : "text-white"}`}>
-                            {amount}
-                          </span>
-                          <span className="text-white/40 text-xs font-mono">/månad</span>
-                        </div>
+                    <div className="mb-5">
+                      <h2 className="text-lg font-bold text-white mb-1">{shortName}</h2>
+                      <p className="text-white/40 text-xs mb-3">Från</p>
+                      <div className="flex items-baseline gap-1">
+                        <span className="text-3xl font-bold text-white">{amount}</span>
+                        <span className="text-white/40 text-sm">/månad</span>
                       </div>
                     </div>
 
-                    <ul className="space-y-2 mb-5">
+                    <ul className="space-y-2.5 mb-6 flex-1">
                       {features.map((f) => (
-                        <li key={f} className="flex items-center gap-2 text-sm text-white/70">
-                          <CheckCircle2 className={`w-3.5 h-3.5 shrink-0 ${isPlatinum ? "text-violet-400" : isGold ? "text-cyan-400" : "text-white/40"}`} />
-                          {f}
+                        <li key={f} className="flex items-start gap-2.5 text-sm text-white/75">
+                          <span className="text-green-400 font-bold mt-0.5 shrink-0">✓</span>
+                          <span>{f}</span>
                         </li>
                       ))}
                     </ul>
@@ -319,21 +309,16 @@ function SubscriptionWall() {
                     <button
                       onClick={() => priceId && handleCheckout(priceId)}
                       disabled={!priceId || !!checkingOut}
-                      className={`w-full flex items-center justify-center gap-2 py-3 rounded-xl text-sm font-mono font-semibold transition-all disabled:opacity-50 ${
-                        isPlatinum
-                          ? "bg-violet-500 text-white hover:bg-violet-400"
-                          : isGold
-                          ? "bg-cyan-400 text-black hover:bg-cyan-300"
-                          : "bg-white/8 text-white hover:bg-white/12 border border-white/10"
+                      className={`w-full flex items-center justify-center gap-2 py-3 rounded-xl text-sm font-semibold transition-all disabled:opacity-50 ${
+                        isGold
+                          ? "bg-blue-600 text-white hover:bg-blue-500"
+                          : "bg-white/8 text-white hover:bg-white/14 border border-white/15"
                       }`}
                     >
                       {isLoading ? (
                         <Loader2 className="w-4 h-4 animate-spin" />
                       ) : (
-                        <>
-                          Välj {plan.name.replace("SharpTracker ", "")}
-                          <ArrowRight className="w-4 h-4" />
-                        </>
+                        <>Välj {shortName} <ArrowRight className="w-4 h-4" /></>
                       )}
                     </button>
                   </div>
@@ -342,7 +327,7 @@ function SubscriptionWall() {
             </div>
           )}
 
-          <p className="text-center text-white/20 text-xs font-mono mt-6">
+          <p className="text-center text-white/20 text-xs font-mono mt-8">
             Avbryt när som helst · Säker betalning via Stripe
           </p>
         </div>
