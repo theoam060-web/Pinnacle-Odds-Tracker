@@ -196,7 +196,7 @@ function SubscriptionWall() {
         });
         const data = await res.json();
         if (data.url) {
-          window.location.href = data.url;
+          (window.top || window).location.href = data.url;
         }
       } catch {
         setCheckingOut(null);

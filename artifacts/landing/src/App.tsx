@@ -389,7 +389,7 @@ async function openSubscriptionPortalOrWall(getToken: () => Promise<string | nul
     });
     if (res.ok) {
       const { url } = await res.json();
-      if (url) { window.location.href = url; return; }
+      if (url) { (window.top || window).location.href = url; return; }
     }
   } catch {}
   // Fallback: show the pricing page instead of the app wall
