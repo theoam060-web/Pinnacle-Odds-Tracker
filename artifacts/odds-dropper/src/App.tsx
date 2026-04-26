@@ -97,6 +97,17 @@ function AuthScreen() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  useEffect(() => {
+    let timer: ReturnType<typeof setTimeout> | null = null;
+    if (loading) {
+      timer = setTimeout(() => {
+        setLoading(false);
+        setError("Inloggningen tog för lång tid. Försök igen.");
+      }, 8000);
+    }
+    return () => { if (timer) clearTimeout(timer); };
+  }, [loading]);
+
   const handleGoogleSignIn = async () => {
     if (!signIn || !isLoaded) return;
     setLoading(true);
@@ -107,9 +118,15 @@ function AuthScreen() {
         redirectUrl: `${window.location.origin}${base}/sso-callback`,
         redirectUrlComplete: `${window.location.origin}${base}/`,
       });
-    } catch {
       setLoading(false);
-      setError("Inloggningen misslyckades. Försök igen.");
+    } catch (err: unknown) {
+      setLoading(false);
+      const msg = err instanceof Error ? err.message : "";
+      if (msg.toLowerCase().includes("not enabled") || msg.toLowerCase().includes("oauth")) {
+        setError("Google-inloggning är inte aktiverad ännu. Kontakta support.");
+      } else {
+        setError("Inloggningen misslyckades. Försök igen.");
+      }
     }
   };
 
