@@ -1,4 +1,5 @@
 import { useState, useMemo } from "react";
+import { useUpgradePortal } from "@/hooks/use-upgrade";
 import {
   XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
   ReferenceLine, BarChart, Bar, Cell,
@@ -148,6 +149,7 @@ export default function BetStatsPage() {
   const sym = getCurrencySymbol(currency);
   const tier = usePlan();
   const isPlatinum = tier === "platinum";
+  const { openPortal, loading: portalLoading } = useUpgradePortal();
   const [timeFilter, setTimeFilter] = useState<TimeFilter>("all");
   const [calendarMonth, setCalendarMonth] = useState<{ year: number; month: number }>(() => {
     const now = new Date();
@@ -373,12 +375,13 @@ export default function BetStatsPage() {
               Upgrade to access full performance analytics.
             </p>
           </div>
-          <a
-            href="/"
-            className="inline-flex items-center gap-2 bg-primary text-primary-foreground font-mono text-sm font-bold px-6 py-2.5 rounded-lg hover:bg-primary/90 transition-colors"
+          <button
+            onClick={openPortal}
+            disabled={portalLoading}
+            className="inline-flex items-center gap-2 bg-primary text-primary-foreground font-mono text-sm font-bold px-6 py-2.5 rounded-lg hover:bg-primary/90 transition-colors disabled:opacity-60"
           >
-            Upgrade Plan
-          </a>
+            {portalLoading ? "Loading…" : "Upgrade Plan"}
+          </button>
         </div>
       </Layout>
     );

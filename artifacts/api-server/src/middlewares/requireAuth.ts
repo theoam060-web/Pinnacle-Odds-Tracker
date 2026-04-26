@@ -3,6 +3,7 @@ import type { Request, Response, NextFunction } from "express";
 
 export interface AuthRequest extends Request {
   userId: string;
+  userEmail?: string;
 }
 
 export async function requireAuth(
@@ -29,6 +30,9 @@ export async function requireAuth(
     }
 
     (req as AuthRequest).userId = payload.sub;
+    // Extract email from JWT claims (present if Clerk is configured to include it)
+    const email = (payload as any).email as string | undefined;
+    if (email) (req as AuthRequest).userEmail = email;
     next();
   } catch {
     res.status(401).json({ error: "Unauthorized" });

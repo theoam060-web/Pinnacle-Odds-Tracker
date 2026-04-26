@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useUpgradePortal } from "@/hooks/use-upgrade";
 import { Layout } from "@/components/layout";
 import { useBetStore, CURRENCIES, getCurrencySymbol, calcCLV, calcEV, BetResult, LoggedBet } from "@/lib/bet-store";
 import { useSettings } from "@/lib/settings-context";
@@ -107,6 +108,7 @@ export default function BetTrackerPage() {
   const [timeFilter, setTimeFilter] = useState<TimeFilter>("all");
   const [editBet, setEditBet] = useState<LoggedBet | null>(null);
   const tier = usePlan();
+  const { openPortal, loading: portalLoading } = useUpgradePortal();
 
   const filteredBets = filterByTime(bets, timeFilter);
 
@@ -125,12 +127,13 @@ export default function BetTrackerPage() {
               Upgrade to start tracking your bets and analyzing performance.
             </p>
           </div>
-          <a
-            href="/"
-            className="inline-flex items-center gap-2 bg-primary text-primary-foreground font-mono text-sm font-bold px-6 py-2.5 rounded-lg hover:bg-primary/90 transition-colors"
+          <button
+            onClick={openPortal}
+            disabled={portalLoading}
+            className="inline-flex items-center gap-2 bg-primary text-primary-foreground font-mono text-sm font-bold px-6 py-2.5 rounded-lg hover:bg-primary/90 transition-colors disabled:opacity-60"
           >
-            Upgrade Plan
-          </a>
+            {portalLoading ? "Loading…" : "Upgrade Plan"}
+          </button>
         </div>
       </Layout>
     );

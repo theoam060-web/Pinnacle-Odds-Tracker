@@ -42,14 +42,17 @@ router.post('/stripe/checkout', requireAuth, async (req: any, res) => {
   const { priceId, redirectAfter } = req.body;
   if (!priceId) return res.status(400).json({ error: 'priceId required' });
   try {
+    const userEmail: string | undefined = req.userEmail;
     let user = await storage.getUser(req.userId);
     if (!user) {
-      user = await storage.createUser(req.userId, undefined);
+      user = await storage.createUser(req.userId, userEmail);
     }
 
     let customerId = user?.stripeCustomerId;
     if (!customerId) {
-      const customer = await stripeService.createCustomer(user?.email ?? req.userId, req.userId);
+      // Use stored email, fallback to JWT email — never use userId as email
+      const emailForStripe = user?.email ?? userEmail;
+      const customer = await stripeService.createCustomer(emailForStripe, req.userId);
       await storage.updateUserStripeInfo(req.userId, { stripeCustomerId: customer.id });
       customerId = customer.id;
     }
@@ -69,7 +72,9 @@ router.post('/stripe/checkout', requireAuth, async (req: any, res) => {
 
     res.json({ url: session.url });
   } catch (err: any) {
-    res.status(500).json({ error: err.message ?? 'Failed to create checkout session' });
+    const detail = err?.raw?.message ?? err?.message ?? 'Failed to create checkout session';
+    console.error('[stripe/checkout] error:', detail, err?.raw ?? err);
+    res.status(500).json({ error: detail });
   }
 });
 
@@ -92,7 +97,7 @@ router.post('/stripe/portal', requireAuth, async (req: any, res) => {
 
     const host = req.headers.host || '';
     const proto = req.headers['x-forwarded-proto'] || 'https';
-    const returnUrl = `${proto}://${host}/`;
+    const returnUrl = `${proto}://${host}/app/`;
 
     const session = await stripeService.createCustomerPortalSession(user.stripeCustomerId, returnUrl);
     res.json({ url: session.url });
