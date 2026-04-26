@@ -1,4 +1,4 @@
-import { ClerkProvider, useUser, useAuth, useClerk, useSignIn, AuthenticateWithRedirectCallback } from "@clerk/react";
+import { ClerkProvider, useUser, useAuth, useClerk, SignIn, SignUp } from "@clerk/react";
 import { Switch, Route, Router as WouterRouter } from "wouter";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
@@ -16,7 +16,7 @@ import AlertConfigurationsPage from "@/pages/alert-configurations";
 import TopMoversPage from "@/pages/top-movers";
 import MyBetsPage from "@/pages/my-bets";
 import React, { useEffect, useState, useCallback } from "react";
-import { Activity, ArrowRight, Loader2, CheckCircle2, ExternalLink } from "lucide-react";
+import { Activity, LogIn, UserPlus, ArrowRight, Loader2, CheckCircle2, ExternalLink } from "lucide-react";
 import { PlanContext, type PlanTier } from "@/lib/plan-context";
 
 const clerkPubKey = import.meta.env.VITE_CLERK_PUBLISHABLE_KEY as string;
@@ -92,43 +92,8 @@ const clerkAppearance = {
 } as const;
 
 function AuthScreen() {
+  const [mode, setMode] = useState<"sign-in" | "sign-up">("sign-in");
   const base = import.meta.env.BASE_URL?.replace(/\/$/, "") ?? "";
-  const { signIn, isLoaded } = useSignIn();
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-
-  useEffect(() => {
-    let timer: ReturnType<typeof setTimeout> | null = null;
-    if (loading) {
-      timer = setTimeout(() => {
-        setLoading(false);
-        setError("Inloggningen tog för lång tid. Försök igen.");
-      }, 8000);
-    }
-    return () => { if (timer) clearTimeout(timer); };
-  }, [loading]);
-
-  const handleGoogleSignIn = async () => {
-    if (!signIn || !isLoaded) return;
-    setLoading(true);
-    setError(null);
-    try {
-      await signIn.authenticateWithRedirect({
-        strategy: "oauth_google",
-        redirectUrl: `${window.location.origin}${base}/sso-callback`,
-        redirectUrlComplete: `${window.location.origin}${base}/`,
-      });
-      setLoading(false);
-    } catch (err: unknown) {
-      setLoading(false);
-      const msg = err instanceof Error ? err.message : "";
-      if (msg.toLowerCase().includes("not enabled") || msg.toLowerCase().includes("oauth")) {
-        setError("Google-inloggning är inte aktiverad ännu. Kontakta support.");
-      } else {
-        setError("Inloggningen misslyckades. Försök igen.");
-      }
-    }
-  };
 
   return (
     <div className="min-h-screen bg-[#0a0b0f] flex flex-col">
@@ -140,39 +105,47 @@ function AuthScreen() {
       </div>
 
       <div className="flex-1 flex flex-col items-center justify-center px-4 py-8">
-        <div className="w-full max-w-[360px] space-y-6">
-          <div className="text-center space-y-1">
-            <h1 className="text-2xl font-bold text-white tracking-tight">Sign in to SharpTracker</h1>
-            <p className="text-sm text-white/50">Continue with your Google account to get started</p>
+        <div className="w-full max-w-[400px]">
+          <div className="flex rounded-xl overflow-hidden border border-white/20 mb-6">
+            <button
+              onClick={() => setMode("sign-in")}
+              className={`flex-1 flex items-center justify-center gap-2 py-3 text-sm font-mono transition-colors border-r border-white/20 ${
+                mode === "sign-in"
+                  ? "bg-cyan-400/15 text-cyan-400"
+                  : "bg-white/5 text-white/80 hover:text-white hover:bg-white/10"
+              }`}
+            >
+              <LogIn className="w-3.5 h-3.5" />
+              Logga in
+            </button>
+            <button
+              onClick={() => setMode("sign-up")}
+              className={`flex-1 flex items-center justify-center gap-2 py-3 text-sm font-mono transition-colors ${
+                mode === "sign-up"
+                  ? "bg-cyan-400/15 text-cyan-400"
+                  : "bg-white/5 text-white/80 hover:text-white hover:bg-white/10"
+              }`}
+            >
+              <UserPlus className="w-3.5 h-3.5" />
+              Skapa konto
+            </button>
           </div>
 
-          <button
-            onClick={handleGoogleSignIn}
-            disabled={!isLoaded || loading}
-            className="w-full flex items-center justify-center gap-3 bg-white text-black font-medium py-3.5 rounded-xl hover:bg-white/90 active:scale-[.98] transition-all disabled:opacity-60 disabled:cursor-not-allowed"
-          >
-            {loading ? (
-              <Loader2 className="w-5 h-5 animate-spin" />
-            ) : (
-              <svg viewBox="0 0 24 24" className="w-5 h-5 shrink-0">
-                <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
-                <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
-                <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
-                <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
-              </svg>
-            )}
-            Continue with Google
-          </button>
-
-          {error && (
-            <p className="text-center text-sm text-red-400">
-              {error}
-            </p>
+          {mode === "sign-in" ? (
+            <SignIn
+              routing="hash"
+              afterSignInUrl={`${base}/`}
+              signUpUrl={undefined}
+              appearance={clerkAppearance}
+            />
+          ) : (
+            <SignUp
+              routing="hash"
+              afterSignUpUrl={`${base}/`}
+              signInUrl={undefined}
+              appearance={clerkAppearance}
+            />
           )}
-
-          <p className="text-center text-xs text-white/25 leading-relaxed">
-            By continuing you agree to SharpTracker's Terms of Service and Privacy Policy.
-          </p>
         </div>
       </div>
     </div>
@@ -455,16 +428,8 @@ function SubscriptionGate({ children }: { children: React.ReactNode }) {
 function AuthGate({ children }: { children: React.ReactNode }) {
   const bypassAuth = import.meta.env.VITE_DEV_BYPASS_AUTH === "true";
   const { isLoaded, isSignedIn } = useUser();
-  const base = import.meta.env.BASE_URL?.replace(/\/$/, "") ?? "";
 
   if (bypassAuth) return <>{children}</>;
-
-  // Handle Google OAuth callback before auth state is resolved
-  const path = window.location.pathname;
-  if (path === `${base}/sso-callback` || path.startsWith(`${base}/sso-callback/`)) {
-    return <AuthenticateWithRedirectCallback />;
-  }
-
   if (!isLoaded) return <LoadingScreen />;
   if (!isSignedIn) return <AuthScreen />;
 
