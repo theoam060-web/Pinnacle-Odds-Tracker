@@ -620,7 +620,6 @@ function Navbar() {
         <div className="flex items-center gap-3">
           <LangDropdown />
           <Show when="signed-out">
-            <button onClick={() => { closePanel(); window.location.href = "/app/"; }} className="hidden md:block text-sm font-mono text-foreground hover:text-primary transition-colors" data-testid="btn-login">{tr.nav.login}</button>
             <div className="flex flex-col items-center gap-0.5">
               <span className="text-[11px] font-bold text-green-400 leading-none tracking-wide">{tr.nav.trialBadge}</span>
               <button onClick={() => { closePanel(); window.location.href = "/app/"; }} className="flex items-center gap-2 bg-primary/10 text-primary border border-primary/30 hover:bg-primary hover:text-primary-foreground px-5 py-2 rounded-md font-mono text-sm transition-all shadow-[0_0_15px_rgba(0,255,255,0.1)] hover:shadow-[0_0_20px_rgba(0,255,255,0.3)]" data-testid="btn-get-access">

@@ -28,7 +28,6 @@ export interface Translations {
     why: string;
     pricing: string;
     faq: string;
-    login: string;
     signup: string;
     trialBadge: string;
     subscriptions: string;
@@ -59,7 +58,6 @@ const T: Record<LangCode, Translations> = {
       why: "Why SharpTracker?",
       pricing: "Pricing",
       faq: "FAQ",
-      login: "Log In",
       signup: "Sign Up",
       trialBadge: "14 days free",
       subscriptions: "Subscriptions",
@@ -88,7 +86,6 @@ const T: Record<LangCode, Translations> = {
       why: "Varför SharpTracker?",
       pricing: "Priser",
       faq: "FAQ",
-      login: "Logga in",
       signup: "Kom igång",
       trialBadge: "14 dagar gratis",
       subscriptions: "Prenumerationer",
@@ -117,7 +114,6 @@ const T: Record<LangCode, Translations> = {
       why: "Hvorfor SharpTracker?",
       pricing: "Priser",
       faq: "FAQ",
-      login: "Logg inn",
       signup: "Kom i gang",
       trialBadge: "14 dager gratis",
       subscriptions: "Abonnementer",
@@ -146,7 +142,6 @@ const T: Record<LangCode, Translations> = {
       why: "Hvorfor SharpTracker?",
       pricing: "Priser",
       faq: "FAQ",
-      login: "Log ind",
       signup: "Kom i gang",
       trialBadge: "14 dage gratis",
       subscriptions: "Abonnementer",
@@ -175,7 +170,6 @@ const T: Record<LangCode, Translations> = {
       why: "Warum SharpTracker?",
       pricing: "Preise",
       faq: "FAQ",
-      login: "Anmelden",
       signup: "Loslegen",
       trialBadge: "14 Tage kostenlos",
       subscriptions: "Abonnements",
@@ -204,7 +198,6 @@ const T: Record<LangCode, Translations> = {
       why: "Pourquoi SharpTracker ?",
       pricing: "Tarifs",
       faq: "FAQ",
-      login: "Connexion",
       signup: "Commencer",
       trialBadge: "14 jours gratuits",
       subscriptions: "Abonnements",
@@ -233,7 +226,6 @@ const T: Record<LangCode, Translations> = {
       why: "¿Por qué SharpTracker?",
       pricing: "Precios",
       faq: "FAQ",
-      login: "Iniciar sesión",
       signup: "Empezar",
       trialBadge: "14 días gratis",
       subscriptions: "Suscripciones",
@@ -262,7 +254,6 @@ const T: Record<LangCode, Translations> = {
       why: "Perché SharpTracker?",
       pricing: "Prezzi",
       faq: "FAQ",
-      login: "Accedi",
       signup: "Inizia",
       trialBadge: "14 giorni gratis",
       subscriptions: "Abbonamenti",
@@ -291,7 +282,6 @@ const T: Record<LangCode, Translations> = {
       why: "なぜSharpTracker？",
       pricing: "料金",
       faq: "よくある質問",
-      login: "ログイン",
       signup: "始める",
       trialBadge: "14日間無料",
       subscriptions: "サブスクリプション",
@@ -320,7 +310,6 @@ const T: Record<LangCode, Translations> = {
       why: "Dlaczego SharpTracker?",
       pricing: "Cennik",
       faq: "FAQ",
-      login: "Zaloguj się",
       signup: "Zacznij",
       trialBadge: "14 dni za darmo",
       subscriptions: "Subskrypcje",
@@ -349,7 +338,6 @@ const T: Record<LangCode, Translations> = {
       why: "Por que SharpTracker?",
       pricing: "Preços",
       faq: "FAQ",
-      login: "Entrar",
       signup: "Começar",
       trialBadge: "14 dias grátis",
       subscriptions: "Assinaturas",
