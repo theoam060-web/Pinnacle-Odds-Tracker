@@ -279,7 +279,6 @@ function SubscriptionWall() {
               {plans.map((plan) => {
                 const planKey = plan.metadata?.plan ?? "";
                 const price = plan.prices?.[0];
-                const priceId = price?.id;
                 const features = PLAN_FEATURES[planKey] ?? [];
                 const colors = PLAN_COLORS[planKey] ?? PLAN_COLORS.silver;
                 const isGold = planKey === "gold";
