@@ -131,6 +131,25 @@ By default Clerk uses its own managed Google credentials, which shows a generic 
 
 After this, users clicking "Continue with Google" will see the SharpTracker app name and branding on Google's consent screen instead of generic Clerk branding.
 
+### Google Sign-In Verification (Task #36)
+
+End-to-end automated tests confirmed the following in the **development** environment:
+
+| Check | Result |
+|-------|--------|
+| `/app/` shows auth screen when not signed in | ✅ Pass |
+| Auth screen renders "Sign in to SharpTracker" heading | ✅ Pass |
+| "Continue with Google" button visible with Google logo | ✅ Pass |
+| `/app/sso-callback` renders without a hard crash | ✅ Pass |
+| Authenticated user bypasses auth screen and reaches main app | ✅ Pass |
+
+**Auth flow (code-level):**
+- `AuthScreen` uses `signIn.authenticateWithRedirect({ strategy: "oauth_google", redirectUrl: origin+"/app/sso-callback", redirectUrlComplete: origin+"/app/" })`
+- `AuthGate` intercepts `/app/sso-callback` and renders `<AuthenticateWithRedirectCallback />` (Clerk component) before auth state resolves
+- After callback completes, Clerk sets the session and redirects to `/app/`
+
+**Note:** The production Clerk environment must be tested manually (see Task #39). Automated tests cannot drive Google's external OAuth consent screen.
+
 ### `artifacts/landing` (`@workspace/landing`)
 
 SharpTracker marketing landing page.
