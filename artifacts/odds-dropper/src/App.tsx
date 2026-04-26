@@ -205,32 +205,48 @@ function SubscriptionWall() {
     [getToken],
   );
 
-  const PLAN_FEATURES: Record<string, string[]> = {
+  const PLAN_FEATURES: Record<string, { text: string; bold?: boolean }[]> = {
     silver: [
-      "Realtids-odds drop-alertar",
-      "3 sporter & 3 marknader var",
-      "Bet Size Calculator",
-      "Bookmaker-jämförelse",
-      "Telegram-grupp (enbart members)",
+      { text: "Dropping odds alerts", bold: true },
+      { text: "3 alert configurations" },
+      { text: "Bet size calculator" },
+      { text: "3 sports" },
+      { text: "3 markets per sport" },
+      { text: "Only members Telegram group" },
     ],
     gold: [
-      "Allt i Silver",
-      "Bet Tracker & Bet Stats",
-      "Alla sporter & alla marknader",
-      "Live EV & Closing EV",
-      "9 alert-konfigurationer",
+      { text: "Everything in Silver" },
+      { text: "9 alert configurations", bold: true },
+      { text: "ALL sports — every league covered", bold: true },
+      { text: "ALL markets", bold: true },
+      { text: "Bet Tracker & Bet Stats", bold: true },
+      { text: "Odds movement history" },
+      { text: "Live EV in Bet Tracker" },
+      { text: "Closing EV in Bet Tracker" },
     ],
     platinum: [
-      "Allt i Gold",
-      "Push-notiser i appen",
-      "20 alert-konfigurationer",
-      "Current CLV & Current CV",
-      "More coming…",
+      { text: "Everything in Gold" },
+      { text: "20 alert configurations", bold: true },
+      { text: "Bookmaker comparison" },
+      { text: "Push notifications on app", bold: true },
+      { text: "Current CLV & Current CV" },
     ],
   };
 
+  const PLAN_COLORS: Record<string, { name: string; border: string; bg: string; text: string; btn: string }> = {
+    silver:   { name: "text-white",        border: "border-white/15",      bg: "bg-[#0e0f14]", text: "text-white",        btn: "bg-transparent border border-white/20 text-white hover:bg-white/8" },
+    gold:     { name: "text-cyan-400",     border: "border-cyan-400/60",   bg: "bg-[#080f14]", text: "text-cyan-400",     btn: "bg-cyan-400 text-black hover:bg-cyan-300" },
+    platinum: { name: "text-violet-400",   border: "border-violet-500/50", bg: "bg-[#0c0814]", text: "text-violet-400",   btn: "bg-violet-600 text-white hover:bg-violet-500" },
+  };
+
+  function formatPrice(unitAmount: number) {
+    const total = (unitAmount / 100).toFixed(2);
+    const [intPart, decPart] = total.split(".");
+    return { int: `€${intPart}`, dec: `.${decPart}` };
+  }
+
   return (
-    <div className="min-h-screen bg-[#0a0b0f] flex flex-col">
+    <div className="min-h-screen bg-[#080809] flex flex-col">
       <div className="flex items-center justify-between px-6 py-5 border-b border-white/5">
         <div className="flex items-center gap-2">
           <Activity className="w-5 h-5 text-cyan-400" />
@@ -246,9 +262,9 @@ function SubscriptionWall() {
         </button>
       </div>
 
-      <div className="flex-1 flex flex-col items-center justify-center px-4 py-12">
+      <div className="flex-1 flex flex-col items-center justify-center px-4 py-14">
         <div className="w-full max-w-5xl">
-          <h1 className="text-3xl font-bold text-white text-center mb-10 tracking-tight">Pricing</h1>
+          <h1 className="text-5xl font-extrabold text-white text-center mb-12 tracking-tight">Pricing</h1>
 
           {loadingPlans ? (
             <div className="flex justify-center py-12">
@@ -259,49 +275,54 @@ function SubscriptionWall() {
               Kunde inte ladda prenumerationer. Försök igen.
             </div>
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-5 items-start">
               {plans.map((plan) => {
                 const planKey = plan.metadata?.plan ?? "";
                 const price = plan.prices?.[0];
                 const priceId = price?.id;
-                const amount = price ? `€${(price.unit_amount / 100).toFixed(2)}` : "—";
                 const features = PLAN_FEATURES[planKey] ?? [];
+                const colors = PLAN_COLORS[planKey] ?? PLAN_COLORS.silver;
                 const isGold = planKey === "gold";
-                const isPlatinum = planKey === "platinum";
                 const isLoading = checkingOut === priceId;
                 const shortName = plan.name.replace("SharpTracker ", "");
+                const { int: priceInt, dec: priceDec } = price
+                  ? formatPrice(price.unit_amount)
+                  : { int: "—", dec: "" };
 
                 return (
                   <div
                     key={plan.id}
-                    className={`relative flex flex-col rounded-2xl border p-6 transition-all ${
-                      isGold
-                        ? "border-blue-500/70 bg-[#0d1520]"
-                        : "border-white/10 bg-[#111218]"
-                    }`}
+                    className={`relative flex flex-col rounded-2xl border p-6 transition-all ${colors.border} ${colors.bg}`}
                   >
                     {isGold && (
-                      <div className="absolute -top-3 right-5">
-                        <span className="bg-blue-600 text-white text-[10px] font-bold px-3 py-1 rounded-full uppercase tracking-wider">
-                          Mest populär
+                      <div className="absolute -top-4 left-1/2 -translate-x-1/2 whitespace-nowrap">
+                        <span className="flex items-center gap-1.5 bg-cyan-400 text-black text-[10px] font-bold px-4 py-1.5 rounded-full uppercase tracking-widest">
+                          <span>⭐</span> Most Popular
                         </span>
                       </div>
                     )}
 
-                    <div className="mb-5">
-                      <h2 className="text-lg font-bold text-white mb-1">{shortName}</h2>
-                      <p className="text-white/40 text-xs mb-3">Från</p>
-                      <div className="flex items-baseline gap-1">
-                        <span className="text-3xl font-bold text-white">{amount}</span>
-                        <span className="text-white/40 text-sm">/månad</span>
-                      </div>
+                    <div className={`text-2xl font-bold mb-1 mt-2 ${colors.name}`}>{shortName}</div>
+
+                    <div className="flex items-end gap-0.5 mt-2 mb-1">
+                      <span className="text-5xl font-extrabold text-white leading-none">{priceInt}</span>
+                      <span className="text-2xl font-bold text-white/70 mb-1">{priceDec}</span>
+                    </div>
+                    <p className="text-white/30 text-xs uppercase tracking-widest mb-4">per month</p>
+
+                    <div className="mb-4">
+                      <p className="text-[10px] font-bold text-white/30 uppercase tracking-widest mb-2">Bookmaker</p>
+                      <span className="inline-flex items-center gap-1.5 bg-white/8 border border-white/10 rounded-lg px-3 py-1 text-xs text-white font-semibold">
+                        <span className="w-4 h-4 rounded bg-blue-600 flex items-center justify-center text-[9px] font-black text-white">P</span>
+                        Pinnacle
+                      </span>
                     </div>
 
                     <ul className="space-y-2.5 mb-6 flex-1">
                       {features.map((f) => (
-                        <li key={f} className="flex items-start gap-2.5 text-sm text-white/75">
-                          <span className="text-green-400 font-bold mt-0.5 shrink-0">✓</span>
-                          <span>{f}</span>
+                        <li key={f.text} className="flex items-start gap-2.5 text-sm">
+                          <span className="text-cyan-400 font-bold mt-0.5 shrink-0">✓</span>
+                          <span className={f.bold ? "font-bold text-white" : "text-white/65"}>{f.text}</span>
                         </li>
                       ))}
                     </ul>
@@ -309,17 +330,9 @@ function SubscriptionWall() {
                     <button
                       onClick={() => priceId && handleCheckout(priceId)}
                       disabled={!priceId || !!checkingOut}
-                      className={`w-full flex items-center justify-center gap-2 py-3 rounded-xl text-sm font-semibold transition-all disabled:opacity-50 ${
-                        isGold
-                          ? "bg-blue-600 text-white hover:bg-blue-500"
-                          : "bg-white/8 text-white hover:bg-white/14 border border-white/15"
-                      }`}
+                      className={`w-full flex items-center justify-center gap-2 py-3.5 rounded-xl text-sm font-bold transition-all disabled:opacity-50 ${colors.btn}`}
                     >
-                      {isLoading ? (
-                        <Loader2 className="w-4 h-4 animate-spin" />
-                      ) : (
-                        <>Välj {shortName} <ArrowRight className="w-4 h-4" /></>
-                      )}
+                      {isLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : "Get Started"}
                     </button>
                   </div>
                 );
@@ -327,7 +340,7 @@ function SubscriptionWall() {
             </div>
           )}
 
-          <p className="text-center text-white/20 text-xs font-mono mt-8">
+          <p className="text-center text-white/20 text-xs mt-8">
             Avbryt när som helst · Säker betalning via Stripe
           </p>
         </div>
