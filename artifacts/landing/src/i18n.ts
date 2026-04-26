@@ -42,7 +42,6 @@ export interface Translations {
     stat2: string;
     stat3: string;
     cta: string;
-    ctaSub: string;
   };
   mobile: {
     badge: string;
@@ -72,7 +71,6 @@ const T: Record<LangCode, Translations> = {
       stat2: "From the moment a line moves to the moment you get alerted",
       stat3: "Sharp odds drops tracked and logged every single day",
       cta: "Get access",
-      ctaSub: "See how it works",
     },
     mobile: {
       badge: "Mobile App",
@@ -100,7 +98,6 @@ const T: Record<LangCode, Translations> = {
       stat2: "Från att kursen rör sig tills du får din avisering",
       stat3: "Skarpa oddsrörelser spårade och loggade varje dag",
       cta: "Kom igång",
-      ctaSub: "Se hur det fungerar",
     },
     mobile: {
       badge: "Mobilapp",
@@ -128,7 +125,6 @@ const T: Record<LangCode, Translations> = {
       stat2: "Fra linjen beveger seg til du mottar varselet",
       stat3: "Skarpe oddsfall sporet og logget hver eneste dag",
       cta: "Kom i gang",
-      ctaSub: "Se hvordan det fungerer",
     },
     mobile: {
       badge: "Mobilapp",
@@ -156,7 +152,6 @@ const T: Record<LangCode, Translations> = {
       stat2: "Fra linjen bevæger sig til du modtager advarslen",
       stat3: "Skarpe oddsanfald sporet og logget hver eneste dag",
       cta: "Kom i gang",
-      ctaSub: "Se hvordan det virker",
     },
     mobile: {
       badge: "Mobilapp",
@@ -184,7 +179,6 @@ const T: Record<LangCode, Translations> = {
       stat2: "Vom Zeitpunkt der Linienveränderung bis zur Benachrichtigung",
       stat3: "Scharfe Quotenstürze täglich verfolgt und protokolliert",
       cta: "Zugang erhalten",
-      ctaSub: "Wie es funktioniert",
     },
     mobile: {
       badge: "Mobile App",
@@ -212,7 +206,6 @@ const T: Record<LangCode, Translations> = {
       stat2: "Entre le moment où la cote bouge et celui où vous recevez l'alerte",
       stat3: "Chutes de cotes sharps suivies et enregistrées chaque jour",
       cta: "Accéder",
-      ctaSub: "Voir comment ça marche",
     },
     mobile: {
       badge: "Application mobile",
@@ -240,7 +233,6 @@ const T: Record<LangCode, Translations> = {
       stat2: "Desde que la línea se mueve hasta que recibes la alerta",
       stat3: "Caídas de cuotas sharps rastreadas y registradas cada día",
       cta: "Obtener acceso",
-      ctaSub: "Ver cómo funciona",
     },
     mobile: {
       badge: "App móvil",
@@ -268,7 +260,6 @@ const T: Record<LangCode, Translations> = {
       stat2: "Dal momento in cui la quota si muove a quando ricevi l'avviso",
       stat3: "Cali di quote sharp tracciati e registrati ogni giorno",
       cta: "Ottieni accesso",
-      ctaSub: "Guarda come funziona",
     },
     mobile: {
       badge: "App mobile",
@@ -296,7 +287,6 @@ const T: Record<LangCode, Translations> = {
       stat2: "ラインが動いてからアラートを受け取るまでの時間",
       stat3: "毎日追跡・記録されるシャープなオッズ変動数",
       cta: "アクセスする",
-      ctaSub: "仕組みを見る",
     },
     mobile: {
       badge: "モバイルアプリ",
@@ -324,7 +314,6 @@ const T: Record<LangCode, Translations> = {
       stat2: "Od ruchu linii do momentu otrzymania powiadomienia",
       stat3: "Ostre spadki kursów śledzone i rejestrowane każdego dnia",
       cta: "Uzyskaj dostęp",
-      ctaSub: "Zobacz jak to działa",
     },
     mobile: {
       badge: "Aplikacja mobilna",
@@ -352,7 +341,6 @@ const T: Record<LangCode, Translations> = {
       stat2: "Do momento em que a linha se move até você receber o alerta",
       stat3: "Quedas de odds sharp rastreadas e registradas todos os dias",
       cta: "Obter acesso",
-      ctaSub: "Ver como funciona",
     },
     mobile: {
       badge: "App mobile",
