@@ -39,6 +39,10 @@ MOCK_MODE = "true"
 VITE_ADMIN_EMAILS = "theoam060@gmail.com"
 
 [userenv.development]
+GOOGLE_CALLBACK_URL = "https://84e61830-7611-4d35-8623-77d057b02e4e-00-30ovvqhxka0d5.kirk.replit.dev/api/auth/google/callback"
+
+[userenv.production]
+GOOGLE_CALLBACK_URL = "https://sharptracker.io/api/auth/google/callback"
 
 [nix]
 channel = "stable-25_05"
