@@ -182,8 +182,8 @@ function SubscriptionWall() {
   }, []);
 
   const handleCheckout = useCallback(
-    async (priceId: string) => {
-      setCheckingOut(priceId);
+    async (plan: string) => {
+      setCheckingOut(plan);
       try {
         const token = await getToken();
         const res = await fetch(`${API_BASE}/api/stripe/checkout`, {
@@ -192,7 +192,7 @@ function SubscriptionWall() {
             "Content-Type": "application/json",
             Authorization: `Bearer ${token}`,
           },
-          body: JSON.stringify({ priceId, redirectAfter: "/app/" }),
+          body: JSON.stringify({ plan, redirectAfter: "/app/" }),
         });
         const data = await res.json();
         if (data.url) {
@@ -283,7 +283,7 @@ function SubscriptionWall() {
                 const features = PLAN_FEATURES[planKey] ?? [];
                 const colors = PLAN_COLORS[planKey] ?? PLAN_COLORS.silver;
                 const isGold = planKey === "gold";
-                const isLoading = checkingOut === priceId;
+                const isLoading = checkingOut === planKey;
                 const shortName = plan.name.replace("SharpTracker ", "");
                 const { int: priceInt, dec: priceDec } = price
                   ? formatPrice(price.unit_amount)
@@ -328,8 +328,8 @@ function SubscriptionWall() {
                     </ul>
 
                     <button
-                      onClick={() => priceId && handleCheckout(priceId)}
-                      disabled={!priceId || !!checkingOut}
+                      onClick={() => planKey && handleCheckout(planKey)}
+                      disabled={!planKey || !!checkingOut}
                       className={`w-full flex items-center justify-center gap-2 py-3.5 rounded-xl text-sm font-bold transition-all disabled:opacity-50 ${colors.btn}`}
                     >
                       {isLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : "Get Started"}

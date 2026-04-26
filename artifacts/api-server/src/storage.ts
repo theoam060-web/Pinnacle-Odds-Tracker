@@ -10,6 +10,22 @@ export class Storage {
     return result.rows[0] || null;
   }
 
+  async getPriceIdByPlan(plan: string): Promise<string | null> {
+    try {
+      const result = await db.execute(sql`
+        SELECT pr.id AS price_id
+        FROM stripe.products p
+        JOIN stripe.prices pr ON pr.product = p.id AND pr.active = true
+        WHERE p.active = true
+          AND p.metadata->>'plan' = ${plan}
+        LIMIT 1
+      `);
+      return (result.rows[0] as any)?.price_id ?? null;
+    } catch {
+      return null;
+    }
+  }
+
   async listProductsWithPrices(active = true) {
     const result = await db.execute(
       sql`

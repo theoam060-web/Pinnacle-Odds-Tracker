@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
 import { motion } from "framer-motion";
 import { Link, useLocation } from "wouter";
 import { Activity, Check, Loader2, Star } from "lucide-react";
@@ -110,44 +110,12 @@ const PLATINUM_FEATURES: FeatureDef[] = [
   { text: "Current CLV & Current CV" },
 ];
 
-interface StripePrice {
-  id: string;
-  unit_amount: number;
-  currency: string;
-  recurring: { interval: string } | null;
-}
-
-interface StripeProduct {
-  id: string;
-  name: string;
-  description: string;
-  metadata: { plan?: string };
-  prices: StripePrice[];
-}
-
 export default function PricingPage() {
   const [, navigate] = useLocation();
   const { isSignedIn } = useUser();
   const { getToken } = useAuth();
-  const [products, setProducts] = useState<StripeProduct[]>([]);
-  const [productsLoading, setProductsLoading] = useState(true);
   const [loading, setLoading] = useState<Record<string, boolean>>({});
   const [error, setError] = useState<string | null>(null);
-
-  const fetchProducts = () => {
-    setProductsLoading(true);
-    return fetch(`${API_BASE}/api/stripe/products`)
-      .then(r => r.json())
-      .then(({ data }) => { setProducts(data ?? []); setProductsLoading(false); })
-      .catch(() => { setProductsLoading(false); });
-  };
-
-  useEffect(() => { fetchProducts(); }, []);
-
-  const getPriceId = (plan: string): string | null => {
-    const product = products.find(p => p.metadata?.plan === plan);
-    return product?.prices[0]?.id ?? null;
-  };
 
   const handleCheckout = async (plan: string) => {
     if (!isSignedIn) {
@@ -157,16 +125,6 @@ export default function PricingPage() {
     setLoading(l => ({ ...l, [plan]: true }));
     setError(null);
     try {
-      let priceId = getPriceId(plan);
-      if (!priceId) {
-        await fetchProducts();
-        priceId = getPriceId(plan);
-      }
-      if (!priceId) {
-        setError("Plan not available yet — please try again in a moment.");
-        setLoading(l => ({ ...l, [plan]: false }));
-        return;
-      }
       const token = await getToken();
       const res = await fetch(`${API_BASE}/api/stripe/checkout`, {
         method: "POST",
@@ -174,7 +132,7 @@ export default function PricingPage() {
           "Content-Type": "application/json",
           ...(token ? { Authorization: `Bearer ${token}` } : {}),
         },
-        body: JSON.stringify({ priceId, redirectAfter: "/app/" }),
+        body: JSON.stringify({ plan, redirectAfter: "/app/" }),
       });
       const data = await res.json();
       if (data.url) {
@@ -250,10 +208,10 @@ export default function PricingPage() {
 
               <button
                 onClick={() => handleCheckout("silver")}
-                disabled={silverLoading || productsLoading}
+                disabled={silverLoading}
                 className="w-full py-3 rounded-lg border border-border/60 text-foreground/80 font-mono text-sm hover:border-primary/40 hover:text-primary transition-all disabled:opacity-60 flex items-center justify-center gap-2"
               >
-                {silverLoading || productsLoading ? <><Loader2 className="w-4 h-4 animate-spin" /> {silverLoading ? "Processing…" : "Loading…"}</> : isSignedIn ? "Subscribe" : "Get Started"}
+                {silverLoading ? <><Loader2 className="w-4 h-4 animate-spin" /> Processing…</> : isSignedIn ? "Subscribe" : "Get Started"}
               </button>
             </motion.div>
 
@@ -292,10 +250,10 @@ export default function PricingPage() {
 
               <button
                 onClick={() => handleCheckout("gold")}
-                disabled={goldLoading || productsLoading}
+                disabled={goldLoading}
                 className="w-full py-3 rounded-lg bg-primary text-primary-foreground font-mono text-sm font-bold hover:bg-primary/90 transition-all shadow-[0_0_20px_rgba(0,255,255,0.25)] disabled:opacity-60 flex items-center justify-center gap-2"
               >
-                {goldLoading || productsLoading ? <><Loader2 className="w-4 h-4 animate-spin" /> {goldLoading ? "Processing…" : "Loading…"}</> : isSignedIn ? "Subscribe" : "Get Started"}
+                {goldLoading ? <><Loader2 className="w-4 h-4 animate-spin" /> Processing…</> : isSignedIn ? "Subscribe" : "Get Started"}
               </button>
             </motion.div>
 
@@ -328,10 +286,10 @@ export default function PricingPage() {
 
               <button
                 onClick={() => handleCheckout("platinum")}
-                disabled={platinumLoading || productsLoading}
+                disabled={platinumLoading}
                 className="w-full py-3 rounded-lg bg-violet-600 text-white font-mono text-sm font-bold hover:bg-violet-500 transition-all shadow-[0_0_20px_rgba(139,92,246,0.25)] disabled:opacity-60 flex items-center justify-center gap-2"
               >
-                {platinumLoading || productsLoading ? <><Loader2 className="w-4 h-4 animate-spin" /> {platinumLoading ? "Processing…" : "Loading…"}</> : isSignedIn ? "Subscribe" : "Get Started"}
+                {platinumLoading ? <><Loader2 className="w-4 h-4 animate-spin" /> Processing…</> : isSignedIn ? "Subscribe" : "Get Started"}
               </button>
             </motion.div>
 

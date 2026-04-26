@@ -39,8 +39,15 @@ router.get('/stripe/products', async (_req, res) => {
 });
 
 router.post('/stripe/checkout', requireAuth, async (req: any, res) => {
-  const { priceId, redirectAfter } = req.body;
-  if (!priceId) return res.status(400).json({ error: 'priceId required' });
+  const { plan, priceId: rawPriceId, redirectAfter } = req.body;
+  if (!plan && !rawPriceId) return res.status(400).json({ error: 'plan or priceId required' });
+
+  // Resolve priceId server-side when caller sends a plan name
+  let priceId = rawPriceId as string | null | undefined;
+  if (plan && !priceId) {
+    priceId = await storage.getPriceIdByPlan(plan);
+    if (!priceId) return res.status(400).json({ error: `No active price found for plan: ${plan}` });
+  }
   try {
     const userEmail: string | undefined = req.userEmail;
     let user = await storage.getUser(req.userId);
