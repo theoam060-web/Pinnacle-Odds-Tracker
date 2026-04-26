@@ -392,7 +392,8 @@ async function openSubscriptionPortalOrWall(getToken: () => Promise<string | nul
       if (url) { window.location.href = url; return; }
     }
   } catch {}
-  window.location.href = "/app/";
+  // Fallback: show the pricing page instead of the app wall
+  window.location.href = "/pricing";
 }
 
 function SubscriptionButton({ closePanel, className, children }: { closePanel: () => void; className?: string; children: React.ReactNode }) {
@@ -783,22 +784,13 @@ function Hero() {
             className="flex flex-col sm:flex-row items-center gap-4"
           >
             {isSignedIn ? (
-              <>
-                <button
-                  onClick={() => navigate("/pricing")}
-                  className="bg-primary text-primary-foreground px-10 py-4 rounded-md font-mono font-bold tracking-wide flex items-center justify-center gap-2 hover:bg-primary/90 transition-colors shadow-[0_0_30px_hsl(var(--primary)/0.35)]"
-                  data-testid="btn-plans"
-                >
-                  {tr.nav.pricing} <ChevronRight className="w-5 h-5" />
-                </button>
-                <button
-                  onClick={() => window.location.href = "/app/"}
-                  className="bg-secondary text-secondary-foreground border border-border px-8 py-4 rounded-md font-mono tracking-wide hover:bg-secondary/80 transition-colors"
-                  data-testid="btn-dashboard"
-                >
-                  Dashboard
-                </button>
-              </>
+              <button
+                onClick={() => navigate("/pricing")}
+                className="bg-primary text-primary-foreground px-10 py-4 rounded-md font-mono font-bold tracking-wide flex items-center justify-center gap-2 hover:bg-primary/90 transition-colors shadow-[0_0_30px_hsl(var(--primary)/0.35)]"
+                data-testid="btn-plans"
+              >
+                {tr.nav.pricing} <ChevronRight className="w-5 h-5" />
+              </button>
             ) : (
               <>
                 <button
