@@ -1,7 +1,6 @@
-// Stripe client — connected via Replit Stripe integration
+// Stripe client — prefers STRIPE_SECRET_KEY / STRIPE_PUBLISHABLE_KEY env vars (live mode).
+// Falls back to the Replit Stripe connector for development convenience.
 import Stripe from 'stripe';
-
-let connectionSettings: any;
 
 async function fetchConnection(hostname: string, xReplitToken: string, environment: string) {
   const url = new URL(`https://${hostname}/api/v2/connection`);
@@ -24,7 +23,15 @@ async function fetchConnection(hostname: string, xReplitToken: string, environme
   return null;
 }
 
-async function getCredentials() {
+async function getCredentials(): Promise<{ publishableKey: string; secretKey: string }> {
+  // If explicit live/test keys are set as secrets, use them directly.
+  const secretKey = process.env.STRIPE_SECRET_KEY;
+  const publishableKey = process.env.STRIPE_PUBLISHABLE_KEY;
+  if (secretKey && publishableKey) {
+    return { secretKey, publishableKey };
+  }
+
+  // Fall back to the Replit managed connector.
   const hostname = process.env.REPLIT_CONNECTORS_HOSTNAME;
   const xReplitToken = process.env.REPL_IDENTITY
     ? 'repl ' + process.env.REPL_IDENTITY
@@ -32,24 +39,19 @@ async function getCredentials() {
       ? 'depl ' + process.env.WEB_REPL_RENEWAL
       : null;
 
-  if (!xReplitToken) {
-    throw new Error('X-Replit-Token not found for repl/depl');
+  if (!hostname || !xReplitToken) {
+    throw new Error('No Stripe credentials: set STRIPE_SECRET_KEY + STRIPE_PUBLISHABLE_KEY, or configure the Replit Stripe connector.');
   }
 
   const isProduction = process.env.REPLIT_DEPLOYMENT === '1';
-
-  // Try the target environment first, then fall back to 'development'
-  const envOrder = isProduction
-    ? ['production', 'development']
-    : ['development'];
+  const envOrder = isProduction ? ['production', 'development'] : ['development'];
 
   for (const env of envOrder) {
-    const item = await fetchConnection(hostname!, xReplitToken, env);
+    const item = await fetchConnection(hostname, xReplitToken, env);
     if (item) {
-      connectionSettings = item;
       return {
-        publishableKey: connectionSettings.settings.publishable as string,
-        secretKey: connectionSettings.settings.secret as string,
+        publishableKey: item.settings.publishable as string,
+        secretKey: item.settings.secret as string,
       };
     }
   }
