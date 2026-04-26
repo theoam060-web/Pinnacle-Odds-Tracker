@@ -317,6 +317,17 @@ const STEPS = [
 
 // --- Components ---
 
+function GoogleIcon({ size = 18 }: { size?: number }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 18 18" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+      <path d="M17.64 9.2c0-.637-.057-1.251-.164-1.84H9v3.481h4.844c-.209 1.125-.843 2.078-1.796 2.716v2.259h2.908c1.702-1.567 2.684-3.875 2.684-6.615z" fill="#4285F4"/>
+      <path d="M9 18c2.43 0 4.467-.806 5.956-2.18l-2.908-2.259c-.806.54-1.837.86-3.048.86-2.344 0-4.328-1.584-5.036-3.711H.957v2.332A8.997 8.997 0 0 0 9 18z" fill="#34A853"/>
+      <path d="M3.964 10.71A5.41 5.41 0 0 1 3.682 9c0-.593.102-1.17.282-1.71V4.958H.957A8.996 8.996 0 0 0 0 9c0 1.452.348 2.827.957 4.042l3.007-2.332z" fill="#FBBC05"/>
+      <path d="M9 3.58c1.321 0 2.508.454 3.44 1.345l2.582-2.58C13.463.891 11.426 0 9 0A8.997 8.997 0 0 0 .957 4.958L3.964 7.29C4.672 5.163 6.656 3.58 9 3.58z" fill="#EA4335"/>
+    </svg>
+  );
+}
+
 const GlitchText = ({ text, className = "" }: { text: string, className?: string }) => {
   return (
     <span className={`relative inline-block ${className}`}>
@@ -612,7 +623,8 @@ function Navbar() {
             <button onClick={() => { closePanel(); window.location.href = "/app/"; }} className="hidden md:block text-sm font-mono text-foreground hover:text-primary transition-colors" data-testid="btn-login">{tr.nav.login}</button>
             <div className="flex flex-col items-center gap-0.5">
               <span className="text-[11px] font-bold text-green-400 leading-none tracking-wide">{tr.nav.trialBadge}</span>
-              <button onClick={() => { closePanel(); window.location.href = "/app/"; }} className="bg-primary/10 text-primary border border-primary/30 hover:bg-primary hover:text-primary-foreground px-5 py-2 rounded-md font-mono text-sm transition-all shadow-[0_0_15px_rgba(0,255,255,0.1)] hover:shadow-[0_0_20px_rgba(0,255,255,0.3)]" data-testid="btn-get-access">
+              <button onClick={() => { closePanel(); window.location.href = "/app/"; }} className="flex items-center gap-2 bg-primary/10 text-primary border border-primary/30 hover:bg-primary hover:text-primary-foreground px-5 py-2 rounded-md font-mono text-sm transition-all shadow-[0_0_15px_rgba(0,255,255,0.1)] hover:shadow-[0_0_20px_rgba(0,255,255,0.3)]" data-testid="btn-get-access">
+                <GoogleIcon size={16} />
                 {tr.nav.signup}
               </button>
             </div>
@@ -805,7 +817,7 @@ function Hero() {
                   className="bg-primary text-primary-foreground px-10 py-4 rounded-md font-mono font-bold tracking-wide flex items-center justify-center gap-2 hover:bg-primary/90 transition-colors shadow-[0_0_30px_hsl(var(--primary)/0.35)]"
                   data-testid="btn-sign-up"
                 >
-                  {tr.hero.cta} <ChevronRight className="w-5 h-5" />
+                  <GoogleIcon /> {tr.hero.cta} <ChevronRight className="w-5 h-5" />
                 </button>
                 <div className="flex items-center gap-3">
                   <button
@@ -1357,9 +1369,10 @@ function CTASection() {
           ) : (
             <button
               onClick={() => window.location.href = "/app/"}
-              className="bg-primary text-primary-foreground px-10 py-4 rounded-md font-mono font-bold tracking-wide text-lg hover:bg-primary/90 transition-colors shadow-[0_0_30px_hsl(var(--primary)/0.3)]"
+              className="bg-primary text-primary-foreground px-10 py-4 rounded-md font-mono font-bold tracking-wide text-lg hover:bg-primary/90 transition-colors shadow-[0_0_30px_hsl(var(--primary)/0.3)] flex items-center justify-center gap-2"
               data-testid="btn-footer-signup"
             >
+              <GoogleIcon />
               Start 14-Day Free Trial
             </button>
           )}
