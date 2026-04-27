@@ -14,7 +14,24 @@ const PAYMENT_LINKS: Record<string, string> = {
   silver: "https://buy.stripe.com/8x200caQU5tN9PV4rWeZ200",
 };
 
+// Shared key the in-app dashboard reads on return to detect "user just left
+// for Stripe" so it can briefly poll the subscription endpoint while waiting
+// for the webhook to land. Must match SubscriptionGate in odds-dropper/App.tsx.
+const PENDING_CHECKOUT_KEY = "sharptracker.pendingCheckout";
+
+function markPendingCheckout() {
+  try {
+    sessionStorage.setItem(PENDING_CHECKOUT_KEY, String(Date.now()));
+    localStorage.setItem(PENDING_CHECKOUT_KEY, String(Date.now()));
+  } catch {
+    /* storage may be unavailable in some browsers/modes — non-fatal */
+  }
+}
+
 function openCheckoutUrl(url: string) {
+  // Signal to the dashboard that the user is on their way to Stripe, so when
+  // they come back we know to poll briefly while the webhook propagates.
+  markPendingCheckout();
   // Try top-level navigation first (breaks out of Replit's preview iframe);
   // fall back to a new tab if cross-origin blocked.
   try {

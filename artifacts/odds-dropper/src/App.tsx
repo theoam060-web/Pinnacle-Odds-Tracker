@@ -30,7 +30,43 @@ const PAYMENT_LINKS: Record<string, string> = {
   silver: "https://buy.stripe.com/8x200caQU5tN9PV4rWeZ200",
 };
 
+// Shared key the SubscriptionGate reads on return to detect "user just left
+// for Stripe" so it can briefly poll the subscription endpoint while waiting
+// for the webhook to land. Must match the landing PricingPage.
+const PENDING_CHECKOUT_KEY = "sharptracker.pendingCheckout";
+// Window during which a pending checkout flag is considered relevant. Beyond
+// this we ignore stale flags so genuinely unsubscribed users don't get stuck
+// in loading on every visit.
+const PENDING_CHECKOUT_TTL_MS = 30 * 60 * 1000; // 30 minutes
+
+function markPendingCheckout() {
+  try {
+    sessionStorage.setItem(PENDING_CHECKOUT_KEY, String(Date.now()));
+    localStorage.setItem(PENDING_CHECKOUT_KEY, String(Date.now()));
+  } catch {
+    /* storage may be unavailable in some browsers/modes — non-fatal */
+  }
+}
+
+function consumePendingCheckout(): boolean {
+  try {
+    const raw =
+      sessionStorage.getItem(PENDING_CHECKOUT_KEY) ??
+      localStorage.getItem(PENDING_CHECKOUT_KEY);
+    if (!raw) return false;
+    const ts = Number(raw);
+    sessionStorage.removeItem(PENDING_CHECKOUT_KEY);
+    localStorage.removeItem(PENDING_CHECKOUT_KEY);
+    return Number.isFinite(ts) && Date.now() - ts < PENDING_CHECKOUT_TTL_MS;
+  } catch {
+    return false;
+  }
+}
+
 function openCheckoutUrl(url: string) {
+  // Signal to the SubscriptionGate that the user is on their way to Stripe,
+  // so when they come back we know to poll briefly while the webhook lands.
+  markPendingCheckout();
   try {
     (window.top ?? window).location.href = url;
   } catch {
@@ -451,11 +487,17 @@ function SubscriptionGate({ children }: { children: React.ReactNode }) {
 
     const params = new URLSearchParams(window.location.search);
     const sessionId = params.get("session_id");
+    // Optional explicit return marker. Stripe Payment Links can be configured
+    // to redirect to /app/?stripe_success=1, but we no longer require it —
+    // we also detect post-checkout returns via the pending-checkout flag set
+    // when the user clicked Subscribe.
     const stripeSuccess = params.get("stripe_success");
 
     // Case 1: Hosted Checkout returned with session_id — fulfill explicitly,
-    // then check subscription. This avoids relying on webhook timing.
+    // then check subscription. Avoids relying on webhook timing entirely.
     if (sessionId) {
+      // Consume any pending-checkout flag so it doesn't trigger polling later
+      consumePendingCheckout();
       params.delete("session_id");
       const newSearch = params.toString();
       const newUrl = window.location.pathname + (newSearch ? `?${newSearch}` : "");
@@ -472,13 +514,19 @@ function SubscriptionGate({ children }: { children: React.ReactNode }) {
       return () => { aliveRef.current = false; };
     }
 
-    // Case 2: Payment Link redirected back with ?stripe_success=1 — we have no
-    // session_id, so we depend on the webhook. Poll briefly to bridge the lag.
-    if (stripeSuccess) {
-      params.delete("stripe_success");
-      const newSearch = params.toString();
-      const newUrl = window.location.pathname + (newSearch ? `?${newSearch}` : "");
-      window.history.replaceState({}, "", newUrl);
+    // Case 2: User just came back from Stripe (Payment Link or otherwise)
+    // without a session_id. We detect this either via:
+    //   (a) ?stripe_success=1 query param (if Stripe redirect was configured), or
+    //   (b) the pending-checkout flag set in storage when Subscribe was clicked.
+    // In either case, poll briefly to bridge the webhook → DB latency window.
+    const recentlyCheckedOut = consumePendingCheckout();
+    if (stripeSuccess || recentlyCheckedOut) {
+      if (stripeSuccess) {
+        params.delete("stripe_success");
+        const newSearch = params.toString();
+        const newUrl = window.location.pathname + (newSearch ? `?${newSearch}` : "");
+        window.history.replaceState({}, "", newUrl);
+      }
       void pollUntilActive();
       return () => { aliveRef.current = false; };
     }
