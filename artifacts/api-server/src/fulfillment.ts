@@ -31,9 +31,56 @@ export async function fulfillCheckout(sessionId: string): Promise<{
     return { alreadyFulfilled: false };
   }
 
-  const user = await storage.getUserByStripeCustomerId(customerId);
+  // Resolve user via Stripe customerId first (Hosted Checkout flow);
+  // fall back to client_reference_id (Payment Link flow, where we attach the
+  // Clerk userId as client_reference_id and the customer is created fresh).
+  const clientReferenceId =
+    typeof session.client_reference_id === 'string' && session.client_reference_id.length > 0
+      ? session.client_reference_id
+      : undefined;
+
+  let user = await storage.getUserByStripeCustomerId(customerId);
+
+  if (!user && clientReferenceId) {
+    user = await storage.getUser(clientReferenceId);
+    if (user) {
+      // SECURITY: client_reference_id is supplied via the Payment Link URL
+      // and is therefore user-controlled. We only auto-link a fresh Stripe
+      // customer to a user who does NOT yet have one. If the user already
+      // has a different stripeCustomerId attached, refuse to overwrite —
+      // overwriting would clobber their existing billing portal association
+      // and could be a misdirected or malicious payment that grants the
+      // wrong account a subscription.
+      if (user.stripeCustomerId && user.stripeCustomerId !== customerId) {
+        logger.warn(
+          {
+            sessionId,
+            newCustomerId: customerId,
+            existingCustomerId: user.stripeCustomerId,
+            userId: user.id,
+            clientReferenceId,
+          },
+          'Refusing to link Payment Link customer: user already has a different stripeCustomerId',
+        );
+        return { alreadyFulfilled: false };
+      }
+      if (!user.stripeCustomerId) {
+        // First-time link — safe to attach this Stripe customer to the user
+        // so future lifecycle webhooks (cancel, past_due, etc.) can resolve.
+        await storage.updateUserStripeInfo(user.id, { stripeCustomerId: customerId });
+        logger.info(
+          { sessionId, customerId, userId: user.id },
+          'Resolved user via client_reference_id and linked Stripe customer',
+        );
+      }
+    }
+  }
+
   if (!user) {
-    logger.warn({ sessionId, customerId }, 'No user found for customer — cannot fulfill');
+    logger.warn(
+      { sessionId, customerId, clientReferenceId },
+      'No user found for customer or client_reference_id — cannot fulfill',
+    );
     return { alreadyFulfilled: false };
   }
 

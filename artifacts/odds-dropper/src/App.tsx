@@ -15,13 +15,28 @@ import BetStatsPage from "@/pages/bet-stats";
 import AlertConfigurationsPage from "@/pages/alert-configurations";
 import TopMoversPage from "@/pages/top-movers";
 import MyBetsPage from "@/pages/my-bets";
-import React, { useEffect, useState, useCallback } from "react";
+import React, { useEffect, useState, useCallback, useRef } from "react";
 import { Activity, LogIn, UserPlus, ArrowRight, Loader2, CheckCircle2, ExternalLink } from "lucide-react";
 import { PlanContext, type PlanTier } from "@/lib/plan-context";
 
 const clerkPubKey = import.meta.env.VITE_CLERK_PUBLISHABLE_KEY as string;
 const clerkProxyUrl = import.meta.env.VITE_CLERK_PROXY_URL as string | undefined;
 const API_BASE = "";
+
+// Stripe-hosted Payment Links — when a plan has one configured here, Subscribe
+// redirects directly to it (with client_reference_id) instead of calling our
+// /api/stripe/checkout endpoint.
+const PAYMENT_LINKS: Record<string, string> = {
+  silver: "https://buy.stripe.com/8x200caQU5tN9PV4rWeZ200",
+};
+
+function openCheckoutUrl(url: string) {
+  try {
+    (window.top ?? window).location.href = url;
+  } catch {
+    window.open(url, "_blank", "noopener");
+  }
+}
 
 function AppServices() {
   useAutoSettle();
@@ -181,9 +196,23 @@ function SubscriptionWall() {
       .finally(() => setLoadingPlans(false));
   }, []);
 
+  const { user } = useUser();
+
   const handleCheckout = useCallback(
     async (plan: string) => {
       setCheckingOut(plan);
+
+      // Plans wired to a Stripe Payment Link skip the API and redirect directly.
+      const paymentLink = PAYMENT_LINKS[plan];
+      if (paymentLink) {
+        const url = new URL(paymentLink);
+        if (user?.id) url.searchParams.set("client_reference_id", user.id);
+        const email = user?.primaryEmailAddress?.emailAddress;
+        if (email) url.searchParams.set("prefilled_email", email);
+        openCheckoutUrl(url.toString());
+        return;
+      }
+
       try {
         const token = await getToken();
         const res = await fetch(`${API_BASE}/api/stripe/checkout`, {
@@ -196,13 +225,13 @@ function SubscriptionWall() {
         });
         const data = await res.json();
         if (data.url) {
-          (window.top || window).location.href = data.url;
+          openCheckoutUrl(data.url);
         }
       } catch {
         setCheckingOut(null);
       }
     },
-    [getToken],
+    [getToken, user],
   );
 
   const PLAN_FEATURES: Record<string, { text: string; bold?: boolean }[]> = {
@@ -364,14 +393,21 @@ function SubscriptionGate({ children }: { children: React.ReactNode }) {
     adminEmails.length > 0 &&
     adminEmails.includes(user?.primaryEmailAddress?.emailAddress ?? "");
 
-  const check = useCallback(async () => {
+  // Tracks whether the gate is still mounted; polling/check loops use this to
+  // avoid setting state after unmount.
+  const aliveRef = useRef(true);
+
+  // Returns true when an active subscription was found.
+  const check = useCallback(async (): Promise<boolean> => {
     try {
       const token = await getToken();
       const res = await fetch(`${API_BASE}/api/stripe/subscription`, {
         headers: { Authorization: `Bearer ${token}` },
       });
-      if (!res.ok) { setStatus("none"); return; }
+      if (!aliveRef.current) return false;
+      if (!res.ok) { setStatus("none"); return false; }
       const data = await res.json();
+      if (!aliveRef.current) return false;
       const sub = data.subscription;
       const isActive = sub?.status === "active" || sub?.status === "trialing";
       if (isActive) {
@@ -379,43 +415,77 @@ function SubscriptionGate({ children }: { children: React.ReactNode }) {
         if (t === "silver" || t === "gold" || t === "platinum") {
           setPlanTier(t);
           setStatus("active");
-        } else {
-          setStatus("none");
+          return true;
         }
-      } else {
-        setStatus("none");
       }
-    } catch {
       setStatus("none");
+      return false;
+    } catch {
+      if (aliveRef.current) setStatus("none");
+      return false;
     }
   }, [getToken]);
 
-  useEffect(() => {
-    if (bypassAuth || isAdmin) { setPlanTier("platinum"); setStatus("active"); return; }
+  // Briefly poll the subscription endpoint after a Stripe redirect, since the
+  // webhook → DB update may lag a few seconds. Stops as soon as we see "active"
+  // or the component unmounts.
+  const pollUntilActive = useCallback(async (timeoutMs = 12000, intervalMs = 1500) => {
+    if (!aliveRef.current) return;
+    setStatus("loading");
+    const deadline = Date.now() + timeoutMs;
+    while (Date.now() < deadline && aliveRef.current) {
+      const active = await check();
+      if (active || !aliveRef.current) return;
+      await new Promise(r => setTimeout(r, intervalMs));
+    }
+    if (aliveRef.current) await check();
+  }, [check]);
 
-    // If Stripe redirected back with a session_id, fulfill the checkout first
-    // then check subscription. This avoids relying on webhook timing.
+  useEffect(() => {
+    aliveRef.current = true;
+    if (bypassAuth || isAdmin) {
+      setPlanTier("platinum");
+      setStatus("active");
+      return () => { aliveRef.current = false; };
+    }
+
     const params = new URLSearchParams(window.location.search);
     const sessionId = params.get("session_id");
+    const stripeSuccess = params.get("stripe_success");
+
+    // Case 1: Hosted Checkout returned with session_id — fulfill explicitly,
+    // then check subscription. This avoids relying on webhook timing.
     if (sessionId) {
-      // Remove session_id from URL immediately so it doesn't re-trigger on refresh
       params.delete("session_id");
       const newSearch = params.toString();
       const newUrl = window.location.pathname + (newSearch ? `?${newSearch}` : "");
       window.history.replaceState({}, "", newUrl);
 
       getToken().then((token) => {
+        if (!aliveRef.current) return;
         fetch(`${API_BASE}/api/stripe/checkout/session?session_id=${encodeURIComponent(sessionId)}`, {
           headers: { Authorization: `Bearer ${token ?? ""}` },
         })
           .catch(() => {})
-          .finally(() => check());
+          .finally(() => { if (aliveRef.current) void check(); });
       });
-      return;
+      return () => { aliveRef.current = false; };
     }
 
-    check();
-  }, [bypassAuth, isAdmin, check, getToken]);
+    // Case 2: Payment Link redirected back with ?stripe_success=1 — we have no
+    // session_id, so we depend on the webhook. Poll briefly to bridge the lag.
+    if (stripeSuccess) {
+      params.delete("stripe_success");
+      const newSearch = params.toString();
+      const newUrl = window.location.pathname + (newSearch ? `?${newSearch}` : "");
+      window.history.replaceState({}, "", newUrl);
+      void pollUntilActive();
+      return () => { aliveRef.current = false; };
+    }
+
+    void check();
+    return () => { aliveRef.current = false; };
+  }, [bypassAuth, isAdmin, check, pollUntilActive, getToken]);
 
   if (status === "loading") return <LoadingScreen label="Kontrollerar prenumeration…" />;
   if (status === "none") return <SubscriptionWall />;

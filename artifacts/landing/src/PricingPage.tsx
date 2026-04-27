@@ -7,6 +7,23 @@ import GoogleIcon from "./components/GoogleIcon";
 
 const API_BASE = "";
 
+// Stripe-hosted Payment Links (configured in Stripe Dashboard).
+// Map plan -> direct payment link URL. When set, Subscribe will redirect
+// straight to this URL instead of calling /api/stripe/checkout.
+const PAYMENT_LINKS: Record<string, string> = {
+  silver: "https://buy.stripe.com/8x200caQU5tN9PV4rWeZ200",
+};
+
+function openCheckoutUrl(url: string) {
+  // Try top-level navigation first (breaks out of Replit's preview iframe);
+  // fall back to a new tab if cross-origin blocked.
+  try {
+    (window.top ?? window).location.href = url;
+  } catch {
+    window.open(url, "_blank", "noopener");
+  }
+}
+
 function PricingNav() {
   const [, navigate] = useLocation();
   const { isSignedIn } = useUser();
@@ -112,7 +129,7 @@ const PLATINUM_FEATURES: FeatureDef[] = [
 
 export default function PricingPage() {
   const [, navigate] = useLocation();
-  const { isSignedIn } = useUser();
+  const { isSignedIn, user } = useUser();
   const { getToken } = useAuth();
   const [loading, setLoading] = useState<Record<string, boolean>>({});
   const [error, setError] = useState<string | null>(null);
@@ -122,6 +139,20 @@ export default function PricingPage() {
       navigate("/sign-in");
       return;
     }
+
+    // Plans wired to a Stripe Payment Link skip the API and redirect directly.
+    // We attach client_reference_id (Clerk userId) so the webhook can map the
+    // payment back to this user, and prefilled_email for a smoother checkout.
+    const paymentLink = PAYMENT_LINKS[plan];
+    if (paymentLink) {
+      const url = new URL(paymentLink);
+      if (user?.id) url.searchParams.set("client_reference_id", user.id);
+      const email = user?.primaryEmailAddress?.emailAddress;
+      if (email) url.searchParams.set("prefilled_email", email);
+      openCheckoutUrl(url.toString());
+      return;
+    }
+
     setLoading(l => ({ ...l, [plan]: true }));
     setError(null);
     let url: string | null = null;
@@ -147,13 +178,7 @@ export default function PricingPage() {
     } finally {
       setLoading(l => ({ ...l, [plan]: false }));
     }
-    // Navigate outside of the iframe to avoid Stripe's iframe restrictions.
-    // Try top-level navigation first; fall back to new tab if cross-origin blocked.
-    try {
-      (window.top ?? window).location.href = url;
-    } catch {
-      window.open(url, "_blank", "noopener");
-    }
+    if (url) openCheckoutUrl(url);
   };
 
   const silverLoading = loading["silver"];
