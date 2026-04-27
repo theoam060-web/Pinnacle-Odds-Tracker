@@ -162,9 +162,29 @@ export default function PricingPage() {
     // payment back to this user, and prefilled_email for a smoother checkout.
     const paymentLink = PAYMENT_LINKS[plan];
     if (paymentLink) {
+      const email = user?.primaryEmailAddress?.emailAddress;
+
+      // Ensure the user row exists in our DB BEFORE leaving for Stripe. If
+      // this is a freshly signed-up user, the row may not exist yet — without
+      // it, the webhook fulfillment can't map the payment back to this user.
+      // POST /api/user is idempotent (returns the existing row if present).
+      try {
+        const token = await getToken();
+        await fetch(`${API_BASE}/api/user`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            ...(token ? { Authorization: `Bearer ${token}` } : {}),
+          },
+          body: JSON.stringify({ email }),
+        });
+      } catch {
+        // Non-fatal: fulfillment has a server-side safety net that creates
+        // the user from client_reference_id + session email if missing.
+      }
+
       const url = new URL(paymentLink);
       if (user?.id) url.searchParams.set("client_reference_id", user.id);
-      const email = user?.primaryEmailAddress?.emailAddress;
       if (email) url.searchParams.set("prefilled_email", email);
       openCheckoutUrl(url.toString());
       return;

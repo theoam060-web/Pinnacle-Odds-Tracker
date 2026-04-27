@@ -241,9 +241,28 @@ function SubscriptionWall() {
       // Plans wired to a Stripe Payment Link skip the API and redirect directly.
       const paymentLink = PAYMENT_LINKS[plan];
       if (paymentLink) {
+        const email = user?.primaryEmailAddress?.emailAddress;
+
+        // Ensure the user row exists in our DB BEFORE leaving for Stripe.
+        // If a freshly signed-up user clicks Subscribe, no DB row exists yet —
+        // without it, the webhook fulfillment can't map the payment back to
+        // this user. POST /api/user is idempotent.
+        try {
+          const token = await getToken();
+          await fetch(`${API_BASE}/api/user`, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              ...(token ? { Authorization: `Bearer ${token}` } : {}),
+            },
+            body: JSON.stringify({ email }),
+          });
+        } catch {
+          // Non-fatal: fulfillment has a server-side safety net.
+        }
+
         const url = new URL(paymentLink);
         if (user?.id) url.searchParams.set("client_reference_id", user.id);
-        const email = user?.primaryEmailAddress?.emailAddress;
         if (email) url.searchParams.set("prefilled_email", email);
         openCheckoutUrl(url.toString());
         return;

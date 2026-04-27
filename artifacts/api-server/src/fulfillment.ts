@@ -42,7 +42,37 @@ export async function fulfillCheckout(sessionId: string): Promise<{
   let user = await storage.getUserByStripeCustomerId(customerId);
 
   if (!user && clientReferenceId) {
+    // Validate Clerk userId format before trusting client_reference_id —
+    // Clerk IDs look like "user_<base32>". This stops random/spoofed values
+    // from polluting our users table via the safety-net createUser below.
+    const looksLikeClerkId = /^user_[A-Za-z0-9]{8,}$/.test(clientReferenceId);
+    if (!looksLikeClerkId) {
+      logger.warn(
+        { sessionId, customerId, clientReferenceId },
+        'client_reference_id does not match Clerk userId format — ignoring',
+      );
+      return { alreadyFulfilled: false };
+    }
+
     user = await storage.getUser(clientReferenceId);
+
+    // Safety net: the frontend is supposed to upsert the user via POST /api/user
+    // before redirecting to the Payment Link, but if that call failed (network
+    // error, transient DB issue) the user row may not exist. Auto-provision
+    // from the session email so fulfillment can still complete. createUser
+    // uses ON CONFLICT DO NOTHING so this is race-safe.
+    if (!user) {
+      const sessionEmail = session.customer_details?.email ?? undefined;
+      await storage.createUser(clientReferenceId, sessionEmail);
+      user = await storage.getUser(clientReferenceId);
+      if (user) {
+        logger.info(
+          { sessionId, customerId, userId: user.id, hadEmail: Boolean(sessionEmail) },
+          'Safety-net auto-created user during fulfillment',
+        );
+      }
+    }
+
     if (user) {
       // SECURITY: client_reference_id is supplied via the Payment Link URL
       // and is therefore user-controlled. We only auto-link a fresh Stripe
