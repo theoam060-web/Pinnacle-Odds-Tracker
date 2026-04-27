@@ -5,7 +5,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Separator } from "@/components/ui/separator";
-import { SlidersHorizontal, RotateCcw } from "lucide-react";
+import { SlidersHorizontal, RotateCcw, XCircle } from "lucide-react";
 
 export interface FilterSettings {
   minDropPercent: number;
@@ -44,13 +44,15 @@ const ALL_MARKET_TYPES = [
 interface Props {
   filters: FilterSettings;
   onChange: (f: FilterSettings) => void;
+  onCancelSubscription?: () => void;
+  canCancelSubscription?: boolean;
 }
 
 function toggleItem(list: string[], item: string): string[] {
   return list.includes(item) ? list.filter(x => x !== item) : [...list, item];
 }
 
-export function SettingsPanel({ filters, onChange }: Props) {
+export function SettingsPanel({ filters, onChange, onCancelSubscription, canCancelSubscription }: Props) {
   function update(partial: Partial<FilterSettings>) {
     onChange({ ...filters, ...partial });
   }
@@ -197,6 +199,18 @@ export function SettingsPanel({ filters, onChange }: Props) {
           <RotateCcw className="w-3 h-3 mr-2" />
           Reset to defaults
         </Button>
+
+        {canCancelSubscription && onCancelSubscription && (
+          <Button
+            variant="destructive"
+            size="sm"
+            className="w-full mt-3"
+            onClick={onCancelSubscription}
+          >
+            <XCircle className="w-3 h-3 mr-2" />
+            Avbryt prenumeration
+          </Button>
+        )}
       </SheetContent>
     </Sheet>
   );

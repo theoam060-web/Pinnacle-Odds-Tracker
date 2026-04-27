@@ -113,6 +113,21 @@ router.post('/stripe/portal', requireAuth, async (req: any, res) => {
   }
 });
 
+router.post('/stripe/cancel', requireAuth, async (req: any, res) => {
+  try {
+    const user = await storage.getUser(req.userId);
+    if (!user?.stripeCustomerId) return res.status(400).json({ error: 'No subscription found' });
+
+    const subscriptionId = user.stripeSubscriptionId;
+    if (!subscriptionId) return res.status(400).json({ error: 'No active subscription found' });
+
+    const updated = await stripeService.cancelSubscription(subscriptionId);
+    res.json({ ok: true, subscription: updated });
+  } catch (err: any) {
+    res.status(500).json({ error: err.message ?? 'Failed to cancel subscription' });
+  }
+});
+
 router.get('/stripe/subscription', requireAuth, async (req: any, res) => {
   try {
     const user = await storage.getUser(req.userId);
