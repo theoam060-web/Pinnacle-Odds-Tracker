@@ -2434,6 +2434,18 @@ function SharpDataSection() {
 }
 
 function AppContent() {
+  const { isSignedIn, isLoaded } = useUser();
+
+  useEffect(() => {
+    if (!isLoaded) return;
+    if (isSignedIn) {
+      // Signed-in users belong in the dashboard, not on the landing page.
+      window.location.replace("/app/");
+    }
+  }, [isSignedIn, isLoaded]);
+
+  if (!isLoaded || isSignedIn) return null;
+
   return (
     <div className="min-h-[100dvh] bg-background text-foreground font-sans selection:bg-primary/30 selection:text-primary">
       <Navbar />

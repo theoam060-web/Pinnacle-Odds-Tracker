@@ -96,6 +96,35 @@ export class Storage {
     const [user] = await db.select().from(usersTable).where(eq(usersTable.stripeSubscriptionId, subscriptionId));
     return user;
   }
+
+  async getUserByEmail(email: string) {
+    const result = await db.execute(
+      sql`SELECT * FROM users WHERE email = ${email} LIMIT 1`
+    );
+    return result.rows[0] || null;
+  }
+
+  /**
+   * Upsert a user row from Stripe data — used by live-recovery paths.
+   * Creates the user if they don't exist, then links their Stripe info.
+   */
+  async upsertUserFromStripe(
+    userId: string,
+    email: string | undefined,
+    customerId: string,
+    subscriptionId: string,
+    subscriptionStatus: string,
+  ) {
+    await db
+      .insert(usersTable)
+      .values({ id: userId, email })
+      .onConflictDoNothing();
+
+    await db
+      .update(usersTable)
+      .set({ stripeCustomerId: customerId, stripeSubscriptionId: subscriptionId, subscriptionStatus })
+      .where(eq(usersTable.id, userId));
+  }
 }
 
 export const storage = new Storage();

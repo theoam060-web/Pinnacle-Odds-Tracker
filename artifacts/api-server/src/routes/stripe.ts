@@ -130,7 +130,30 @@ router.post('/stripe/cancel', requireAuth, async (req: any, res) => {
 
 router.get('/stripe/subscription', requireAuth, async (req: any, res) => {
   try {
-    const user = await storage.getUser(req.userId);
+    let user = await storage.getUser(req.userId);
+
+    // ── Live Stripe recovery ────────────────────────────────────────────────
+    // If our DB has no subscription linked (webhook may have failed), hit the
+    // Stripe API directly to recover the subscription. This handles the case
+    // where a user paid but the webhook verification failed.
+    if (!user?.stripeSubscriptionId) {
+      const email: string | undefined = req.userEmail;
+
+      if (user?.stripeCustomerId) {
+        // Fast path: we know the customer, just look for active subs
+        const recovered = await stripeService.recoverSubscriptionByCustomerId(req.userId, user.stripeCustomerId);
+        if (recovered.subscriptionId) {
+          user = await storage.getUser(req.userId);
+        }
+      } else if (email) {
+        // Slow path: look up by email (webhook-failure scenario)
+        const recovered = await stripeService.recoverSubscriptionByEmail(req.userId, email);
+        if (recovered.subscriptionId) {
+          user = await storage.getUser(req.userId);
+        }
+      }
+    }
+
     if (!user?.stripeSubscriptionId) return res.json({ subscription: null, planTier: null });
 
     // Strict gate: only grant access when subscriptionStatus is explicitly 'active'.
@@ -145,6 +168,16 @@ router.get('/stripe/subscription', requireAuth, async (req: any, res) => {
       storage.getSubscription(user.stripeSubscriptionId),
       storage.getSubscriptionPlanTier(user.stripeSubscriptionId),
     ]);
+
+    // If the DB subscription tables are not yet synced (stripe-replit-sync lag),
+    // fall back to a basic active response so the user isn't locked out.
+    if (!sub) {
+      return res.json({
+        subscription: { status: 'active', id: user.stripeSubscriptionId },
+        planTier: planTier ?? 'silver',
+      });
+    }
+
     res.json({ subscription: sub, planTier });
   } catch (err) {
     res.status(500).json({ error: 'Failed to fetch subscription' });
