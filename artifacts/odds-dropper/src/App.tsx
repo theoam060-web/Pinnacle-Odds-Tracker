@@ -452,15 +452,22 @@ function SubscriptionGate({ children }: { children: React.ReactNode }) {
   // avoid setting state after unmount.
   const aliveRef = useRef(true);
 
-  // Returns true when an active subscription was found.
-  const check = useCallback(async (): Promise<boolean> => {
+  // Checks subscription status. When silent=true, only flips state to "active"
+  // on success — does NOT flip to "none" on failure. Polling uses silent mode
+  // so the SubscriptionWall doesn't flash between retries while we wait for
+  // the webhook to land. The final post-deadline check uses silent=false to
+  // commit a definitive "none" if still inactive.
+  const check = useCallback(async (silent = false): Promise<boolean> => {
     try {
       const token = await getToken();
       const res = await fetch(`${API_BASE}/api/stripe/subscription`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       if (!aliveRef.current) return false;
-      if (!res.ok) { setStatus("none"); return false; }
+      if (!res.ok) {
+        if (!silent) setStatus("none");
+        return false;
+      }
       const data = await res.json();
       if (!aliveRef.current) return false;
       const sub = data.subscription;
@@ -473,27 +480,28 @@ function SubscriptionGate({ children }: { children: React.ReactNode }) {
           return true;
         }
       }
-      setStatus("none");
+      if (!silent) setStatus("none");
       return false;
     } catch {
-      if (aliveRef.current) setStatus("none");
+      if (!silent && aliveRef.current) setStatus("none");
       return false;
     }
   }, [getToken]);
 
   // Briefly poll the subscription endpoint after a Stripe redirect, since the
-  // webhook → DB update may lag a few seconds. Stops as soon as we see "active"
-  // or the component unmounts.
+  // webhook → DB update may lag a few seconds. Keeps the gate in "loading"
+  // throughout (silent checks) so users don't briefly see the SubscriptionWall
+  // flash between retries. After the deadline, runs one definitive check.
   const pollUntilActive = useCallback(async (timeoutMs = 12000, intervalMs = 1500) => {
     if (!aliveRef.current) return;
     setStatus("loading");
     const deadline = Date.now() + timeoutMs;
     while (Date.now() < deadline && aliveRef.current) {
-      const active = await check();
+      const active = await check(true); // silent — don't flash SubscriptionWall
       if (active || !aliveRef.current) return;
       await new Promise(r => setTimeout(r, intervalMs));
     }
-    if (aliveRef.current) await check();
+    if (aliveRef.current) await check(false); // final, definitive
   }, [check]);
 
   useEffect(() => {

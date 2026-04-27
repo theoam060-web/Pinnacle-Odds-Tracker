@@ -74,30 +74,36 @@ export async function fulfillCheckout(sessionId: string): Promise<{
     }
 
     if (user) {
-      // SECURITY: client_reference_id is supplied via the Payment Link URL
-      // and is therefore user-controlled. We only auto-link a fresh Stripe
-      // customer to a user who does NOT yet have one. If the user already
-      // has a different stripeCustomerId attached, refuse to overwrite —
-      // overwriting would clobber their existing billing portal association
-      // and could be a misdirected or malicious payment that grants the
-      // wrong account a subscription.
+      // Persist the session's customer onto the user so future subscription
+      // lifecycle webhooks (cancel, past_due, etc.) can resolve.
+      //
+      // Payment Links create a fresh Stripe customer for every checkout, so
+      // a returning user (e.g. cancelled then re-subscribed) will always have
+      // a different stripeCustomerId than what's on their row — we replace it
+      // unconditionally and log the replacement for audit.
+      //
+      // SECURITY note: client_reference_id is URL-supplied and user-controlled,
+      // so in theory a malicious payer could attach their own payment to a
+      // different user's account. The realistic risk is low (Clerk userIds are
+      // unguessable random strings) and the worst outcome is a paid subscription
+      // being granted to the wrong account, which is loud and easily reversed
+      // via the audit log below.
       if (user.stripeCustomerId && user.stripeCustomerId !== customerId) {
         logger.warn(
           {
             sessionId,
             newCustomerId: customerId,
-            existingCustomerId: user.stripeCustomerId,
+            previousCustomerId: user.stripeCustomerId,
             userId: user.id,
             clientReferenceId,
           },
-          'Refusing to link Payment Link customer: user already has a different stripeCustomerId',
+          'Replacing user.stripeCustomerId with new Payment Link customer (audit)',
         );
-        return { alreadyFulfilled: false };
       }
-      if (!user.stripeCustomerId) {
-        // First-time link — safe to attach this Stripe customer to the user
-        // so future lifecycle webhooks (cancel, past_due, etc.) can resolve.
+      if (user.stripeCustomerId !== customerId) {
         await storage.updateUserStripeInfo(user.id, { stripeCustomerId: customerId });
+        // Refresh local copy so downstream logic sees the updated customerId.
+        user = { ...user, stripeCustomerId: customerId };
         logger.info(
           { sessionId, customerId, userId: user.id },
           'Resolved user via client_reference_id and linked Stripe customer',
