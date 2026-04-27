@@ -53,14 +53,7 @@ function PricingNav() {
             Sharp<span className="text-primary">Tracker</span>
           </span>
         </button>
-        {isSignedIn ? (
-          <button
-            onClick={() => { window.location.href = "/app/"; }}
-            className="bg-primary/10 text-primary border border-primary/30 hover:bg-primary hover:text-primary-foreground px-5 py-2 rounded-md font-mono text-sm transition-all"
-          >
-            Dashboard
-          </button>
-        ) : (
+        {!isSignedIn ? (
           <button
             onClick={() => navigate("/sign-in")}
             className="flex items-center gap-2 bg-primary/10 text-primary border border-primary/30 hover:bg-primary hover:text-primary-foreground px-5 py-2 rounded-md font-mono text-sm transition-all"
@@ -68,7 +61,7 @@ function PricingNav() {
             <GoogleIcon size={16} />
             Sign In
           </button>
-        )}
+        ) : null}
       </div>
     </nav>
   );
