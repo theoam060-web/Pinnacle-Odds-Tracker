@@ -573,7 +573,9 @@ function Navbar() {
       <div className="container mx-auto pl-2 pr-6 h-20 flex items-center justify-between">
         <div className="flex items-center gap-2">
           <Activity className="w-6 h-6 text-primary" />
-          <span className="font-sans font-bold text-xl tracking-tight text-foreground">Sharp<span className="text-primary">Tracker</span></span>
+          <a href="/" className="font-sans font-bold text-xl tracking-tight text-foreground cursor-pointer">
+            Sharp<span className="text-primary">Tracker</span>
+          </a>
         </div>
 
         <div className="hidden md:flex items-center gap-8 text-sm font-mono tracking-wide text-muted-foreground">
