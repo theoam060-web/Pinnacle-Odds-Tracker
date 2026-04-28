@@ -6,7 +6,7 @@
  * Steps:
  *  1. Calls runMigrations() to ensure the stripe.* DB schema exists.
  *  2. Calls getStripeSync() to get the StripeSync singleton.
- *  3. Creates Silver / Gold products + prices only if absent (idempotent).
+ *  3. Creates Silver / Gold / Platinum products + prices only if absent (idempotent).
  *  4. Calls syncProducts() then backfillPrices() to populate the DB.
  *  5. Queries stripe.products / stripe.prices to verify DB rows.
  *  6. Fetches /api/stripe/products to confirm the API response.
@@ -147,7 +147,7 @@ async function main() {
 
   const stripe = await getUncachableStripeClient();
 
-  // 3. Idempotently ensure Silver and Gold products + prices exist in Stripe
+  // 3. Idempotently ensure Silver, Gold, and Platinum products + prices exist in Stripe
   const priceIds: string[] = [];
   for (const plan of PLANS) {
     const { priceId } = await ensureProduct(stripe, plan);

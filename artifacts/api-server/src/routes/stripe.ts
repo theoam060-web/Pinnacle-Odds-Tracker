@@ -46,6 +46,9 @@ router.post('/stripe/checkout', requireAuth, async (req: any, res) => {
   let priceId = rawPriceId as string | null | undefined;
   if (plan && !priceId) {
     priceId = await storage.getPriceIdByPlan(plan);
+    if (!priceId) {
+      priceId = await storage.getPriceIdByPlanFromStripe(plan);
+    }
     if (!priceId) return res.status(400).json({ error: `No active price found for plan: ${plan}` });
   }
   try {
