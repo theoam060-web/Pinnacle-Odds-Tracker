@@ -9,7 +9,7 @@ export default function CancelPage() {
     <div className="min-h-[100dvh] bg-background text-foreground font-sans flex flex-col">
       <nav className="fixed top-0 w-full z-50 bg-background/80 backdrop-blur-md border-b border-border/50">
         <div className="container mx-auto px-6 h-16 flex items-center">
-          <button onClick={() => navigate("/")} className="flex items-center gap-2">
+          <button onClick={() => window.location.href = "/"} className="flex items-center gap-2">
             <Activity className="w-5 h-5 text-primary" />
             <span className="font-sans font-bold text-lg tracking-tight">
               Sharp<span className="text-primary">Tracker</span>
@@ -44,10 +44,10 @@ export default function CancelPage() {
 
           <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
             <button
-              onClick={() => navigate("/pricing")}
+              onClick={() => window.location.href = "/"}
               className="px-6 py-3 rounded-lg bg-primary text-primary-foreground font-mono text-sm font-bold hover:bg-primary/90 transition-all"
             >
-              View plans
+              Back to landing page
             </button>
             <button
               onClick={() => navigate("/")}
