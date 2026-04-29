@@ -18,27 +18,35 @@ export async function fulfillCheckout(sessionId: string) {
 
   const clerkUserId =
     session.client_reference_id ??
-    (typeof session.customer === 'object' ? (session.customer as any)?.metadata?.clerkUserId : null);
+    (typeof session.customer === 'object'
+      ? (session.customer as any)?.metadata?.clerkUserId
+      : null);
 
   if (!clerkUserId) {
     throw new Error('Session missing client_reference_id (Clerk user ID)');
   }
 
-  // Retrieve subscription to get plan tier
+  // Check if already fulfilled
+  const existingUser = await storage.getUser(clerkUserId);
+  if (existingUser?.stripeSubscriptionId === subscriptionId) {
+    logger.info({ clerkUserId, subscriptionId }, 'Checkout already fulfilled');
+    return {
+      plan: existingUser.subscriptionPlan,
+      status: existingUser.subscriptionStatus,
+      alreadyFulfilled: true,
+      trialActive: existingUser.subscriptionStatus === 'trialing',
+    };
+  }
+
+  // Retrieve subscription to get actual status and plan tier
   const sub = await stripeService.retrieveSubscription(subscriptionId);
   const tier = getPlanTierFromSub(sub);
-  const status =
-    sub.status === 'active' || sub.status === 'trialing' ? 'active' : sub.status ?? 'active';
+  // Use Stripe's actual status ('trialing', 'active', etc.)
+  const status = sub.status ?? 'active';
+  const isTrialing = status === 'trialing';
 
   const customerEmail =
     typeof session.customer === 'object' ? (session.customer as any)?.email : undefined;
-
-  // Check if already fulfilled
-  const user = await storage.getUser(clerkUserId);
-  if (user?.stripeSubscriptionId === subscriptionId) {
-    logger.info({ clerkUserId, subscriptionId }, 'Checkout already fulfilled');
-    return { plan: tier, alreadyFulfilled: true };
-  }
 
   await storage.upsertUserFromStripe(
     clerkUserId,
@@ -47,8 +55,14 @@ export async function fulfillCheckout(sessionId: string) {
     subscriptionId,
     status,
     tier,
+    isTrialing ? true : undefined,
   );
 
-  logger.info({ clerkUserId, subscriptionId, tier }, 'Checkout fulfilled');
-  return { plan: tier, alreadyFulfilled: false };
+  logger.info({ clerkUserId, subscriptionId, tier, status }, 'Checkout fulfilled');
+  return {
+    plan: tier,
+    status,
+    alreadyFulfilled: false,
+    trialActive: isTrialing,
+  };
 }

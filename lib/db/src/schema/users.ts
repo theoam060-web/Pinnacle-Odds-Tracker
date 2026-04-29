@@ -1,4 +1,4 @@
-import { pgTable, text, timestamp } from "drizzle-orm/pg-core";
+import { pgTable, text, timestamp, boolean } from "drizzle-orm/pg-core";
 import { createInsertSchema, createSelectSchema } from "drizzle-zod";
 import { z } from "zod/v4";
 
@@ -9,6 +9,7 @@ export const usersTable = pgTable("users", {
   stripeSubscriptionId: text("stripe_subscription_id"),
   subscriptionStatus: text("subscription_status"),
   subscriptionPlan: text("subscription_plan"),
+  trialUsed: boolean("trial_used").notNull().default(false),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 });
 

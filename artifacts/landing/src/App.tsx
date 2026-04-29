@@ -27,6 +27,7 @@ import {
 import WhyPage from "./WhyPage";
 import PricingPage from "./PricingPage";
 import SuccessPage from "./SuccessPage";
+import CancelPage from "./CancelPage";
 import TermsPage from "./TermsPage";
 import PrivacyPage from "./PrivacyPage";
 import ChatWidget from "./ChatWidget";
@@ -2473,6 +2474,7 @@ function Router() {
       <Route path="/features/bankroll" component={BankrollPage} />
       <Route path="/pricing" component={PricingPage} />
       <Route path="/success" component={SuccessPage} />
+      <Route path="/cancel" component={CancelPage} />
       <Route path="/terms" component={TermsPage} />
       <Route path="/privacy" component={PrivacyPage} />
       <Route component={NotFound} />

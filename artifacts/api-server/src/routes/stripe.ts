@@ -1,6 +1,6 @@
 import { Router, type IRouter } from 'express';
 import { storage } from '../storage.js';
-import { stripeService } from '../stripeService.js';
+import { stripeService, isAccessAllowed } from '../stripeService.js';
 import { fulfillCheckout } from '../fulfillment.js';
 import { requireAuth } from '../middlewares/requireAuth.js';
 import { getStripePublishableKey } from '../stripeClient.js';
@@ -13,7 +13,7 @@ router.get('/stripe/publishable-key', async (_req, res) => {
   try {
     const key = await getStripePublishableKey();
     res.json({ publishableKey: key });
-  } catch (err: any) {
+  } catch {
     res.status(500).json({ error: 'Stripe not configured' });
   }
 });
@@ -23,12 +23,11 @@ router.get('/stripe/plans', async (_req, res) => {
   try {
     const plans = await storage.listPlans();
     res.json({ plans });
-  } catch (err: any) {
-    // Gracefully return static plans when DB is not yet synced
+  } catch {
     res.json({
       plans: [
-        { id: 'silver', name: 'Silver', price: 3499, currency: 'eur', interval: 'month' },
-        { id: 'gold',   name: 'Gold',   price: 8499, currency: 'eur', interval: 'month' },
+        { id: 'silver',   name: 'Silver',   price: 3499,  currency: 'eur', interval: 'month' },
+        { id: 'gold',     name: 'Gold',     price: 8499,  currency: 'eur', interval: 'month' },
         { id: 'platinum', name: 'Platinum', price: 11499, currency: 'eur', interval: 'month' },
       ],
     });
@@ -51,26 +50,50 @@ router.post('/stripe/checkout', requireAuth, async (req: any, res) => {
       const customer = await stripeService.createCustomer(user?.email ?? userEmail, req.userId);
       await storage.updateUserStripeInfo(req.userId, { stripeCustomerId: customer.id });
       customerId = customer.id;
+      user = await storage.getUser(req.userId);
+    }
+
+    // --- Trial eligibility check ---
+    // 1. Check our DB flag (fastest)
+    let trialEligible = !user?.trialUsed;
+
+    // 2. If DB says eligible, double-check against Stripe (catches email reuse)
+    if (trialEligible && customerId) {
+      const stripeTrialUsed = await stripeService.customerHasUsedTrial(customerId);
+      if (stripeTrialUsed) trialEligible = false;
+    }
+
+    // 3. Check other Stripe customers at the same email
+    const email = user?.email ?? userEmail;
+    if (trialEligible && email) {
+      const emailTrialUsed = await stripeService.checkEmailHasUsedTrial(email, customerId ?? undefined);
+      if (emailTrialUsed) trialEligible = false;
     }
 
     // Resolve price ID — first try DB, then Stripe API directly
     let priceId = await storage.getPriceIdByPlan(plan);
-    if (!priceId) {
-      priceId = await storage.getPriceIdByPlanFromStripe(plan);
-    }
+    if (!priceId) priceId = await storage.getPriceIdByPlanFromStripe(plan);
     if (!priceId) {
       return res.status(400).json({ error: `No active price found for plan: ${plan}. Make sure Stripe products are seeded.` });
     }
 
-    const host = req.headers.host || '';
-    const proto = (req.headers['x-forwarded-proto'] as string) || 'https';
+    const host = req.headers.host ?? '';
+    const proto = (req.headers['x-forwarded-proto'] as string) ?? 'https';
     const baseUrl = `${proto}://${host}`;
-    const appBase = `${baseUrl}/app/`;
-    const successUrl = `${appBase}?session_id={CHECKOUT_SESSION_ID}`;
-    const cancelUrl = redirectAfter ? `${baseUrl}${redirectAfter}` : `${baseUrl}/pricing`;
+    const successUrl = `${baseUrl}/success?session_id={CHECKOUT_SESSION_ID}`;
+    const cancelUrl = redirectAfter ? `${baseUrl}${redirectAfter}` : `${baseUrl}/cancel`;
 
-    const session = await stripeService.createCheckoutSession(customerId, priceId, successUrl, cancelUrl, req.userId);
-    res.json({ url: session.url });
+    const session = await stripeService.createCheckoutSession(
+      customerId!,
+      priceId,
+      successUrl,
+      cancelUrl,
+      req.userId,
+      trialEligible,
+    );
+
+    logger.info({ userId: req.userId, plan, trialEligible }, 'Checkout session created');
+    res.json({ url: session.url, trialEligible });
   } catch (err: any) {
     const detail = err?.raw?.message ?? err?.message ?? 'Failed to create checkout session';
     logger.error({ err }, '[stripe/checkout] error');
@@ -78,7 +101,7 @@ router.post('/stripe/checkout', requireAuth, async (req: any, res) => {
   }
 });
 
-// Fulfill a checkout session (called when user returns from Stripe)
+// Fulfill a checkout session (called from success page)
 router.get('/stripe/checkout/session', async (req, res) => {
   const sessionId = req.query.session_id as string;
   if (!sessionId) return res.status(400).json({ error: 'session_id required' });
@@ -98,8 +121,8 @@ router.post('/stripe/portal', requireAuth, async (req: any, res) => {
     if (!user?.stripeCustomerId) {
       return res.status(400).json({ error: 'No subscription found' });
     }
-    const host = req.headers.host || '';
-    const proto = (req.headers['x-forwarded-proto'] as string) || 'https';
+    const host = req.headers.host ?? '';
+    const proto = (req.headers['x-forwarded-proto'] as string) ?? 'https';
     const returnUrl = `${proto}://${host}/app/`;
     const session = await stripeService.createCustomerPortalSession(user.stripeCustomerId, returnUrl);
     res.json({ url: session.url });
@@ -127,24 +150,21 @@ router.get('/stripe/subscription', requireAuth, async (req: any, res) => {
     }
 
     if (!user?.stripeSubscriptionId) {
-      return res.json({ subscription: null, planTier: null });
+      return res.json({ subscription: null, planTier: null, trialUsed: user?.trialUsed ?? false });
     }
 
-    if (user.subscriptionStatus !== 'active') {
-      return res.json({
-        subscription: { status: user.subscriptionStatus ?? 'unknown' },
-        planTier: null,
-      });
-    }
+    const status = user.subscriptionStatus ?? 'unknown';
+    const hasAccess = isAccessAllowed(status);
 
-    // Get plan tier from DB or stored field
-    const planTier =
-      user.subscriptionPlan ??
-      (await storage.getSubscriptionPlanTier(user.stripeSubscriptionId));
+    // Get plan tier from stored field or DB lookup
+    const planTier = hasAccess
+      ? (user.subscriptionPlan ?? (await storage.getSubscriptionPlanTier(user.stripeSubscriptionId)))
+      : null;
 
     res.json({
-      subscription: { status: 'active', id: user.stripeSubscriptionId },
-      planTier,
+      subscription: { status, id: user.stripeSubscriptionId },
+      planTier: hasAccess ? planTier : null,
+      trialUsed: user.trialUsed,
     });
   } catch (err) {
     logger.error({ err }, '[stripe/subscription] error');

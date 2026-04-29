@@ -45,6 +45,7 @@ export class Storage {
       stripeSubscriptionId?: string | null;
       subscriptionStatus?: string | null;
       subscriptionPlan?: string | null;
+      trialUsed?: boolean;
     },
   ) {
     const [user] = await db
@@ -55,6 +56,13 @@ export class Storage {
     return user;
   }
 
+  async markTrialUsed(userId: string) {
+    await db
+      .update(usersTable)
+      .set({ trialUsed: true })
+      .where(eq(usersTable.id, userId));
+  }
+
   async upsertUserFromStripe(
     userId: string,
     email: string | undefined,
@@ -62,6 +70,7 @@ export class Storage {
     subscriptionId: string,
     subscriptionStatus: string,
     subscriptionPlan?: string | null,
+    trialUsed?: boolean,
   ) {
     await db.insert(usersTable).values({ id: userId, email }).onConflictDoNothing();
     await db
@@ -71,6 +80,7 @@ export class Storage {
         stripeSubscriptionId: subscriptionId,
         subscriptionStatus,
         ...(subscriptionPlan !== undefined ? { subscriptionPlan } : {}),
+        ...(trialUsed !== undefined ? { trialUsed } : {}),
       })
       .where(eq(usersTable.id, userId));
   }

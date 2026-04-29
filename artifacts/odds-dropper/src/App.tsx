@@ -154,14 +154,19 @@ function AuthScreen() {
 function SubscriptionWall() {
   const [loadingPlan, setLoadingPlan] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const { getToken } = useAuth();
 
   const startCheckout = async (plan: string) => {
     setError(null);
     setLoadingPlan(plan);
     try {
+      const token = await getToken();
       const res = await fetch("/api/stripe/checkout", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
         body: JSON.stringify({ plan }),
         credentials: "include",
       });
@@ -176,8 +181,10 @@ function SubscriptionWall() {
 
   const openPortal = async () => {
     try {
+      const token = await getToken();
       const res = await fetch("/api/stripe/portal", {
         method: "POST",
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
         credentials: "include",
       });
       const data = await res.json();
@@ -197,9 +204,12 @@ function SubscriptionWall() {
       </div>
 
       <div className="max-w-xl w-full text-center mb-10">
-        <h1 className="text-2xl font-bold text-white mb-3">Choose your plan</h1>
+        <div className="inline-flex items-center gap-1.5 bg-amber-400/10 border border-amber-400/20 text-amber-400 text-[10px] font-mono font-bold uppercase tracking-widest px-3 py-1 rounded-full mb-4">
+          14-day free trial — card required
+        </div>
+        <h1 className="text-2xl font-bold text-white mb-3">Start your free trial</h1>
         <p className="text-white/50 font-mono text-sm">
-          Subscribe to start tracking dropping odds and sharp money.
+          Try SharpTracker free for 14 days. Cancel anytime before the trial ends and you won't be charged.
         </p>
       </div>
 
@@ -229,7 +239,7 @@ function SubscriptionWall() {
             disabled={loadingPlan !== null}
             className="w-full py-2.5 rounded-lg border border-white/20 text-white/80 font-mono text-xs transition-colors hover:bg-white/5 disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            {loadingPlan === "silver" ? "Redirecting…" : "Subscribe"}
+            {loadingPlan === "silver" ? "Redirecting…" : "Try 14 Days Free"}
           </button>
         </div>
 
@@ -255,7 +265,7 @@ function SubscriptionWall() {
             disabled={loadingPlan !== null}
             className="w-full py-2.5 rounded-lg bg-cyan-400 text-black font-mono text-xs font-semibold transition-colors hover:bg-cyan-300 disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            {loadingPlan === "gold" ? "Redirecting…" : "Subscribe"}
+            {loadingPlan === "gold" ? "Redirecting…" : "Try 14 Days Free"}
           </button>
         </div>
 
@@ -278,7 +288,7 @@ function SubscriptionWall() {
             disabled={loadingPlan !== null}
             className="w-full py-2.5 rounded-lg border border-violet-500/40 text-violet-300 font-mono text-xs transition-colors hover:bg-violet-500/10 disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            {loadingPlan === "platinum" ? "Redirecting…" : "Subscribe"}
+            {loadingPlan === "platinum" ? "Redirecting…" : "Try 14 Days Free"}
           </button>
         </div>
       </div>
@@ -301,7 +311,7 @@ function SubscriptionWall() {
 
 type SubState =
   | { status: "loading" }
-  | { status: "active"; tier: PlanTier }
+  | { status: "active"; tier: PlanTier; isTrialing: boolean }
   | { status: "none" };
 
 function SubscriptionGate({ children }: { children: React.ReactNode }) {
@@ -327,9 +337,11 @@ function SubscriptionGate({ children }: { children: React.ReactNode }) {
       });
       const data = await res.json();
       const tier = data.planTier as PlanTier | null;
-      const isActive = data.subscription?.status === "active";
-      if (isActive && tier && tier !== "none") {
-        setSubState({ status: "active", tier });
+      const subStatus = data.subscription?.status as string | undefined;
+      // Allow access for both 'active' and 'trialing' subscriptions
+      const hasAccess = (subStatus === "active" || subStatus === "trialing") && tier && tier !== "none";
+      if (hasAccess) {
+        setSubState({ status: "active", tier: tier!, isTrialing: subStatus === "trialing" });
       } else {
         setSubState({ status: "none" });
       }
@@ -374,7 +386,7 @@ function SubscriptionGate({ children }: { children: React.ReactNode }) {
     );
   }
 
-  // No active subscription — show subscription wall
+  // No active or trialing subscription — show subscription wall
   if (isSignedIn) {
     return <SubscriptionWall />;
   }

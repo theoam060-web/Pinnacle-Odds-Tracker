@@ -156,9 +156,15 @@ export default function PricingPage() {
             transition={{ duration: 0.5 }}
             className="text-center mb-16"
           >
+            <div className="inline-flex items-center gap-1.5 bg-amber-400/10 border border-amber-400/20 text-amber-400 text-[10px] font-mono font-bold uppercase tracking-widest px-3 py-1 rounded-full mb-4">
+              14-day free trial included
+            </div>
             <h1 className="text-4xl md:text-5xl font-sans font-bold text-foreground mb-0 leading-tight">
               Pricing
             </h1>
+            <p className="text-foreground/50 text-sm font-mono mt-3">
+              Card required · No charge during trial · Cancel anytime
+            </p>
           </motion.div>
 
           {error && (
@@ -202,7 +208,7 @@ export default function PricingPage() {
                 className="w-full py-3 rounded-lg border border-border/60 text-foreground/80 font-mono text-sm text-center transition-colors hover:bg-white/5 hover:border-border disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
               >
                 {loadingPlan === "silver" ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
-                {isSignedIn ? "Subscribe — Silver" : "Get Started"}
+                {isSignedIn ? "Try 14 Days Free" : "Get Started"}
               </button>
             </motion.div>
 
@@ -245,7 +251,7 @@ export default function PricingPage() {
                 className="w-full py-3 rounded-lg bg-primary text-background font-mono text-sm font-semibold text-center transition-colors hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
               >
                 {loadingPlan === "gold" ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
-                {isSignedIn ? "Subscribe — Gold" : "Get Started"}
+                {isSignedIn ? "Try 14 Days Free" : "Get Started"}
               </button>
             </motion.div>
 
@@ -282,7 +288,7 @@ export default function PricingPage() {
                 className="w-full py-3 rounded-lg border border-violet-500/40 text-violet-300 font-mono text-sm text-center transition-colors hover:bg-violet-500/10 hover:border-violet-500/60 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
               >
                 {loadingPlan === "platinum" ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
-                {isSignedIn ? "Subscribe — Platinum" : "Get Started"}
+                {isSignedIn ? "Try 14 Days Free" : "Get Started"}
               </button>
             </motion.div>
 
