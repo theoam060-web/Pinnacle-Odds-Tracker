@@ -1,14 +1,15 @@
 import { Router, type IRouter } from "express";
-import healthRouter from "./health";
-import oddsRouter from "./odds";
-import sportsRouter from "./sports";
-import marketsRouter from "./markets";
-import betsRouter from "./bets";
-import resultsRouter from "./results";
-import userRouter from "./user";
-import softOddsRouter from "./soft-odds";
-import pushRouter from "./push";
-import chatRouter from "./chat";
+import healthRouter from "./health.js";
+import oddsRouter from "./odds.js";
+import sportsRouter from "./sports.js";
+import marketsRouter from "./markets.js";
+import betsRouter from "./bets.js";
+import resultsRouter from "./results.js";
+import userRouter from "./user.js";
+import stripeRouter from "./stripe.js";
+import softOddsRouter from "./soft-odds.js";
+import pushRouter from "./push.js";
+import chatRouter from "./chat.js";
 
 const router: IRouter = Router();
 
@@ -19,6 +20,7 @@ router.use(marketsRouter);
 router.use(betsRouter);
 router.use(resultsRouter);
 router.use(userRouter);
+router.use(stripeRouter);
 router.use(softOddsRouter);
 router.use(pushRouter);
 router.use(chatRouter);

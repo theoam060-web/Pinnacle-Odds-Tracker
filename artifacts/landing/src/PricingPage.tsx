@@ -1,8 +1,8 @@
-import React from "react";
+import React, { useState } from "react";
 import { motion } from "framer-motion";
 import { Link, useLocation } from "wouter";
-import { Activity, Check, Star } from "lucide-react";
-import { useUser } from "@clerk/react";
+import { Activity, Check, Loader2, Star } from "lucide-react";
+import { useUser, useAuth } from "@clerk/react";
 import GoogleIcon from "./components/GoogleIcon";
 
 function PricingNav() {
@@ -101,7 +101,48 @@ const PLATINUM_FEATURES: FeatureDef[] = [
   { text: "Current CLV & Current CV" },
 ];
 
+function useCheckout() {
+  const [loadingPlan, setLoadingPlan] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const { isSignedIn } = useUser();
+  const { getToken } = useAuth();
+  const [, navigate] = useLocation();
+
+  const startCheckout = async (plan: string) => {
+    if (!isSignedIn) {
+      navigate("/sign-in");
+      return;
+    }
+    setError(null);
+    setLoadingPlan(plan);
+    try {
+      const token = await getToken();
+      const res = await fetch("/api/stripe/checkout", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
+        body: JSON.stringify({ plan, redirectAfter: "/pricing" }),
+        credentials: "include",
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error ?? "Checkout failed");
+      if (data.url) window.location.href = data.url;
+    } catch (e: any) {
+      setError(e.message ?? "Something went wrong");
+    } finally {
+      setLoadingPlan(null);
+    }
+  };
+
+  return { startCheckout, loadingPlan, error };
+}
+
 export default function PricingPage() {
+  const { startCheckout, loadingPlan, error } = useCheckout();
+  const { isSignedIn } = useUser();
+
   return (
     <div className="min-h-[100dvh] bg-background text-foreground font-sans">
       <PricingNav />
@@ -119,6 +160,12 @@ export default function PricingPage() {
               Pricing
             </h1>
           </motion.div>
+
+          {error && (
+            <div className="mb-8 text-center text-sm font-mono text-red-400 bg-red-500/10 border border-red-500/20 rounded-lg py-3 px-4">
+              {error}
+            </div>
+          )}
 
           <div className="grid md:grid-cols-3 gap-6 items-start">
 
@@ -149,9 +196,14 @@ export default function PricingPage() {
                 {SILVER_FEATURES.map(f => <FeatureLine key={f.text} {...f} />)}
               </ul>
 
-              <div className="w-full py-3 rounded-lg border border-border/60 text-foreground/40 font-mono text-sm text-center cursor-default select-none">
-                Coming Soon
-              </div>
+              <button
+                onClick={() => startCheckout("silver")}
+                disabled={loadingPlan !== null}
+                className="w-full py-3 rounded-lg border border-border/60 text-foreground/80 font-mono text-sm text-center transition-colors hover:bg-white/5 hover:border-border disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+              >
+                {loadingPlan === "silver" ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
+                {isSignedIn ? "Subscribe — Silver" : "Get Started"}
+              </button>
             </motion.div>
 
             {/* Gold */}
@@ -187,9 +239,14 @@ export default function PricingPage() {
                 {GOLD_FEATURES.map(f => <FeatureLine key={f.text} {...f} />)}
               </ul>
 
-              <div className="w-full py-3 rounded-lg border border-primary/30 text-primary/40 font-mono text-sm text-center cursor-default select-none">
-                Coming Soon
-              </div>
+              <button
+                onClick={() => startCheckout("gold")}
+                disabled={loadingPlan !== null}
+                className="w-full py-3 rounded-lg bg-primary text-background font-mono text-sm font-semibold text-center transition-colors hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+              >
+                {loadingPlan === "gold" ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
+                {isSignedIn ? "Subscribe — Gold" : "Get Started"}
+              </button>
             </motion.div>
 
             {/* Platinum */}
@@ -219,9 +276,14 @@ export default function PricingPage() {
                 {PLATINUM_FEATURES.map(f => <PlatinumFeatureLine key={f.text} {...f} />)}
               </ul>
 
-              <div className="w-full py-3 rounded-lg border border-violet-500/30 text-violet-400/40 font-mono text-sm text-center cursor-default select-none">
-                Coming Soon
-              </div>
+              <button
+                onClick={() => startCheckout("platinum")}
+                disabled={loadingPlan !== null}
+                className="w-full py-3 rounded-lg border border-violet-500/40 text-violet-300 font-mono text-sm text-center transition-colors hover:bg-violet-500/10 hover:border-violet-500/60 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+              >
+                {loadingPlan === "platinum" ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
+                {isSignedIn ? "Subscribe — Platinum" : "Get Started"}
+              </button>
             </motion.div>
 
           </div>
