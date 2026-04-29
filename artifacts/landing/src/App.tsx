@@ -427,12 +427,18 @@ function NavUserMenu({ closePanel }: { closePanel: () => void }) {
           <div className="px-4 py-2 border-b border-border/40">
             <p className="text-xs font-mono text-muted-foreground truncate">{user.emailAddresses?.[0]?.emailAddress}</p>
           </div>
+          <a
+            href="/app/"
+            className="flex items-center gap-2 w-full px-4 py-2 text-sm font-mono text-primary hover:bg-primary/5 transition-colors"
+          >
+            Go to Live Feed →
+          </a>
           <button
             onClick={() => {
               setOpen(false);
               window.location.href = "/pricing";
             }}
-            className="w-full text-left px-4 py-2 text-sm font-mono text-primary hover:bg-primary/5 transition-colors"
+            className="w-full text-left px-4 py-2 text-sm font-mono text-foreground/70 hover:text-primary hover:bg-primary/5 transition-colors"
           >
             Pricing
           </button>
@@ -592,6 +598,13 @@ function Navbar() {
             </div>
           </Show>
           <Show when="signed-in">
+            <a
+              href="/app/"
+              className="flex items-center gap-2 bg-primary/10 text-primary border border-primary/30 hover:bg-primary hover:text-black px-4 py-2 rounded-md font-mono text-sm font-semibold transition-all shadow-[0_0_15px_rgba(0,255,255,0.08)] hover:shadow-[0_0_20px_rgba(0,255,255,0.3)]"
+            >
+              <TrendingDown className="w-3.5 h-3.5" />
+              Live Feed
+            </a>
             <NavUserMenu closePanel={closePanel} />
           </Show>
         </div>
