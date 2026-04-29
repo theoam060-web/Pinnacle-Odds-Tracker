@@ -389,7 +389,7 @@ function SubscriptionButton({ closePanel, className, children }: { closePanel: (
   );
 }
 
-function NavUserMenu({ closePanel }: { closePanel: () => void }) {
+function NavUserMenu({ closePanel, hasAccess }: { closePanel: () => void; hasAccess: boolean }) {
   const { user, isLoaded } = useUser();
   const { signOut } = useClerk();
   const [open, setOpen] = useState(false);
@@ -427,12 +427,14 @@ function NavUserMenu({ closePanel }: { closePanel: () => void }) {
           <div className="px-4 py-2 border-b border-border/40">
             <p className="text-xs font-mono text-muted-foreground truncate">{user.emailAddresses?.[0]?.emailAddress}</p>
           </div>
-          <button
-            onClick={() => { window.location.href = "/app/"; }}
-            className="flex items-center gap-2 w-full px-4 py-2 text-sm font-mono text-primary hover:bg-primary/5 transition-colors"
-          >
-            Go to Live Feed →
-          </button>
+          {hasAccess && (
+            <button
+              onClick={() => { window.location.href = "/app/"; }}
+              className="flex items-center gap-2 w-full px-4 py-2 text-sm font-mono text-primary hover:bg-primary/5 transition-colors"
+            >
+              Go to Live Feed →
+            </button>
+          )}
           <button
             onClick={() => {
               setOpen(false);
@@ -509,28 +511,7 @@ function LangDropdown() {
   );
 }
 
-function LiveFeedButton() {
-  const { getToken } = useAuth();
-  const [hasAccess, setHasAccess] = useState<boolean | null>(null);
-
-  useEffect(() => {
-    let cancelled = false;
-    getToken().then(token => {
-      fetch("/api/stripe/subscription", {
-        headers: token ? { Authorization: `Bearer ${token}` } : {},
-        credentials: "include",
-      })
-        .then(r => r.json())
-        .then(data => {
-          if (cancelled) return;
-          const status = data.subscription?.status;
-          setHasAccess(status === "active" || status === "trialing");
-        })
-        .catch(() => { if (!cancelled) setHasAccess(false); });
-    });
-    return () => { cancelled = true; };
-  }, [getToken]);
-
+function LiveFeedButton({ hasAccess }: { hasAccess: boolean }) {
   if (!hasAccess) return null;
 
   return (
@@ -544,6 +525,34 @@ function LiveFeedButton() {
   );
 }
 
+function useSubscriptionAccess() {
+  const { getToken, isSignedIn } = useAuth();
+  const [hasAccess, setHasAccess] = useState(false);
+
+  useEffect(() => {
+    if (!isSignedIn) { setHasAccess(false); return; }
+    let stale = false;
+    getToken().then(token => {
+      fetch("/api/stripe/subscription", {
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+        credentials: "include",
+      })
+        .then(r => r.json())
+        .then(data => {
+          if (stale) return;
+          const sub = data.subscription;
+          const active = sub?.status === "active" || sub?.status === "trialing";
+          const cancelled = sub?.cancel_at_period_end === true;
+          setHasAccess(active && !cancelled);
+        })
+        .catch(() => { if (!stale) setHasAccess(false); });
+    });
+    return () => { stale = true; };
+  }, [getToken, isSignedIn]);
+
+  return hasAccess;
+}
+
 function Navbar() {
   const [scrolled, setScrolled] = useState(false);
   const [featuresOpen, setFeaturesOpen] = useState(false);
@@ -552,6 +561,7 @@ function Navbar() {
   const [, navigate] = useLocation();
   const { lang } = useLang();
   const tr = t(lang);
+  const hasAccess = useSubscriptionAccess();
 
   useEffect(() => {
     const handleScroll = () => setScrolled(window.scrollY > 50);
@@ -633,8 +643,8 @@ function Navbar() {
             </div>
           </Show>
           <Show when="signed-in">
-            <LiveFeedButton />
-            <NavUserMenu closePanel={closePanel} />
+            <LiveFeedButton hasAccess={hasAccess} />
+            <NavUserMenu closePanel={closePanel} hasAccess={hasAccess} />
           </Show>
         </div>
       </div>
