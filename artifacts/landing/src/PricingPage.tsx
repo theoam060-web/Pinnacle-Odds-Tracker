@@ -49,8 +49,13 @@ function BookmakerBadge({ name, icon }: { name: string; icon: React.ReactNode })
   );
 }
 
-function LogoBadge() {
-  return (
+function LogoBadge({ dark = false }: { dark?: boolean }) {
+  return dark ? (
+    <span className="inline-flex items-center gap-1.5 rounded-md border border-black/20 bg-black/20 px-2 py-1">
+      <Activity className="w-3.5 h-3.5 text-black/80" />
+      <span className="text-[11px] font-bold text-black/80 tracking-tight">SharpTracker</span>
+    </span>
+  ) : (
     <span className="inline-flex items-center gap-1.5 rounded-md border border-primary/25 bg-primary/10 px-2 py-1">
       <Activity className="w-3.5 h-3.5 text-primary" />
       <span className="text-[11px] font-bold text-primary tracking-tight">SharpTracker</span>
@@ -260,7 +265,7 @@ export default function PricingPage() {
                 disabled={loadingPlan !== null}
                 className="w-full py-3 rounded-lg bg-primary text-background font-mono text-sm font-semibold text-center transition-colors hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
               >
-                <LogoBadge />
+                <LogoBadge dark />
                 {loadingPlan === "gold" ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
                 {isSignedIn ? "Try 14 Days Free" : "Get Started"}
               </button>
