@@ -15,6 +15,7 @@ import BetStatsPage from "@/pages/bet-stats";
 import AlertConfigurationsPage from "@/pages/alert-configurations";
 import TopMoversPage from "@/pages/top-movers";
 import MyBetsPage from "@/pages/my-bets";
+import AccountPage from "@/pages/account";
 import React, { useState, useEffect, useCallback } from "react";
 import { Activity, LogIn, UserPlus, ExternalLink } from "lucide-react";
 import { PlanContext, type PlanTier } from "@/lib/plan-context";
@@ -43,6 +44,7 @@ function Router() {
       <Route path="/alert-configurations" component={AlertConfigurationsPage} />
       <Route path="/top-movers" component={TopMoversPage} />
       <Route path="/my-bets" component={MyBetsPage} />
+      <Route path="/account" component={AccountPage} />
       <Route component={NotFound} />
     </Switch>
   );

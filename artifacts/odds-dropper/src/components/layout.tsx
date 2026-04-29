@@ -1,6 +1,6 @@
 import { useState, useCallback, useEffect } from "react";
 import { Link, useLocation } from "wouter";
-import { Activity, TrendingDown, BookMarked, BellRing, Volume2, VolumeX, Cog, BarChart2, Zap, X, Lock } from "lucide-react";
+import { Activity, TrendingDown, BookMarked, BellRing, Volume2, VolumeX, Cog, BarChart2, Zap, X, Lock, User } from "lucide-react";
 import { useAlertStore } from "@/lib/alert-context";
 import { useGetOddsSummary, getGetOddsSummaryQueryKey } from "@workspace/api-client-react";
 import { SettingsModal } from "@/components/settings-modal";
@@ -16,6 +16,7 @@ const NAV_ITEMS: NavItem[] = [
   { href: "/bet-tracker", label: "Bet Tracker", icon: BookMarked, goldPlus: true },
   { href: "/bet-stats", label: "Bet Stats", icon: BarChart2, goldPlus: true },
   { href: "/alert-configurations", label: "Alert Configurations", icon: BellRing },
+  { href: "/account", label: "Account", icon: User },
 ];
 
 function OddsStreamListener({
@@ -92,8 +93,21 @@ export function Layout({ children, notificationFilters }: LayoutProps) {
           </span>
         </a>
 
+        {/* Prominent Live Feed button — shown when not on the feed */}
+        {location !== "/" && (
+          <div className="px-2 pt-3 pb-1">
+            <Link href="/">
+              <div className="flex items-center gap-2.5 px-3 py-2.5 rounded-lg bg-primary/12 border border-primary/25 text-primary text-sm font-semibold cursor-pointer hover:bg-primary/20 hover:border-primary/40 transition-all group">
+                <TrendingDown className="w-4 h-4 shrink-0 group-hover:scale-110 transition-transform" />
+                <span className="flex-1">Live Feed</span>
+                <div className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse" />
+              </div>
+            </Link>
+          </div>
+        )}
+
         {/* Nav */}
-        <nav className="flex flex-col gap-0.5 px-2 pt-4 pb-2">
+        <nav className="flex flex-col gap-0.5 px-2 pt-2 pb-2">
           {NAV_ITEMS.map(({ href, label, icon: Icon, goldPlus }) => {
             const active = location === href;
             const locked = goldPlus && tier === "silver";
