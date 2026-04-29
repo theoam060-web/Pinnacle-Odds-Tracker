@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useUpgradePortal } from "@/hooks/use-upgrade";
 import { Layout } from "@/components/layout";
 import { useBetStore, CURRENCIES, getCurrencySymbol, calcCLV, calcEV, BetResult, LoggedBet } from "@/lib/bet-store";
@@ -107,8 +107,17 @@ export default function BetTrackerPage() {
   const sym = getCurrencySymbol(currency);
   const [timeFilter, setTimeFilter] = useState<TimeFilter>("all");
   const [editBet, setEditBet] = useState<LoggedBet | null>(null);
+  const [editBetDraft, setEditBetDraft] = useState<LoggedBet | null>(null);
   const tier = usePlan();
   const { openPortal, loading: portalLoading } = useUpgradePortal();
+
+  useEffect(() => {
+    if (!editBet) {
+      setEditBetDraft(null);
+      return;
+    }
+    setEditBetDraft({ ...editBet });
+  }, [editBet]);
 
   const filteredBets = filterByTime(bets, timeFilter);
 
@@ -192,7 +201,13 @@ export default function BetTrackerPage() {
       </div>
 
       {/* Edit modal */}
-      {editBet && <EditBetModal bet={editBet} onClose={() => setEditBet(null)} />}
+      {editBetDraft && (
+        <EditBetModal
+          key={editBetDraft.id}
+          bet={editBetDraft}
+          onClose={() => setEditBet(null)}
+        />
+      )}
 
       {/* Empty state */}
       {bets.length === 0 ? (
