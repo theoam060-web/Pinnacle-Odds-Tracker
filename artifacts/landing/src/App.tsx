@@ -447,47 +447,410 @@ function LangDropdown() {
   );
 }
 
+const PLAN_FEATURES = {
+  silver: [
+    "Up to 3 alert configurations",
+    "Soccer, Basketball & Tennis",
+    "Moneyline markets",
+    "Bet Tracker",
+    "Push + sound notifications",
+  ],
+  gold: [
+    "Unlimited alert configurations",
+    "All sports & leagues",
+    "All market types",
+    "Full Bet Tracker + Stats",
+    "Push + sound + email alerts",
+    "Closing Line Value tracking",
+    "Priority support",
+  ],
+};
+
+function LiveFeedPreview() {
+  const rows = LIVE_ODDS;
+  return (
+    <div className="rounded-2xl border border-border/40 overflow-hidden bg-[#0d0e14] shadow-[0_0_60px_rgba(0,229,255,0.06)]">
+      <div className="flex items-center justify-between px-4 py-3 border-b border-border/30 bg-[#0a0b0f]">
+        <div className="flex items-center gap-2">
+          <div className="w-2 h-2 rounded-full bg-primary animate-pulse" />
+          <span className="text-xs font-mono text-muted-foreground uppercase tracking-widest">Live odds feed</span>
+        </div>
+        <div className="flex gap-1.5">
+          <div className="w-2.5 h-2.5 rounded-full bg-border/60" />
+          <div className="w-2.5 h-2.5 rounded-full bg-border/60" />
+          <div className="w-2.5 h-2.5 rounded-full bg-border/60" />
+        </div>
+      </div>
+      <div className="divide-y divide-border/20">
+        {rows.map((row) => (
+          <div key={row.id} className="flex items-center px-4 py-3 gap-4 hover:bg-white/[0.02] transition-colors">
+            <div className="w-1.5 h-1.5 rounded-full bg-primary shrink-0" />
+            <div className="flex-1 min-w-0">
+              <div className="text-sm font-semibold text-foreground truncate">{row.match}</div>
+              <div className="text-xs text-muted-foreground font-mono">{row.market}</div>
+            </div>
+            <div className="text-xs font-mono text-muted-foreground">{row.old}</div>
+            <div className="text-xs text-muted-foreground">→</div>
+            <div className="text-xs font-mono font-bold text-foreground">{row.new}</div>
+            <div className="px-2 py-0.5 rounded bg-primary/10 border border-primary/20 text-primary text-xs font-mono font-bold">
+              −{row.drop}
+            </div>
+            <div className="text-[10px] font-mono text-muted-foreground/50 w-14 text-right shrink-0">{row.time}</div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 function LandingContent() {
+  const { user, isLoaded } = useUser();
+  const { signOut } = useClerk();
+  const { isSignedIn } = useAuth();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [mobileMenuVisible, setMobileMenuVisible] = useState(false);
-  const [showInstallModal, setShowInstallModal] = useState(false);
-  const isSignedIn = false;
-  const hasAccess = false;
+  const [activeStep, setActiveStep] = useState(0);
+  const [featureRoute, setFeatureRoute] = useState<string | null>(null);
+  const hasAccess = !!isSignedIn;
+
+  const closePanel = () => setFeatureRoute(null);
+
+  const FEATURE_MAP: Record<string, React.ReactNode> = {
+    "odds-drops": <OddsDropPage />,
+    "bet-tracker": <BetTrackerPage />,
+    "bookmaker-comparison": <BookmakerComparisonPage />,
+    "stake-calculator": <StakeCalculatorPage />,
+    "daily-calendar": <DailyCalendarPage />,
+    "multi-sport": <MultiSportPage />,
+    "bankroll": <BankrollPage />,
+  };
 
   return (
     <div className="min-h-screen bg-background text-foreground">
+      {/* Header */}
       <header className="sticky top-0 z-40 border-b border-border/30 bg-background/90 backdrop-blur-xl">
-        <div className="container mx-auto px-6 py-4 flex items-center justify-between">
-          <a href="/" className="font-bold text-xl">SharpTracker</a>
+        <div className="container mx-auto px-6 py-4 flex items-center justify-between gap-4">
+          {/* Brand */}
+          <a href="/" className="flex items-center gap-2 shrink-0">
+            <div className="w-7 h-7 rounded-lg bg-primary/15 border border-primary/30 flex items-center justify-center">
+              <Activity className="h-4 w-4 text-primary" />
+            </div>
+            <span className="font-bold text-[15px] tracking-tight">
+              Sharp<span className="text-primary">Tracker</span>
+            </span>
+          </a>
+
+          {/* Desktop nav */}
+          <nav className="hidden md:flex items-center gap-6 text-sm font-mono text-muted-foreground">
+            <Link href="/why" className="hover:text-primary transition-colors">Why SharpTracker?</Link>
+            <a href="/pricing" className="hover:text-primary transition-colors">Pricing</a>
+          </nav>
+
+          {/* Right side */}
+          <div className="flex items-center gap-3">
+            <LangDropdown />
+            {isLoaded && isSignedIn && user ? (
+              <NavUserMenu closePanel={closePanel} hasAccess={hasAccess} />
+            ) : (
+              <>
+                <a
+                  href="/app/"
+                  className="hidden sm:block text-sm font-mono text-muted-foreground hover:text-primary transition-colors"
+                >
+                  Sign in
+                </a>
+                <a
+                  href="/app/"
+                  className="text-sm font-mono px-4 py-2 rounded-lg bg-primary text-black font-bold hover:bg-primary/90 transition-colors"
+                >
+                  Start free trial
+                </a>
+              </>
+            )}
+            {/* Mobile menu toggle */}
+            <button
+              className="md:hidden p-2 text-muted-foreground hover:text-foreground"
+              onClick={() => setMobileMenuOpen(v => !v)}
+            >
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                {mobileMenuOpen
+                  ? <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                  : <path strokeLinecap="round" strokeLinejoin="round" d="M4 6h16M4 12h16M4 18h16" />}
+              </svg>
+            </button>
+          </div>
         </div>
+
+        {/* Mobile menu */}
+        {mobileMenuOpen && (
+          <div className="md:hidden border-t border-border/30 bg-background/95 backdrop-blur-xl px-6 py-4 flex flex-col gap-4 text-sm font-mono text-muted-foreground">
+            <Link href="/why" className="hover:text-primary" onClick={() => setMobileMenuOpen(false)}>Why SharpTracker?</Link>
+            <a href="/pricing" className="hover:text-primary" onClick={() => setMobileMenuOpen(false)}>Pricing</a>
+            <a href="/app/" className="hover:text-primary" onClick={() => setMobileMenuOpen(false)}>Sign in</a>
+          </div>
+        )}
       </header>
-      <main className="container mx-auto px-6 py-16">
-        <section className="max-w-3xl mx-auto text-center space-y-6">
-          <h1 className="text-5xl font-bold">SharpTracker</h1>
-          <p className="text-muted-foreground">Dark themed sports odds tracker for sharp bettors.</p>
+
+      {/* Feature panel overlay */}
+      <AnimatePresence>
+        {featureRoute && FEATURE_MAP[featureRoute] && (
+          <motion.div
+            key="feature-panel"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4"
+            onClick={closePanel}
+          >
+            <motion.div
+              initial={{ scale: 0.95, y: 20 }}
+              animate={{ scale: 1, y: 0 }}
+              exit={{ scale: 0.95, y: 20 }}
+              className="bg-[#0d0e14] border border-border/40 rounded-2xl max-w-2xl w-full max-h-[80vh] overflow-y-auto relative"
+              onClick={e => e.stopPropagation()}
+            >
+              <button
+                onClick={closePanel}
+                className="absolute top-4 right-4 text-muted-foreground hover:text-foreground p-1"
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+              {FEATURE_MAP[featureRoute]}
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      <main>
+        {/* Hero */}
+        <section className="relative overflow-hidden">
+          <div className="absolute inset-0 pointer-events-none">
+            <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[700px] h-[400px] bg-primary/5 rounded-full blur-[120px]" />
+          </div>
+          <div className="container mx-auto px-6 pt-24 pb-16 text-center relative">
+            <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-primary/10 border border-primary/20 text-primary text-xs font-mono mb-8">
+              <div className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse" />
+              Live odds monitoring · Sub-second alerts
+            </div>
+            <h1 className="text-5xl md:text-7xl font-bold tracking-tight mb-6 leading-none">
+              Beat the line.<br />
+              <GlitchText text="Every time." className="text-primary" />
+            </h1>
+            <p className="text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto mb-10 leading-relaxed">
+              SharpTracker monitors odds across every bookmaker in real time and alerts you the instant sharp money moves a line — before the market catches up.
+            </p>
+            <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-16">
+              <a
+                href="/app/"
+                className="px-8 py-3.5 rounded-xl bg-primary text-black font-bold text-base hover:bg-primary/90 transition-colors shadow-[0_0_30px_rgba(0,229,255,0.25)] font-mono"
+              >
+                Start 14-day free trial →
+              </a>
+              <a
+                href="/pricing"
+                className="px-8 py-3.5 rounded-xl border border-border/40 text-muted-foreground font-mono text-base hover:text-foreground hover:border-border/70 transition-colors"
+              >
+                See pricing
+              </a>
+            </div>
+
+            {/* Live feed preview */}
+            <div className="max-w-3xl mx-auto">
+              <LiveFeedPreview />
+            </div>
+          </div>
+        </section>
+
+        {/* Stats bar */}
+        <section className="border-y border-border/20 bg-white/[0.01]">
+          <div className="container mx-auto px-6 py-8">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-8 text-center">
+              {[
+                { value: "< 1s", label: "Alert latency" },
+                { value: "32+", label: "Bookmakers tracked" },
+                { value: "100+", label: "Leagues covered" },
+                { value: "24/7", label: "Live monitoring" },
+              ].map(s => (
+                <div key={s.label}>
+                  <div className="text-3xl font-bold font-mono text-primary mb-1">{s.value}</div>
+                  <div className="text-sm text-muted-foreground font-mono">{s.label}</div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        {/* How it works */}
+        <section className="container mx-auto px-6 py-24">
+          <div className="text-center mb-16">
+            <div className="text-xs font-mono text-primary uppercase tracking-widest mb-3">How it works</div>
+            <h2 className="text-3xl md:text-4xl font-bold">Set up in minutes. Track forever.</h2>
+          </div>
+          <div className="grid md:grid-cols-2 gap-8 max-w-5xl mx-auto">
+            <div className="flex flex-col gap-3">
+              {STEPS.map((step, i) => (
+                <button
+                  key={i}
+                  onClick={() => setActiveStep(i)}
+                  className={`text-left px-5 py-4 rounded-xl border transition-all ${
+                    activeStep === i
+                      ? "border-primary/40 bg-primary/5 text-foreground"
+                      : "border-border/20 text-muted-foreground hover:border-border/40 hover:bg-white/[0.02]"
+                  }`}
+                >
+                  <div className="flex items-center gap-3">
+                    <div className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold font-mono shrink-0 ${
+                      activeStep === i ? "bg-primary text-black" : "bg-border/20 text-muted-foreground"
+                    }`}>
+                      {i + 1}
+                    </div>
+                    <div>
+                      <div className="font-semibold text-sm">{step.title}</div>
+                      {activeStep === i && (
+                        <div className="text-xs text-muted-foreground mt-1 leading-relaxed">{step.description}</div>
+                      )}
+                    </div>
+                  </div>
+                </button>
+              ))}
+            </div>
+            <div className="rounded-2xl overflow-hidden border border-border/30">
+              {React.createElement(STEPS[activeStep].visual)}
+            </div>
+          </div>
+        </section>
+
+        {/* Features grid */}
+        <section className="border-t border-border/20 bg-white/[0.01]">
+          <div className="container mx-auto px-6 py-24">
+            <div className="text-center mb-16">
+              <div className="text-xs font-mono text-primary uppercase tracking-widest mb-3">Features</div>
+              <h2 className="text-3xl md:text-4xl font-bold">Everything a sharp bettor needs</h2>
+            </div>
+            <div className="grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 max-w-6xl mx-auto">
+              {FEATURE_ITEMS.map(({ route, Icon, name, desc }) => (
+                <button
+                  key={route}
+                  onClick={() => setFeatureRoute(route)}
+                  className="text-left p-5 rounded-xl border border-border/20 bg-white/[0.015] hover:border-primary/30 hover:bg-primary/5 transition-all group"
+                >
+                  <div className="mb-3">
+                    <Icon />
+                  </div>
+                  <div className="font-semibold text-sm mb-1 group-hover:text-primary transition-colors">{name}</div>
+                  <div className="text-xs text-muted-foreground leading-relaxed">{desc}</div>
+                </button>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        {/* Pricing teaser */}
+        <section className="container mx-auto px-6 py-24">
+          <div className="text-center mb-16">
+            <div className="text-xs font-mono text-primary uppercase tracking-widest mb-3">Pricing</div>
+            <h2 className="text-3xl md:text-4xl font-bold">Simple, transparent plans</h2>
+            <p className="text-muted-foreground mt-3 font-mono text-sm">14-day free trial · No credit card required</p>
+          </div>
+          <div className="grid md:grid-cols-2 gap-6 max-w-3xl mx-auto">
+            {/* Silver */}
+            <div className="rounded-2xl border border-border/30 bg-white/[0.02] p-8 flex flex-col">
+              <div className="text-xs font-mono text-muted-foreground uppercase tracking-widest mb-2">Silver</div>
+              <div className="text-4xl font-bold font-mono mb-1">€19<span className="text-base text-muted-foreground font-normal">/mo</span></div>
+              <div className="text-xs text-muted-foreground font-mono mb-6">or €190/year</div>
+              <ul className="space-y-2.5 flex-1 mb-8">
+                {PLAN_FEATURES.silver.map(f => (
+                  <li key={f} className="flex items-start gap-2 text-sm text-muted-foreground">
+                    <CheckCircle2 className="w-4 h-4 text-primary mt-0.5 shrink-0" />
+                    {f}
+                  </li>
+                ))}
+              </ul>
+              <a href="/app/" className="block text-center py-3 rounded-xl border border-border/40 text-foreground font-mono text-sm hover:border-primary/40 hover:bg-primary/5 transition-all">
+                Get started →
+              </a>
+            </div>
+            {/* Gold */}
+            <div className="rounded-2xl border border-primary/30 bg-primary/5 p-8 flex flex-col relative overflow-hidden">
+              <div className="absolute top-4 right-4 px-2 py-0.5 rounded-full bg-primary text-black text-[10px] font-bold font-mono uppercase">Popular</div>
+              <div className="text-xs font-mono text-primary uppercase tracking-widest mb-2">Gold</div>
+              <div className="text-4xl font-bold font-mono mb-1">€39<span className="text-base text-muted-foreground font-normal">/mo</span></div>
+              <div className="text-xs text-muted-foreground font-mono mb-6">or €390/year</div>
+              <ul className="space-y-2.5 flex-1 mb-8">
+                {PLAN_FEATURES.gold.map(f => (
+                  <li key={f} className="flex items-start gap-2 text-sm text-muted-foreground">
+                    <CheckCircle2 className="w-4 h-4 text-primary mt-0.5 shrink-0" />
+                    {f}
+                  </li>
+                ))}
+              </ul>
+              <a href="/app/" className="block text-center py-3 rounded-xl bg-primary text-black font-bold font-mono text-sm hover:bg-primary/90 transition-colors shadow-[0_0_20px_rgba(0,229,255,0.2)]">
+                Get started →
+              </a>
+            </div>
+          </div>
+          <div className="text-center mt-8">
+            <a href="/pricing" className="text-sm font-mono text-primary hover:underline">See full feature comparison →</a>
+          </div>
+        </section>
+
+        {/* CTA banner */}
+        <section className="border-t border-border/20">
+          <div className="container mx-auto px-6 py-24 text-center">
+            <h2 className="text-3xl md:text-5xl font-bold mb-4">
+              Your edge is <GlitchText text="timing." className="text-primary" />
+            </h2>
+            <p className="text-muted-foreground text-lg max-w-xl mx-auto mb-10 font-mono">
+              Sharp money moves fast. SharpTracker makes sure you're always first.
+            </p>
+            <a
+              href="/app/"
+              className="inline-block px-10 py-4 rounded-xl bg-primary text-black font-bold text-lg hover:bg-primary/90 transition-colors shadow-[0_0_40px_rgba(0,229,255,0.2)] font-mono"
+            >
+              Start free trial — no card needed →
+            </a>
+          </div>
         </section>
       </main>
+
+      {/* Footer */}
       <footer className="border-t border-border/20 py-12">
         <div className="container mx-auto px-6">
-          <div className="grid md:grid-cols-2 gap-8 mb-8">
+          <div className="grid md:grid-cols-3 gap-8 mb-8">
             <div>
-              <h4 className="font-sans font-bold mb-4 text-foreground">Navigate</h4>
+              <div className="flex items-center gap-2 mb-3">
+                <div className="w-5 h-5 rounded bg-primary/15 border border-primary/30 flex items-center justify-center">
+                  <Activity className="h-3 w-3 text-primary" />
+                </div>
+                <span className="font-bold text-sm">Sharp<span className="text-primary">Tracker</span></span>
+              </div>
+              <p className="text-xs text-muted-foreground font-mono leading-relaxed">
+                Real-time odds monitoring for professional sports bettors.
+              </p>
+            </div>
+            <div>
+              <h4 className="font-sans font-bold mb-4 text-foreground text-sm">Navigate</h4>
               <ul className="space-y-2 font-mono text-sm text-muted-foreground">
-                <li><Link href="/why" className="hover:text-primary">Why SharpTracker?</Link></li>
+                <li><Link href="/why" className="hover:text-primary transition-colors">Why SharpTracker?</Link></li>
+                <li><a href="/pricing" className="hover:text-primary transition-colors">Pricing</a></li>
                 {isSignedIn
-                  ? <li><a href="/app/" className="hover:text-primary">Dashboard</a></li>
-                  : <li><a href="/app/" className="hover:text-primary">Sign Up</a></li>
+                  ? <li><a href="/app/" className="hover:text-primary transition-colors">Live Feed</a></li>
+                  : <li><a href="/app/" className="hover:text-primary transition-colors">Sign Up</a></li>
                 }
               </ul>
             </div>
             <div>
-              <h4 className="font-sans font-bold mb-4 text-foreground">Legal</h4>
+              <h4 className="font-sans font-bold mb-4 text-foreground text-sm">Legal</h4>
               <ul className="space-y-2 font-mono text-sm text-muted-foreground">
-                <li><Link href="/terms" className="hover:text-primary">Terms of Service</Link></li>
-                <li><Link href="/privacy" className="hover:text-primary">Privacy Policy</Link></li>
-                <li><a href="mailto:info@sharptracker.io" className="hover:text-primary">info@sharptracker.io</a></li>
+                <li><Link href="/terms" className="hover:text-primary transition-colors">Terms of Service</Link></li>
+                <li><Link href="/privacy" className="hover:text-primary transition-colors">Privacy Policy</Link></li>
+                <li><a href="mailto:info@sharptracker.io" className="hover:text-primary transition-colors">info@sharptracker.io</a></li>
               </ul>
             </div>
+          </div>
+          <div className="border-t border-border/20 pt-6 text-center">
+            <p className="text-xs text-muted-foreground font-mono">© {new Date().getFullYear()} SharpTracker. All rights reserved.</p>
           </div>
         </div>
       </footer>
@@ -495,6 +858,40 @@ function LandingContent() {
   );
 }
 
+function AppRouter() {
+  return (
+    <WouterRouter base={basePath}>
+      <Switch>
+        <Route path="/why" component={WhyPage} />
+        <Route path="/pricing" component={PricingPage} />
+        <Route path="/success" component={SuccessPage} />
+        <Route path="/cancel" component={CancelPage} />
+        <Route path="/terms" component={TermsPage} />
+        <Route path="/privacy" component={PrivacyPage} />
+        <Route path="/features/odds-drops" component={OddsDropPage} />
+        <Route path="/features/bet-tracker" component={BetTrackerPage} />
+        <Route path="/features/bookmaker-comparison" component={BookmakerComparisonPage} />
+        <Route path="/features/stake-calculator" component={StakeCalculatorPage} />
+        <Route path="/features/daily-calendar" component={DailyCalendarPage} />
+        <Route path="/features/multi-sport" component={MultiSportPage} />
+        <Route path="/features/bankroll" component={BankrollPage} />
+        <Route component={LandingContent} />
+      </Switch>
+    </WouterRouter>
+  );
+}
+
 export default function App() {
-  return <LandingContent />;
+  return (
+    <ClerkProvider publishableKey={clerkPubKey} proxyUrl={clerkProxyUrl}>
+      <QueryClientProvider client={queryClient}>
+        <LanguageProvider>
+          <TooltipProvider>
+            <AppRouter />
+            <Toaster />
+          </TooltipProvider>
+        </LanguageProvider>
+      </QueryClientProvider>
+    </ClerkProvider>
+  );
 }
