@@ -10,7 +10,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { motion, useScroll, useTransform, AnimatePresence } from "framer-motion";
 import React, { useEffect, useState, useRef } from "react";
-import { ClerkProvider, Show, useClerk, useUser } from "@clerk/react";
+import { ClerkProvider, Show, useClerk, useUser, useAuth } from "@clerk/react";
 import { 
   Activity, Bell,
   LineChart as LineChartIcon, Radar,
@@ -427,12 +427,12 @@ function NavUserMenu({ closePanel }: { closePanel: () => void }) {
           <div className="px-4 py-2 border-b border-border/40">
             <p className="text-xs font-mono text-muted-foreground truncate">{user.emailAddresses?.[0]?.emailAddress}</p>
           </div>
-          <a
-            href="/app/"
+          <button
+            onClick={() => { window.location.href = "/app/"; }}
             className="flex items-center gap-2 w-full px-4 py-2 text-sm font-mono text-primary hover:bg-primary/5 transition-colors"
           >
             Go to Live Feed →
-          </a>
+          </button>
           <button
             onClick={() => {
               setOpen(false);
@@ -506,6 +506,41 @@ function LangDropdown() {
         </div>
       )}
     </div>
+  );
+}
+
+function LiveFeedButton() {
+  const { getToken } = useAuth();
+  const [hasAccess, setHasAccess] = useState<boolean | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    getToken().then(token => {
+      fetch("/api/stripe/subscription", {
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+        credentials: "include",
+      })
+        .then(r => r.json())
+        .then(data => {
+          if (cancelled) return;
+          const status = data.subscription?.status;
+          setHasAccess(status === "active" || status === "trialing");
+        })
+        .catch(() => { if (!cancelled) setHasAccess(false); });
+    });
+    return () => { cancelled = true; };
+  }, [getToken]);
+
+  if (!hasAccess) return null;
+
+  return (
+    <button
+      onClick={() => { window.location.href = "/app/"; }}
+      className="flex items-center gap-2 bg-primary/10 text-primary border border-primary/30 hover:bg-primary hover:text-black px-4 py-2 rounded-md font-mono text-sm font-semibold transition-all shadow-[0_0_15px_rgba(0,255,255,0.08)] hover:shadow-[0_0_20px_rgba(0,255,255,0.3)]"
+    >
+      <TrendingDown className="w-3.5 h-3.5" />
+      Live Feed
+    </button>
   );
 }
 
@@ -598,13 +633,7 @@ function Navbar() {
             </div>
           </Show>
           <Show when="signed-in">
-            <a
-              href="/app/"
-              className="flex items-center gap-2 bg-primary/10 text-primary border border-primary/30 hover:bg-primary hover:text-black px-4 py-2 rounded-md font-mono text-sm font-semibold transition-all shadow-[0_0_15px_rgba(0,255,255,0.08)] hover:shadow-[0_0_20px_rgba(0,255,255,0.3)]"
-            >
-              <TrendingDown className="w-3.5 h-3.5" />
-              Live Feed
-            </a>
+            <LiveFeedButton />
             <NavUserMenu closePanel={closePanel} />
           </Show>
         </div>
