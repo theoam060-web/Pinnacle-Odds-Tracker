@@ -13,7 +13,7 @@ type NavItem = { href: string; label: string; icon: React.ElementType; goldPlus?
 
 const NAV_ITEMS: NavItem[] = [
   { href: "/", label: "Live Feed", icon: TrendingDown },
-  { href: "/bet-tracker", label: "Bet Tracker", icon: BookMarked, goldPlus: true },
+  { href: "/bet-tracker", label: "Bet Tracker", icon: BookMarked },
   { href: "/bet-stats", label: "Bet Stats", icon: BarChart2, goldPlus: true },
   { href: "/alert-configurations", label: "Alert Configurations", icon: BellRing },
   { href: "/account", label: "Account", icon: User },

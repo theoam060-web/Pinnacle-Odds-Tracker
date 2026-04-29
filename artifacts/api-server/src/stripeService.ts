@@ -98,24 +98,22 @@ export const stripeService = {
   async recoverSubscriptionByCustomerId(userId: string, customerId: string) {
     try {
       const stripe = await getUncachableStripeClient();
-      // Include trialing subscriptions in recovery
+      // List without deep expansion (Stripe limits list expand to 4 levels;
+      // data.items.data.price.product is 5 levels and throws an error).
+      // We get the sub ID from the list, then retrieve it separately with the
+      // allowed expansion depth.
       const [activeSubs, trialingSubs] = await Promise.all([
-        stripe.subscriptions.list({
-          customer: customerId,
-          status: 'active',
-          limit: 1,
-          expand: ['data.items.data.price.product'],
-        }),
-        stripe.subscriptions.list({
-          customer: customerId,
-          status: 'trialing',
-          limit: 1,
-          expand: ['data.items.data.price.product'],
-        }),
+        stripe.subscriptions.list({ customer: customerId, status: 'active',   limit: 1 }),
+        stripe.subscriptions.list({ customer: customerId, status: 'trialing', limit: 1 }),
       ]);
 
-      const sub = activeSubs.data[0] ?? trialingSubs.data[0];
-      if (!sub) return { subscriptionId: null };
+      const listSub = activeSubs.data[0] ?? trialingSubs.data[0];
+      if (!listSub) return { subscriptionId: null };
+
+      // Retrieve the full subscription with product metadata
+      const sub = await stripe.subscriptions.retrieve(listSub.id, {
+        expand: ['items.data.price.product'],
+      });
 
       const tier = getPlanTierFromSub(sub);
       await storage.updateUserStripeInfo(userId, {
@@ -136,23 +134,18 @@ export const stripeService = {
       const stripe = await getUncachableStripeClient();
       const customers = await stripe.customers.list({ email, limit: 5 });
       for (const customer of customers.data) {
+        // List without deep expansion to stay within Stripe's 4-level limit
         const [activeSubs, trialingSubs] = await Promise.all([
-          stripe.subscriptions.list({
-            customer: customer.id,
-            status: 'active',
-            limit: 1,
-            expand: ['data.items.data.price.product'],
-          }),
-          stripe.subscriptions.list({
-            customer: customer.id,
-            status: 'trialing',
-            limit: 1,
-            expand: ['data.items.data.price.product'],
-          }),
+          stripe.subscriptions.list({ customer: customer.id, status: 'active',   limit: 1 }),
+          stripe.subscriptions.list({ customer: customer.id, status: 'trialing', limit: 1 }),
         ]);
 
-        const sub = activeSubs.data[0] ?? trialingSubs.data[0];
-        if (sub) {
+        const listSub = activeSubs.data[0] ?? trialingSubs.data[0];
+        if (listSub) {
+          // Retrieve with product expansion (single-resource retrieve allows 3+ levels)
+          const sub = await stripe.subscriptions.retrieve(listSub.id, {
+            expand: ['items.data.price.product'],
+          });
           const tier = getPlanTierFromSub(sub);
           await storage.updateUserStripeInfo(userId, {
             stripeCustomerId: customer.id,
