@@ -1347,25 +1347,16 @@ function CTASection() {
         </p>
         <div className="flex justify-center gap-4">
           {isSignedIn ? (
-            <>
-              <button
-                onClick={() => navigate("/pricing")}
-                className="bg-primary text-primary-foreground px-10 py-4 rounded-md font-mono font-bold tracking-wide text-lg hover:bg-primary/90 transition-colors shadow-[0_0_30px_hsl(var(--primary)/0.3)]"
-                data-testid="btn-view-plans"
-              >
-                View Plans
-              </button>
-              <button
-                onClick={() => window.location.href = "/app/"}
-                className="bg-secondary text-secondary-foreground border border-border px-8 py-4 rounded-md font-mono tracking-wide text-lg hover:bg-secondary/80 transition-colors"
-                data-testid="btn-open-app"
-              >
-                Open App
-              </button>
-            </>
+            <button
+              onClick={() => navigate("/pricing")}
+              className="bg-primary text-primary-foreground px-10 py-4 rounded-md font-mono font-bold tracking-wide text-lg hover:bg-primary/90 transition-colors shadow-[0_0_30px_hsl(var(--primary)/0.3)]"
+              data-testid="btn-view-plans"
+            >
+              View Plans
+            </button>
           ) : (
             <button
-              onClick={() => window.location.href = "/app/"}
+              onClick={() => navigate("/pricing")}
               className="bg-primary text-primary-foreground px-10 py-4 rounded-md font-mono font-bold tracking-wide text-lg hover:bg-primary/90 transition-colors shadow-[0_0_30px_hsl(var(--primary)/0.3)] flex items-center justify-center gap-2"
               data-testid="btn-footer-signup"
             >
