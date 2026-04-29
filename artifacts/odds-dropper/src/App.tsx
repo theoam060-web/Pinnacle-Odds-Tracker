@@ -314,7 +314,8 @@ function SubscriptionWall() {
 type SubState =
   | { status: "loading" }
   | { status: "active"; tier: PlanTier; isTrialing: boolean }
-  | { status: "none" };
+  | { status: "expired" }   // had a subscription before, now fully expired
+  | { status: "none" };     // never subscribed
 
 function SubscriptionGate({ children }: { children: React.ReactNode }) {
   const bypassAuth = import.meta.env.VITE_DEV_BYPASS_AUTH === "true";
@@ -344,7 +345,11 @@ function SubscriptionGate({ children }: { children: React.ReactNode }) {
       const hasAccess = (subStatus === "active" || subStatus === "trialing") && tier && tier !== "none";
       if (hasAccess) {
         setSubState({ status: "active", tier: tier!, isTrialing: subStatus === "trialing" });
+      } else if (subStatus === "canceled" || data.subscription != null) {
+        // Had a subscription before but it's now expired — let into dashboard with no-plan tier
+        setSubState({ status: "expired" });
       } else {
+        // Never subscribed — show the subscription wall
         setSubState({ status: "none" });
       }
     } catch {
@@ -388,7 +393,17 @@ function SubscriptionGate({ children }: { children: React.ReactNode }) {
     );
   }
 
-  // No active or trialing subscription — show subscription wall
+  if (subState.status === "expired") {
+    // Subscription existed but fully expired — let into dashboard with no-plan tier
+    // Live Feed button in the sidebar will redirect to pricing instead of the feed
+    return (
+      <PlanContext.Provider value="none">
+        {children}
+      </PlanContext.Provider>
+    );
+  }
+
+  // Never subscribed — show subscription wall
   if (isSignedIn) {
     return <SubscriptionWall />;
   }

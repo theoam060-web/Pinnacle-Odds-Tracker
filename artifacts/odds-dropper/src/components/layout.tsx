@@ -93,16 +93,28 @@ export function Layout({ children, notificationFilters }: LayoutProps) {
           </span>
         </a>
 
-        {/* Prominent Live Feed button — shown when not on the feed */}
-        {location !== "/" && (
+        {/* Prominent Live Feed button — always visible */}
+        {/* If subscription expired (tier "none") → redirects to pricing; otherwise → goes to feed */}
+        {(location !== "/" || tier === "none") && (
           <div className="px-2 pt-3 pb-1">
-            <Link href="/">
-              <div className="flex items-center gap-2.5 px-3 py-2.5 rounded-lg bg-primary/12 border border-primary/25 text-primary text-sm font-semibold cursor-pointer hover:bg-primary/20 hover:border-primary/40 transition-all group">
+            {tier === "none" ? (
+              <button
+                onClick={() => { window.location.href = "/pricing"; }}
+                className="w-full flex items-center gap-2.5 px-3 py-2.5 rounded-lg bg-primary/12 border border-primary/25 text-primary text-sm font-semibold cursor-pointer hover:bg-primary/20 hover:border-primary/40 transition-all group"
+              >
                 <TrendingDown className="w-4 h-4 shrink-0 group-hover:scale-110 transition-transform" />
                 <span className="flex-1">Live Feed</span>
                 <div className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse" />
-              </div>
-            </Link>
+              </button>
+            ) : (
+              <Link href="/">
+                <div className="flex items-center gap-2.5 px-3 py-2.5 rounded-lg bg-primary/12 border border-primary/25 text-primary text-sm font-semibold cursor-pointer hover:bg-primary/20 hover:border-primary/40 transition-all group">
+                  <TrendingDown className="w-4 h-4 shrink-0 group-hover:scale-110 transition-transform" />
+                  <span className="flex-1">Live Feed</span>
+                  <div className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse" />
+                </div>
+              </Link>
+            )}
           </div>
         )}
 
@@ -111,24 +123,32 @@ export function Layout({ children, notificationFilters }: LayoutProps) {
           {NAV_ITEMS.map(({ href, label, icon: Icon, goldPlus }) => {
             const active = location === href;
             const locked = goldPlus && tier === "silver";
-            return (
+            const isLiveFeedExpired = href === "/" && tier === "none";
+            const inner = (
+              <div
+                className={`relative flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-all cursor-pointer
+                  ${active
+                    ? "bg-primary/12 text-primary font-semibold"
+                    : locked
+                      ? "text-muted-foreground/50 hover:text-muted-foreground hover:bg-white/3"
+                      : "text-muted-foreground hover:text-foreground hover:bg-white/5"
+                  }`}
+              >
+                {active && (
+                  <div className="absolute left-0 top-1/2 -translate-y-1/2 w-[3px] h-5 rounded-r-full bg-primary shadow-[0_0_8px_rgba(0,229,255,0.6)]" />
+                )}
+                <Icon className={`w-4 h-4 shrink-0 ${active ? "text-primary" : ""}`} />
+                <span className="flex-1">{label}</span>
+                {locked && <Lock className="w-3 h-3 shrink-0 text-muted-foreground/40" />}
+              </div>
+            );
+            return isLiveFeedExpired ? (
+              <button key={href} className="text-left w-full" onClick={() => { window.location.href = "/pricing"; }}>
+                {inner}
+              </button>
+            ) : (
               <Link key={href} href={href}>
-                <div
-                  className={`relative flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-all cursor-pointer
-                    ${active
-                      ? "bg-primary/12 text-primary font-semibold"
-                      : locked
-                        ? "text-muted-foreground/50 hover:text-muted-foreground hover:bg-white/3"
-                        : "text-muted-foreground hover:text-foreground hover:bg-white/5"
-                    }`}
-                >
-                  {active && (
-                    <div className="absolute left-0 top-1/2 -translate-y-1/2 w-[3px] h-5 rounded-r-full bg-primary shadow-[0_0_8px_rgba(0,229,255,0.6)]" />
-                  )}
-                  <Icon className={`w-4 h-4 shrink-0 ${active ? "text-primary" : ""}`} />
-                  <span className="flex-1">{label}</span>
-                  {locked && <Lock className="w-3 h-3 shrink-0 text-muted-foreground/40" />}
-                </div>
+                {inner}
               </Link>
             );
           })}
