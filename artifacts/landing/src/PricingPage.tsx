@@ -1,45 +1,9 @@
-import React, { useState } from "react";
+import React from "react";
 import { motion } from "framer-motion";
 import { Link, useLocation } from "wouter";
-import { Activity, Check, Loader2, Star } from "lucide-react";
-import { useUser, useAuth } from "@clerk/react";
+import { Activity, Check, Star } from "lucide-react";
+import { useUser } from "@clerk/react";
 import GoogleIcon from "./components/GoogleIcon";
-
-const API_BASE = "";
-
-// Stripe-hosted Payment Links (configured in Stripe Dashboard).
-// Map plan -> direct payment link URL. When set, Subscribe will redirect
-// straight to this URL instead of calling /api/stripe/checkout.
-const PAYMENT_LINKS: Record<string, string> = {
-  silver: "https://buy.stripe.com/8x200caQU5tN9PV4rWeZ200",
-};
-
-// Shared key the in-app dashboard reads on return to detect "user just left
-// for Stripe" so it can briefly poll the subscription endpoint while waiting
-// for the webhook to land. Must match SubscriptionGate in odds-dropper/App.tsx.
-const PENDING_CHECKOUT_KEY = "sharptracker.pendingCheckout";
-
-function markPendingCheckout() {
-  try {
-    sessionStorage.setItem(PENDING_CHECKOUT_KEY, String(Date.now()));
-    localStorage.setItem(PENDING_CHECKOUT_KEY, String(Date.now()));
-  } catch {
-    /* storage may be unavailable in some browsers/modes — non-fatal */
-  }
-}
-
-function openCheckoutUrl(url: string) {
-  // Signal to the dashboard that the user is on their way to Stripe, so when
-  // they come back we know to poll briefly while the webhook propagates.
-  markPendingCheckout();
-  // Try top-level navigation first (breaks out of Replit's preview iframe);
-  // fall back to a new tab if cross-origin blocked.
-  try {
-    (window.top ?? window).location.href = url;
-  } catch {
-    window.open(url, "_blank", "noopener");
-  }
-}
 
 function PricingNav() {
   const [, navigate] = useLocation();
@@ -138,83 +102,6 @@ const PLATINUM_FEATURES: FeatureDef[] = [
 ];
 
 export default function PricingPage() {
-  const [, navigate] = useLocation();
-  const { isSignedIn, user } = useUser();
-  const { getToken } = useAuth();
-  const [loading, setLoading] = useState<Record<string, boolean>>({});
-  const [error, setError] = useState<string | null>(null);
-
-  const handleCheckout = async (plan: string) => {
-    if (!isSignedIn) {
-      navigate("/sign-in");
-      return;
-    }
-
-    // Plans wired to a Stripe Payment Link skip the API and redirect directly.
-    // We attach client_reference_id (Clerk userId) so the webhook can map the
-    // payment back to this user, and prefilled_email for a smoother checkout.
-    const paymentLink = PAYMENT_LINKS[plan];
-    if (paymentLink) {
-      const email = user?.primaryEmailAddress?.emailAddress;
-
-      // Ensure the user row exists in our DB BEFORE leaving for Stripe. If
-      // this is a freshly signed-up user, the row may not exist yet — without
-      // it, the webhook fulfillment can't map the payment back to this user.
-      // POST /api/user is idempotent (returns the existing row if present).
-      try {
-        const token = await getToken();
-        await fetch(`${API_BASE}/api/user`, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            ...(token ? { Authorization: `Bearer ${token}` } : {}),
-          },
-          body: JSON.stringify({ email }),
-        });
-      } catch {
-        // Non-fatal: fulfillment has a server-side safety net that creates
-        // the user from client_reference_id + session email if missing.
-      }
-
-      const url = new URL(paymentLink);
-      if (user?.id) url.searchParams.set("client_reference_id", user.id);
-      if (email) url.searchParams.set("prefilled_email", email);
-      openCheckoutUrl(url.toString());
-      return;
-    }
-
-    setLoading(l => ({ ...l, [plan]: true }));
-    setError(null);
-    let url: string | null = null;
-    try {
-      const token = await getToken();
-      const res = await fetch(`${API_BASE}/api/stripe/checkout`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          ...(token ? { Authorization: `Bearer ${token}` } : {}),
-        },
-        body: JSON.stringify({ plan, redirectAfter: "/app/" }),
-      });
-      const data = await res.json();
-      if (!res.ok || !data.url) {
-        setError(data.error ?? "Failed to start checkout");
-        return;
-      }
-      url = data.url;
-    } catch {
-      setError("Network error — please try again");
-      return;
-    } finally {
-      setLoading(l => ({ ...l, [plan]: false }));
-    }
-    if (url) openCheckoutUrl(url);
-  };
-
-  const silverLoading = loading["silver"];
-  const goldLoading = loading["gold"];
-  const platinumLoading = loading["platinum"];
-
   return (
     <div className="min-h-[100dvh] bg-background text-foreground font-sans">
       <PricingNav />
@@ -222,7 +109,6 @@ export default function PricingPage() {
       <div className="pt-28 pb-24 px-6">
         <div className="container mx-auto max-w-5xl">
 
-          {/* Header */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -234,13 +120,6 @@ export default function PricingPage() {
             </h1>
           </motion.div>
 
-          {error && (
-            <div className="mb-8 rounded-lg bg-red-500/10 border border-red-500/30 px-4 py-3 text-sm text-red-400 font-mono text-center">
-              {error}
-            </div>
-          )}
-
-          {/* Cards */}
           <div className="grid md:grid-cols-3 gap-6 items-start">
 
             {/* Silver */}
@@ -270,16 +149,12 @@ export default function PricingPage() {
                 {SILVER_FEATURES.map(f => <FeatureLine key={f.text} {...f} />)}
               </ul>
 
-              <button
-                onClick={() => handleCheckout("silver")}
-                disabled={silverLoading}
-                className="w-full py-3 rounded-lg border border-border/60 text-foreground/80 font-mono text-sm hover:border-primary/40 hover:text-primary transition-all disabled:opacity-60 flex items-center justify-center gap-2"
-              >
-                {silverLoading ? <><Loader2 className="w-4 h-4 animate-spin" /> Processing…</> : isSignedIn ? "Subscribe" : "Get Started"}
-              </button>
+              <div className="w-full py-3 rounded-lg border border-border/60 text-foreground/40 font-mono text-sm text-center cursor-default select-none">
+                Coming Soon
+              </div>
             </motion.div>
 
-            {/* Gold — highlighted */}
+            {/* Gold */}
             <motion.div
               initial={{ opacity: 0, y: 24 }}
               animate={{ opacity: 1, y: 0 }}
@@ -312,13 +187,9 @@ export default function PricingPage() {
                 {GOLD_FEATURES.map(f => <FeatureLine key={f.text} {...f} />)}
               </ul>
 
-              <button
-                onClick={() => handleCheckout("gold")}
-                disabled={goldLoading}
-                className="w-full py-3 rounded-lg bg-primary text-primary-foreground font-mono text-sm font-bold hover:bg-primary/90 transition-all shadow-[0_0_20px_rgba(0,255,255,0.25)] disabled:opacity-60 flex items-center justify-center gap-2"
-              >
-                {goldLoading ? <><Loader2 className="w-4 h-4 animate-spin" /> Processing…</> : isSignedIn ? "Subscribe" : "Get Started"}
-              </button>
+              <div className="w-full py-3 rounded-lg border border-primary/30 text-primary/40 font-mono text-sm text-center cursor-default select-none">
+                Coming Soon
+              </div>
             </motion.div>
 
             {/* Platinum */}
@@ -348,18 +219,13 @@ export default function PricingPage() {
                 {PLATINUM_FEATURES.map(f => <PlatinumFeatureLine key={f.text} {...f} />)}
               </ul>
 
-              <button
-                onClick={() => handleCheckout("platinum")}
-                disabled={platinumLoading}
-                className="w-full py-3 rounded-lg bg-violet-600 text-white font-mono text-sm font-bold hover:bg-violet-500 transition-all shadow-[0_0_20px_rgba(139,92,246,0.25)] disabled:opacity-60 flex items-center justify-center gap-2"
-              >
-                {platinumLoading ? <><Loader2 className="w-4 h-4 animate-spin" /> Processing…</> : isSignedIn ? "Subscribe" : "Get Started"}
-              </button>
+              <div className="w-full py-3 rounded-lg border border-violet-500/30 text-violet-400/40 font-mono text-sm text-center cursor-default select-none">
+                Coming Soon
+              </div>
             </motion.div>
 
           </div>
 
-          {/* Back link */}
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}

@@ -1,7 +1,6 @@
 import { Router } from "express";
 import webpush from "web-push";
 import { requireAuth } from "@clerk/express";
-import { storage } from "../storage";
 
 const router = Router();
 
@@ -40,32 +39,10 @@ export function sendPushToAll(payload: {
   }
 }
 
-router.post("/push/subscribe", requireAuth(), async (req, res) => {
+router.post("/push/subscribe", requireAuth(), (req, res) => {
   const userId = req.auth?.userId;
   if (!userId) return res.status(401).json({ error: "Unauthorized" });
   if (!VAPID_PRIVATE_KEY) return res.status(503).json({ error: "Push not configured" });
-
-  // Platinum-only: check subscription tier before allowing registration
-  try {
-    const user = await storage.getUser(userId);
-    if (user?.stripeSubscriptionId) {
-      const tier = await storage.getSubscriptionPlanTier(user.stripeSubscriptionId);
-      if (tier !== "platinum") {
-        return res.status(403).json({ error: "Push notifications require a Platinum subscription" });
-      }
-    } else {
-      // No Stripe subscription — allow only dev bypass or admin email accounts
-      const isDevBypass = process.env["VITE_DEV_BYPASS_AUTH"] === "true";
-      const adminEmails = (process.env["VITE_ADMIN_EMAILS"] ?? "").split(",").map(e => e.trim()).filter(Boolean);
-      const userEmail = user?.email ?? "";
-      const isAdmin = adminEmails.length > 0 && adminEmails.includes(userEmail);
-      if (!isDevBypass && !isAdmin) {
-        return res.status(403).json({ error: "Push notifications require a Platinum subscription" });
-      }
-    }
-  } catch {
-    return res.status(500).json({ error: "Failed to verify subscription tier" });
-  }
 
   const subscription: webpush.PushSubscription = req.body;
   if (!subscription?.endpoint) return res.status(400).json({ error: "Invalid subscription" });

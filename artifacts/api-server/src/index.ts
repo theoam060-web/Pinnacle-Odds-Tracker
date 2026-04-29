@@ -6,10 +6,6 @@ import { createServer } from "node:http";
 import { WebSocketServer } from "ws";
 import { registerWsClient, unregisterWsClient } from "./lib/sseManager";
 import type WebSocket from "ws";
-import { runMigrations } from "stripe-replit-sync";
-import { getStripeSync } from "./stripeClient";
-import { db, usersTable } from "@workspace/db";
-import { sql } from "drizzle-orm";
 
 const rawPort = process.env["PORT"];
 
@@ -32,83 +28,6 @@ logger.info(
   { POLL_INTERVAL_MS, MIN_DROP_PERCENT, hasPinnacleKeyOverride: !!PINNACLE_API_KEY, wsEnabled: ENABLE_WS },
   "Server config",
 );
-
-async function runAppMigrations() {
-  try {
-    await db.execute(
-      sql`ALTER TABLE users ADD COLUMN IF NOT EXISTS subscription_status text`
-    );
-    logger.info("App schema migrations complete (users.subscription_status ensured).");
-  } catch (err) {
-    logger.error({ err }, "App schema migration failed — continuing");
-  }
-}
-
-async function initStripe() {
-  const databaseUrl = process.env.DATABASE_URL;
-  if (!databaseUrl) {
-    logger.warn("DATABASE_URL not set — skipping Stripe init");
-    return;
-  }
-  try {
-    logger.info("Running Stripe migrations…");
-    await runMigrations({ databaseUrl });
-
-    logger.info("Initialising StripeSync…");
-    const stripeSync = await getStripeSync();
-
-    const domain = process.env.REPLIT_DOMAINS?.split(",")[0];
-    if (domain) {
-      const webhookUrl = `https://${domain}/api/stripe/webhook`;
-      logger.info({ webhookUrl }, "Setting up managed Stripe webhook…");
-      await stripeSync.findOrCreateManagedWebhook(webhookUrl);
-    } else {
-      logger.warn("REPLIT_DOMAINS not set — skipping managed webhook setup");
-    }
-
-    logger.info("Syncing Stripe data (backfill)…");
-    await stripeSync.syncBackfill();
-
-    // One-time backfill: set subscriptionStatus for existing users whose
-    // subscriptionStatus is null but who have a Stripe subscription on record.
-    // This prevents locking out users who subscribed before the column was added.
-    try {
-      const usersToFix = await db
-        .select({ id: usersTable.id, stripeSubscriptionId: usersTable.stripeSubscriptionId })
-        .from(usersTable)
-        .where(sql`${usersTable.subscriptionStatus} IS NULL AND ${usersTable.stripeSubscriptionId} IS NOT NULL`);
-
-      if (usersToFix.length > 0) {
-        logger.info({ count: usersToFix.length }, "Backfilling subscriptionStatus for pre-migration users…");
-        for (const u of usersToFix) {
-          if (!u.stripeSubscriptionId) continue;
-          const result = await db.execute(
-            sql`SELECT status FROM stripe.subscriptions WHERE id = ${u.stripeSubscriptionId} LIMIT 1`
-          );
-          const row = result.rows[0] as { status?: string } | undefined;
-          const stripeStatus: string = row?.status ?? '';
-          const localStatus =
-            stripeStatus === 'active' || stripeStatus === 'trialing' ? 'active' :
-            stripeStatus === 'past_due' ? 'past_due' :
-            stripeStatus === 'canceled' || stripeStatus === 'cancelled' ? 'cancelled' :
-            null;
-          if (localStatus) {
-            await db.update(usersTable)
-              .set({ subscriptionStatus: localStatus })
-              .where(sql`${usersTable.id} = ${u.id}`);
-          }
-        }
-        logger.info("subscriptionStatus backfill complete.");
-      }
-    } catch (backfillErr) {
-      logger.warn({ backfillErr }, "subscriptionStatus backfill failed — non-fatal");
-    }
-
-    logger.info("Stripe init complete.");
-  } catch (err) {
-    logger.error({ err }, "Stripe init failed — continuing without Stripe");
-  }
-}
 
 const server = createServer(app);
 let wsServer: WebSocketServer | null = null;
@@ -145,6 +64,4 @@ server.listen(port, () => {
       "PINNACLE_API_KEY override not set — using auto-discovered guest key from Pinnacle app config.",
     );
   }
-
-  runAppMigrations().then(() => initStripe());
 });

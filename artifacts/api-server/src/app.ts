@@ -5,7 +5,6 @@ import { clerkMiddleware } from "@clerk/express";
 import { CLERK_PROXY_PATH, clerkProxyMiddleware } from "./middlewares/clerkProxyMiddleware";
 import router from "./routes";
 import { logger } from "./lib/logger";
-import { WebhookHandlers } from "./webhookHandlers";
 
 const app: Express = express();
 
@@ -31,22 +30,6 @@ app.use(
 
 // Clerk proxy — must be before body parsers (streams raw bytes)
 app.use(CLERK_PROXY_PATH, clerkProxyMiddleware());
-
-// Stripe webhook — must be before express.json() to get raw body for signature verification
-app.post(
-  "/api/stripe/webhook",
-  express.raw({ type: "application/json" }),
-  async (req, res) => {
-    const sig = req.headers["stripe-signature"] as string;
-    try {
-      await WebhookHandlers.processWebhook(req.body as Buffer, sig);
-      res.json({ received: true });
-    } catch (err: any) {
-      logger.error({ err }, "Stripe webhook error");
-      res.status(400).send(`Webhook Error: ${err.message}`);
-    }
-  },
-);
 
 app.use(cors({ credentials: true, origin: true }));
 app.use(express.json());

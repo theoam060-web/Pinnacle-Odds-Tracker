@@ -10,7 +10,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { motion, useScroll, useTransform, AnimatePresence } from "framer-motion";
 import React, { useEffect, useState, useRef } from "react";
-import { ClerkProvider, Show, useClerk, useUser, useAuth } from "@clerk/react";
+import { ClerkProvider, Show, useClerk, useUser } from "@clerk/react";
 import { 
   Activity, Bell,
   LineChart as LineChartIcon, Radar,
@@ -375,41 +375,15 @@ const FEATURE_ITEMS = [
   },
 ];
 
-const LANDING_API_BASE = `${window.location.protocol}//${window.location.host}`;
-
-async function openSubscriptionPortalOrWall(getToken: () => Promise<string | null>) {
-  try {
-    const token = await getToken();
-    const res = await fetch(`${LANDING_API_BASE}/api/stripe/portal`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        ...(token ? { Authorization: `Bearer ${token}` } : {}),
-      },
-    });
-    if (res.ok) {
-      const { url } = await res.json();
-      if (url) { (window.top || window).location.href = url; return; }
-    }
-  } catch {}
-  // Fallback: show the pricing page instead of the app wall
-  window.location.href = "/pricing";
-}
-
 function SubscriptionButton({ closePanel, className, children }: { closePanel: () => void; className?: string; children: React.ReactNode }) {
-  const { getToken } = useAuth();
-  const [loading, setLoading] = useState(false);
-
-  const handleClick = async () => {
+  const handleClick = () => {
     closePanel();
-    setLoading(true);
-    await openSubscriptionPortalOrWall(getToken);
-    setLoading(false);
+    window.location.href = "/pricing";
   };
 
   return (
-    <button onClick={handleClick} disabled={loading} className={className}>
-      {loading ? <span className="opacity-60">Laddar…</span> : children}
+    <button onClick={handleClick} className={className}>
+      {children}
     </button>
   );
 }
@@ -417,9 +391,7 @@ function SubscriptionButton({ closePanel, className, children }: { closePanel: (
 function NavUserMenu({ closePanel }: { closePanel: () => void }) {
   const { user, isLoaded } = useUser();
   const { signOut } = useClerk();
-  const { getToken } = useAuth();
   const [open, setOpen] = useState(false);
-  const [subLoading, setSubLoading] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -455,16 +427,13 @@ function NavUserMenu({ closePanel }: { closePanel: () => void }) {
             <p className="text-xs font-mono text-muted-foreground truncate">{user.emailAddresses?.[0]?.emailAddress}</p>
           </div>
           <button
-            onClick={async () => {
+            onClick={() => {
               setOpen(false);
-              setSubLoading(true);
-              await openSubscriptionPortalOrWall(getToken);
-              setSubLoading(false);
+              window.location.href = "/pricing";
             }}
-            disabled={subLoading}
-            className="w-full text-left px-4 py-2 text-sm font-mono text-primary hover:bg-primary/5 transition-colors disabled:opacity-50"
+            className="w-full text-left px-4 py-2 text-sm font-mono text-primary hover:bg-primary/5 transition-colors"
           >
-            {subLoading ? "Laddar…" : "Prenumerationer"}
+            Pricing
           </button>
           <div className="border-t border-border/40 my-1" />
           <button

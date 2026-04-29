@@ -1,5 +1,4 @@
-import { useState } from "react";
-import { useClerk, useAuth } from "@clerk/react";
+import { useClerk } from "@clerk/react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Label } from "@/components/ui/label";
@@ -9,7 +8,7 @@ import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useSettings, Theme, BetSizeMethod, calcKellyStake, calcUnitStake } from "@/lib/settings-context";
 import { useBetStore, CURRENCIES } from "@/lib/bet-store";
-import { Info, Palette, Calculator, DollarSign, LogOut, CreditCard, Loader2 } from "lucide-react";
+import { Info, Palette, Calculator, DollarSign, LogOut } from "lucide-react";
 
 interface Props {
   onClose: () => void;
@@ -25,25 +24,7 @@ export function SettingsModal({ onClose }: Props) {
   const { settings, updateSettings } = useSettings();
   const { currency, setCurrency } = useBetStore();
   const { signOut } = useClerk();
-  const { getToken } = useAuth();
-  const [portalLoading, setPortalLoading] = useState(false);
 
-  async function handleManageSubscription() {
-    setPortalLoading(true);
-    try {
-      const token = await getToken();
-      const res = await fetch("/api/stripe/portal", {
-        method: "POST",
-        headers: { Authorization: `Bearer ${token ?? ""}`, "Content-Type": "application/json" },
-      });
-      const data = await res.json() as { url?: string };
-      if (data.url) window.open(data.url, "_blank");
-    } finally {
-      setPortalLoading(false);
-    }
-  }
-
-  // Preview bet size calculation
   const previewStake = settings.betSizingEnabled
     ? settings.betSizeMethod === "kelly"
       ? calcKellyStake(settings.bankroll, settings.kellyFraction, 2.0, 0.52)
@@ -346,33 +327,16 @@ export function SettingsModal({ onClose }: Props) {
           </TabsContent>
         </Tabs>
 
-        {/* ── ACCOUNT ACTIONS ── */}
-        <div className="mt-4 pt-4 border-t border-border flex items-center justify-between gap-3">
-          <div className="flex items-center gap-2">
-            <Button
-              variant="ghost"
-              size="sm"
-              className="h-8 text-xs text-muted-foreground hover:text-foreground gap-1.5"
-              onClick={() => signOut()}
-            >
-              <LogOut className="w-3.5 h-3.5" />
-              Sign out
-            </Button>
-            <Button
-              variant="ghost"
-              size="sm"
-              className="h-8 text-xs text-muted-foreground hover:text-destructive gap-1.5"
-              onClick={handleManageSubscription}
-              disabled={portalLoading}
-            >
-              {portalLoading ? (
-                <Loader2 className="w-3.5 h-3.5 animate-spin" />
-              ) : (
-                <CreditCard className="w-3.5 h-3.5" />
-              )}
-              Manage / Cancel subscription
-            </Button>
-          </div>
+        <div className="mt-4 pt-4 border-t border-border flex items-center">
+          <Button
+            variant="ghost"
+            size="sm"
+            className="h-8 text-xs text-muted-foreground hover:text-foreground gap-1.5"
+            onClick={() => signOut()}
+          >
+            <LogOut className="w-3.5 h-3.5" />
+            Sign out
+          </Button>
         </div>
       </DialogContent>
     </Dialog>
