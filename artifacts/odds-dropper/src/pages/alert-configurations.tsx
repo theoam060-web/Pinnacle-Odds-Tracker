@@ -212,7 +212,10 @@ function ConfigDetail({ config }: { config: AlertConfig }) {
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
-            {SPORT_OPTIONS.map(s => (
+            {(limits.allowedSports
+              ? SPORT_OPTIONS.filter(s => (limits.allowedSports as readonly string[]).includes(s.slug))
+              : SPORT_OPTIONS
+            ).map(s => (
               <SelectItem key={s.slug} value={s.slug}>{s.label}</SelectItem>
             ))}
           </SelectContent>

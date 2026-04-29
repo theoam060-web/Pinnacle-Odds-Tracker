@@ -1,16 +1,20 @@
 import { useState, useCallback, useEffect } from "react";
 import { Link, useLocation } from "wouter";
-import { Activity, TrendingDown, BookMarked, BellRing, Volume2, VolumeX, Cog, BarChart2, Zap, X } from "lucide-react";
+import { Activity, TrendingDown, BookMarked, BellRing, Volume2, VolumeX, Cog, BarChart2, Zap, X, Lock } from "lucide-react";
 import { useAlertStore } from "@/lib/alert-context";
 import { useGetOddsSummary, getGetOddsSummaryQueryKey } from "@workspace/api-client-react";
 import { SettingsModal } from "@/components/settings-modal";
 import { useOddsStream, type OddsDropEvent, type OddsStreamFilters } from "@/hooks/use-odds-stream";
 import { useBetStore, getCurrencySymbol, calcEVCurrency } from "@/lib/bet-store";
 import { playChime } from "@/lib/chime";
-const NAV_ITEMS = [
+import { usePlan } from "@/lib/plan-context";
+
+type NavItem = { href: string; label: string; icon: React.ElementType; goldPlus?: boolean };
+
+const NAV_ITEMS: NavItem[] = [
   { href: "/", label: "Live Feed", icon: TrendingDown },
-  { href: "/bet-tracker", label: "Bet Tracker", icon: BookMarked },
-  { href: "/bet-stats", label: "Bet Stats", icon: BarChart2 },
+  { href: "/bet-tracker", label: "Bet Tracker", icon: BookMarked, goldPlus: true },
+  { href: "/bet-stats", label: "Bet Stats", icon: BarChart2, goldPlus: true },
   { href: "/alert-configurations", label: "Alert Configurations", icon: BellRing },
 ];
 
@@ -53,6 +57,7 @@ function MobileAppComingSoon() {
 export function Layout({ children, notificationFilters }: LayoutProps) {
   const [location] = useLocation();
   const { configs, soundEnabled, setSoundEnabled } = useAlertStore();
+  const tier = usePlan();
   const [settingsOpen, setSettingsOpen] = useState(false);
   const activeConfigCount = configs.filter(c => c.enabled).length;
 
@@ -89,22 +94,26 @@ export function Layout({ children, notificationFilters }: LayoutProps) {
 
         {/* Nav */}
         <nav className="flex flex-col gap-0.5 px-2 pt-4 pb-2">
-          {NAV_ITEMS.map(({ href, label, icon: Icon }) => {
+          {NAV_ITEMS.map(({ href, label, icon: Icon, goldPlus }) => {
             const active = location === href;
+            const locked = goldPlus && tier === "silver";
             return (
               <Link key={href} href={href}>
                 <div
                   className={`relative flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-all cursor-pointer
                     ${active
                       ? "bg-primary/12 text-primary font-semibold"
-                      : "text-muted-foreground hover:text-foreground hover:bg-white/5"
+                      : locked
+                        ? "text-muted-foreground/50 hover:text-muted-foreground hover:bg-white/3"
+                        : "text-muted-foreground hover:text-foreground hover:bg-white/5"
                     }`}
                 >
                   {active && (
                     <div className="absolute left-0 top-1/2 -translate-y-1/2 w-[3px] h-5 rounded-r-full bg-primary shadow-[0_0_8px_rgba(0,229,255,0.6)]" />
                   )}
                   <Icon className={`w-4 h-4 shrink-0 ${active ? "text-primary" : ""}`} />
-                  {label}
+                  <span className="flex-1">{label}</span>
+                  {locked && <Lock className="w-3 h-3 shrink-0 text-muted-foreground/40" />}
                 </div>
               </Link>
             );

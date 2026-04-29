@@ -80,7 +80,7 @@ router.post('/stripe/checkout', requireAuth, async (req: any, res) => {
     const host = req.headers.host ?? '';
     const proto = (req.headers['x-forwarded-proto'] as string) ?? 'https';
     const baseUrl = `${proto}://${host}`;
-    const successUrl = `${baseUrl}/success?session_id={CHECKOUT_SESSION_ID}`;
+    const successUrl = `${baseUrl}/app/?session_id={CHECKOUT_SESSION_ID}`;
     const cancelUrl = redirectAfter ? `${baseUrl}${redirectAfter}` : `${baseUrl}/cancel`;
 
     const session = await stripeService.createCheckoutSession(

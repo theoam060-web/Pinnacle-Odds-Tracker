@@ -729,18 +729,22 @@ export default function FeedPage() {
   // Display filtering + sorting
   // ---------------------------------------------------------------------------
   const sortedShownRows = useMemo(() => {
-    const filtered = shownRows.filter(row =>
-      effectiveConfigs.some(c =>
+    const limits = PLAN_LIMITS[tier] ?? PLAN_LIMITS.none;
+    const allowedSports = limits.allowedSports; // null = unrestricted (Gold/Platinum)
+    const filtered = shownRows.filter(row => {
+      // Enforce sport-level access for Silver (only soccer, basketball, tennis)
+      if (allowedSports !== null && !allowedSports.includes(row.sport)) return false;
+      return effectiveConfigs.some(c =>
         lineMatchesConfig(
           { sport: row.sport, marketType: row.marketType },
           { changePercent: row.changePercent, currentOdds: row.currentOdds },
           row.commenceTime,
           c,
         )
-      )
-    );
+      );
+    });
     return applySort(filtered, sortBy);
-  }, [shownRows, sortBy, effectiveConfigs]);
+  }, [shownRows, sortBy, effectiveConfigs, tier]);
 
   // ---------------------------------------------------------------------------
   // Pause / resume
