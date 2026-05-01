@@ -34,7 +34,7 @@ export default function PrivacyPage() {
         </p>
 
         <Section title="1. Who We Are">
-          <p>SharpTracker is the data controller responsible for the personal data collected through this website and service. If you have any privacy-related questions, you can reach us at <span className="text-primary font-mono">info@sharptracker.io</span>.</p>
+          <p>SharpTracker is the data controller responsible for the personal data collected through this website and service. If you have any privacy-related questions, you can reach us at <span className="text-primary font-mono">privacy@sharptracker.io</span>.</p>
         </Section>
 
         <Section title="2. What Data We Collect">
@@ -106,7 +106,7 @@ export default function PrivacyPage() {
             <li><strong className="text-foreground">Right to object:</strong> You can object to processing based on legitimate interests, including profiling and direct marketing.</li>
             <li><strong className="text-foreground">Right to withdraw consent:</strong> Where processing is based on consent, you can withdraw it at any time without affecting the lawfulness of prior processing.</li>
           </ul>
-          <p>To exercise any of these rights, contact us at <span className="text-primary font-mono">info@sharptracker.io</span>. We will respond within 30 days. If you believe we are not handling your data correctly, you have the right to lodge a complaint with your national data protection authority.</p>
+          <p>To exercise any of these rights, contact us at <span className="text-primary font-mono">privacy@sharptracker.io</span>. We will respond within 30 days. If you believe we are not handling your data correctly, you have the right to lodge a complaint with your national data protection authority.</p>
         </Section>
 
         <Section title="9. Security">
@@ -124,7 +124,7 @@ export default function PrivacyPage() {
 
         <Section title="12. Contact">
           <p>For any privacy-related questions or to exercise your rights:</p>
-          <p className="font-mono text-primary">info@sharptracker.io</p>
+          <p className="font-mono text-primary">privacy@sharptracker.io</p>
         </Section>
       </div>
     </div>

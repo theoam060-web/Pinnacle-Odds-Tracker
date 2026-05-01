@@ -93,11 +93,37 @@ export function Layout({ children, notificationFilters }: LayoutProps) {
           </span>
         </a>
 
+        {/* Prominent Live Feed button — always visible */}
+        {/* If subscription expired (tier "none") → redirects to pricing; otherwise → goes to feed */}
+        {(location !== "/" || tier === "none") && (
+          <div className="px-2 pt-3 pb-1">
+            {tier === "none" ? (
+              <button
+                onClick={() => { window.location.href = "/pricing"; }}
+                className="w-full flex items-center gap-2.5 px-3 py-2.5 rounded-lg bg-primary/12 border border-primary/25 text-primary text-sm font-semibold cursor-pointer hover:bg-primary/20 hover:border-primary/40 transition-all group"
+              >
+                <TrendingDown className="w-4 h-4 shrink-0 group-hover:scale-110 transition-transform" />
+                <span className="flex-1">Live Feed</span>
+                <div className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse" />
+              </button>
+            ) : (
+              <Link href="/">
+                <div className="flex items-center gap-2.5 px-3 py-2.5 rounded-lg bg-primary/12 border border-primary/25 text-primary text-sm font-semibold cursor-pointer hover:bg-primary/20 hover:border-primary/40 transition-all group">
+                  <TrendingDown className="w-4 h-4 shrink-0 group-hover:scale-110 transition-transform" />
+                  <span className="flex-1">Live Feed</span>
+                  <div className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse" />
+                </div>
+              </Link>
+            )}
+          </div>
+        )}
+
         {/* Nav */}
         <nav className="flex flex-col gap-0.5 px-2 pt-2 pb-2">
           {NAV_ITEMS.map(({ href, label, icon: Icon, goldPlus }) => {
             const active = location === href;
             const locked = goldPlus && tier === "silver";
+            const isLiveFeedExpired = href === "/" && tier === "none";
             const inner = (
               <div
                 className={`relative flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-all cursor-pointer
@@ -116,7 +142,11 @@ export function Layout({ children, notificationFilters }: LayoutProps) {
                 {locked && <Lock className="w-3 h-3 shrink-0 text-muted-foreground/40" />}
               </div>
             );
-            return (
+            return isLiveFeedExpired ? (
+              <button key={href} className="text-left w-full" onClick={() => { window.location.href = "/pricing"; }}>
+                {inner}
+              </button>
+            ) : (
               <Link key={href} href={href}>
                 {inner}
               </Link>
