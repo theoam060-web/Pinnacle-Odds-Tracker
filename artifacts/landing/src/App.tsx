@@ -426,14 +426,12 @@ function NavUserMenu({ closePanel, hasAccess }: { closePanel: () => void; hasAcc
           <div className="px-4 py-2 border-b border-border/40">
             <p className="text-xs font-mono text-muted-foreground truncate">{user.emailAddresses?.[0]?.emailAddress}</p>
           </div>
-          {hasAccess && (
-            <button
-              onClick={() => { window.location.href = "/app/"; }}
-              className="flex items-center gap-2 w-full px-4 py-2 text-sm font-mono text-primary hover:bg-primary/5 transition-colors"
-            >
-              Go to Live Feed →
-            </button>
-          )}
+          <button
+            onClick={() => { window.location.href = hasAccess ? "/app/" : "/pricing"; }}
+            className="flex items-center gap-2 w-full px-4 py-2 text-sm font-mono text-primary hover:bg-primary/5 transition-colors"
+          >
+            Go to Live Feed →
+          </button>
           <button
             onClick={() => {
               setOpen(false);
@@ -511,11 +509,9 @@ function LangDropdown() {
 }
 
 function LiveFeedButton({ hasAccess }: { hasAccess: boolean }) {
-  if (!hasAccess) return null;
-
   return (
     <button
-      onClick={() => { window.location.href = "/app/"; }}
+      onClick={() => { window.location.href = hasAccess ? "/app/" : "/pricing"; }}
       className="flex items-center gap-2 bg-primary/10 text-primary border border-primary/30 hover:bg-primary hover:text-black px-4 py-2 rounded-md font-mono text-sm font-semibold transition-all shadow-[0_0_15px_rgba(0,255,255,0.08)] hover:shadow-[0_0_20px_rgba(0,255,255,0.3)]"
     >
       <TrendingDown className="w-3.5 h-3.5" />
@@ -2563,15 +2559,14 @@ function UserDashboardSection() {
 
           {/* Right: actions */}
           <div className="flex flex-wrap items-center gap-3">
-            {hasAccess && (
-              <button
-                onClick={() => { window.location.href = "/app/"; }}
-                className="flex items-center gap-2 bg-primary text-primary-foreground px-5 py-2.5 rounded-md font-mono text-sm font-bold hover:bg-primary/90 transition-colors shadow-[0_0_20px_hsl(var(--primary)/0.25)]"
-              >
-                <TrendingDown className="w-4 h-4" />
-                Live Feed
-              </button>
-            )}
+            {/* Always visible — routes to Live Feed when active, Pricing when expired */}
+            <button
+              onClick={() => { window.location.href = hasAccess ? "/app/" : "/pricing"; }}
+              className="flex items-center gap-2 bg-primary text-primary-foreground px-5 py-2.5 rounded-md font-mono text-sm font-bold hover:bg-primary/90 transition-colors shadow-[0_0_20px_hsl(var(--primary)/0.25)]"
+            >
+              <TrendingDown className="w-4 h-4" />
+              Live Feed
+            </button>
             {isActive && (
               <button
                 onClick={openPortal}
@@ -2588,14 +2583,6 @@ function UserDashboardSection() {
                 className="flex items-center gap-2 text-red-400 border border-red-500/20 bg-red-950/20 px-5 py-2.5 rounded-md font-mono text-sm hover:bg-red-950/40 hover:border-red-500/40 transition-colors disabled:opacity-60"
               >
                 {portalLoading ? "Opening…" : "Cancel Subscription"}
-              </button>
-            )}
-            {!isActive && (
-              <button
-                onClick={() => { window.location.href = "/pricing"; }}
-                className="flex items-center gap-2 bg-primary text-primary-foreground px-5 py-2.5 rounded-md font-mono text-sm font-bold hover:bg-primary/90 transition-colors"
-              >
-                View Plans <ChevronRight className="w-4 h-4" />
               </button>
             )}
           </div>
