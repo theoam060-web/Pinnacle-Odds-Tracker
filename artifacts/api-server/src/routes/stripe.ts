@@ -59,8 +59,8 @@ router.post('/stripe/checkout', requireAuth, async (req: any, res) => {
 
     // 2. If DB says eligible, double-check against Stripe (catches email reuse)
     if (trialEligible && customerId) {
-      const stripeTrialUsed = await stripeService.customerHasUsedTrial(customerId);
-      if (stripeTrialUsed) trialEligible = false;
+      const sub = await storage.getUserByStripeCustomerId(customerId);
+      if (sub?.trialUsed) trialEligible = false;
     }
 
     // 3. Check other Stripe customers at the same email
