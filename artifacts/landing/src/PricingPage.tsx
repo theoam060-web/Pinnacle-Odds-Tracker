@@ -190,6 +190,7 @@ export default function PricingPage() {
                   <span className="text-xl font-bold text-foreground/60 font-sans mb-0.5">.99</span>
                 </div>
                 <p className="text-foreground/40 text-xs mt-0.5 font-mono">per month</p>
+                <p className="text-amber-400/80 text-xs mt-1.5 font-mono font-semibold">14 days free — then €34.99/mo</p>
               </div>
 
               <div className="mb-5">
@@ -209,7 +210,7 @@ export default function PricingPage() {
                 className="w-full py-3 rounded-lg border border-border/60 text-foreground/80 font-mono text-sm text-center transition-colors hover:bg-white/5 hover:border-border disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
               >
                 {loadingPlan === "silver" ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
-                {isSignedIn ? "Try 14 Days Free" : "Get Started"}
+                Try 14 Days Free
               </button>
             </motion.div>
 
@@ -233,6 +234,7 @@ export default function PricingPage() {
                   <span className="text-xl font-bold text-foreground/60 font-sans mb-0.5">.99</span>
                 </div>
                 <p className="text-foreground/40 text-xs mt-0.5 font-mono">per month</p>
+                <p className="text-amber-400/80 text-xs mt-1.5 font-mono font-semibold">14 days free — then €84.99/mo</p>
               </div>
 
               <div className="mb-5">
@@ -252,7 +254,7 @@ export default function PricingPage() {
                 className="w-full py-3 rounded-lg bg-primary text-background font-mono text-sm font-semibold text-center transition-colors hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
               >
                 {loadingPlan === "gold" ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
-                {isSignedIn ? "Try 14 Days Free" : "Get Started"}
+                Try 14 Days Free
               </button>
             </motion.div>
 
@@ -270,6 +272,7 @@ export default function PricingPage() {
                   <span className="text-xl font-bold text-foreground/60 font-sans mb-0.5">.99</span>
                 </div>
                 <p className="text-foreground/40 text-xs mt-0.5 font-mono">per month</p>
+                <p className="text-amber-400/80 text-xs mt-1.5 font-mono font-semibold">14 days free — then €114.99/mo</p>
               </div>
 
               <div className="mb-5">
