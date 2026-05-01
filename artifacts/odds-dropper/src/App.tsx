@@ -17,7 +17,7 @@ import TopMoversPage from "@/pages/top-movers";
 import MyBetsPage from "@/pages/my-bets";
 import AccountPage from "@/pages/account";
 import React, { useState, useEffect, useCallback } from "react";
-import { Activity, LogIn, UserPlus, ExternalLink } from "lucide-react";
+import { Activity, LogIn, UserPlus } from "lucide-react";
 import { PlanContext, type PlanTier } from "@/lib/plan-context";
 
 const clerkPubKey = import.meta.env.VITE_CLERK_PUBLISHABLE_KEY as string;
@@ -153,164 +153,6 @@ function AuthScreen() {
   );
 }
 
-function SubscriptionWall() {
-  const [loadingPlan, setLoadingPlan] = useState<string | null>(null);
-  const [error, setError] = useState<string | null>(null);
-  const { getToken } = useAuth();
-
-  const startCheckout = async (plan: string) => {
-    setError(null);
-    setLoadingPlan(plan);
-    try {
-      const token = await getToken();
-      const res = await fetch("/api/stripe/checkout", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          ...(token ? { Authorization: `Bearer ${token}` } : {}),
-        },
-        body: JSON.stringify({ plan }),
-        credentials: "include",
-      });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error ?? "Checkout failed");
-      if (data.url) window.location.href = data.url;
-    } catch (e: any) {
-      setError(e.message ?? "Something went wrong");
-      setLoadingPlan(null);
-    }
-  };
-
-  const openPortal = async () => {
-    try {
-      const token = await getToken();
-      const res = await fetch("/api/stripe/portal", {
-        method: "POST",
-        headers: token ? { Authorization: `Bearer ${token}` } : {},
-        credentials: "include",
-      });
-      const data = await res.json();
-      if (data.url) window.location.href = data.url;
-    } catch {
-      setError("Could not open billing portal");
-    }
-  };
-
-  return (
-    <div className="min-h-screen bg-[#0a0b0f] flex flex-col items-center justify-center px-6">
-      <div className="mb-6 flex items-center gap-2">
-        <Activity className="w-5 h-5 text-cyan-400" />
-        <span className="font-bold text-lg text-white tracking-tight">
-          Sharp<span className="text-cyan-400">Tracker</span>
-        </span>
-      </div>
-
-      <div className="max-w-xl w-full text-center mb-10">
-        <div className="inline-flex items-center gap-1.5 bg-amber-400/10 border border-amber-400/20 text-amber-400 text-[10px] font-mono font-bold uppercase tracking-widest px-3 py-1 rounded-full mb-4">
-          14-day free trial — card required
-        </div>
-        <h1 className="text-2xl font-bold text-white mb-3">Start your free trial</h1>
-        <p className="text-white/50 font-mono text-sm">
-          Try SharpTracker free for 14 days. Cancel anytime before the trial ends and you won't be charged.
-        </p>
-      </div>
-
-      {error && (
-        <div className="mb-6 text-sm font-mono text-red-400 bg-red-500/10 border border-red-500/20 rounded-lg py-3 px-4">
-          {error}
-        </div>
-      )}
-
-      <div className="grid sm:grid-cols-3 gap-4 w-full max-w-2xl">
-        {/* Silver */}
-        <div className="rounded-xl border border-white/10 bg-white/3 p-5 flex flex-col">
-          <div className="mb-4">
-            <span className="text-base font-bold" style={{ color: "#9ca3af" }}>Silver</span>
-            <div className="mt-1">
-              <span className="text-2xl font-bold text-white">€34.99</span>
-              <span className="text-xs text-white/40 font-mono ml-1">/mo</span>
-            </div>
-          </div>
-          <ul className="text-xs text-white/60 font-mono space-y-1.5 flex-1 mb-4">
-            <li>• 3 alert configs</li>
-            <li>• Moneyline only</li>
-            <li>• 3 sports</li>
-          </ul>
-          <button
-            onClick={() => startCheckout("silver")}
-            disabled={loadingPlan !== null}
-            className="w-full py-2.5 rounded-lg border border-white/20 text-white/80 font-mono text-xs transition-colors hover:bg-white/5 disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            {loadingPlan === "silver" ? "Redirecting…" : "Try 14 Days Free"}
-          </button>
-        </div>
-
-        {/* Gold */}
-        <div className="rounded-xl border border-cyan-400/50 bg-cyan-400/5 p-5 flex flex-col relative shadow-[0_0_40px_rgba(0,229,255,0.1)]">
-          <div className="absolute -top-2.5 left-1/2 -translate-x-1/2 whitespace-nowrap bg-cyan-400 text-black text-[9px] font-mono font-bold uppercase tracking-widest px-2.5 py-0.5 rounded-full">
-            Most Popular
-          </div>
-          <div className="mb-4">
-            <span className="text-base font-bold" style={{ color: "#f59e0b" }}>Gold</span>
-            <div className="mt-1">
-              <span className="text-2xl font-bold text-white">€84.99</span>
-              <span className="text-xs text-white/40 font-mono ml-1">/mo</span>
-            </div>
-          </div>
-          <ul className="text-xs text-white/60 font-mono space-y-1.5 flex-1 mb-4">
-            <li>• 9 alert configs</li>
-            <li>• All sports & markets</li>
-            <li>• Bet Tracker</li>
-          </ul>
-          <button
-            onClick={() => startCheckout("gold")}
-            disabled={loadingPlan !== null}
-            className="w-full py-2.5 rounded-lg bg-cyan-400 text-black font-mono text-xs font-semibold transition-colors hover:bg-cyan-300 disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            {loadingPlan === "gold" ? "Redirecting…" : "Try 14 Days Free"}
-          </button>
-        </div>
-
-        {/* Platinum */}
-        <div className="rounded-xl border border-violet-500/40 bg-violet-500/5 p-5 flex flex-col">
-          <div className="mb-4">
-            <span className="text-base font-bold text-violet-400">Platinum</span>
-            <div className="mt-1">
-              <span className="text-2xl font-bold text-white">€114.99</span>
-              <span className="text-xs text-white/40 font-mono ml-1">/mo</span>
-            </div>
-          </div>
-          <ul className="text-xs text-white/60 font-mono space-y-1.5 flex-1 mb-4">
-            <li>• 20 alert configs</li>
-            <li>• Push notifications</li>
-            <li>• CLV & CV tracking</li>
-          </ul>
-          <button
-            onClick={() => startCheckout("platinum")}
-            disabled={loadingPlan !== null}
-            className="w-full py-2.5 rounded-lg border border-violet-500/40 text-violet-300 font-mono text-xs transition-colors hover:bg-violet-500/10 disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            {loadingPlan === "platinum" ? "Redirecting…" : "Try 14 Days Free"}
-          </button>
-        </div>
-      </div>
-
-      <div className="mt-8 flex flex-col items-center gap-3">
-        <p className="text-white/30 text-xs font-mono">
-          Already have a subscription?
-        </p>
-        <button
-          onClick={openPortal}
-          className="flex items-center gap-1.5 text-xs font-mono text-cyan-400/70 hover:text-cyan-400 transition-colors"
-        >
-          <ExternalLink className="w-3 h-3" />
-          Manage billing
-        </button>
-      </div>
-    </div>
-  );
-}
-
 type SubState =
   | { status: "loading" }
   | { status: "active"; tier: PlanTier; isTrialing: boolean }
@@ -349,7 +191,7 @@ function SubscriptionGate({ children }: { children: React.ReactNode }) {
         // Had a subscription before but it's now expired — let into dashboard with no-plan tier
         setSubState({ status: "expired" });
       } else {
-        // Never subscribed — show the subscription wall
+        // No subscription — let into dashboard with no-plan tier
         setSubState({ status: "none" });
       }
     } catch {
@@ -403,13 +245,12 @@ function SubscriptionGate({ children }: { children: React.ReactNode }) {
     );
   }
 
-  // Never subscribed — show subscription wall
-  if (isSignedIn) {
-    return <SubscriptionWall />;
-  }
-
-  // Not signed in — AuthGate handles this above us
-  return <>{children}</>;
+  // No subscription — let into dashboard with no-plan tier
+  return (
+    <PlanContext.Provider value="none">
+      {children}
+    </PlanContext.Provider>
+  );
 }
 
 function AuthGate({ children }: { children: React.ReactNode }) {
