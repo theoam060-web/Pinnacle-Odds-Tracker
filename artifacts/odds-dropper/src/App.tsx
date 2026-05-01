@@ -235,22 +235,14 @@ function SubscriptionGate({ children }: { children: React.ReactNode }) {
     );
   }
 
-  if (subState.status === "expired") {
-    // Subscription existed but fully expired — let into dashboard with no-plan tier
-    // Live Feed button in the sidebar will redirect to pricing instead of the feed
-    return (
-      <PlanContext.Provider value="none">
-        {children}
-      </PlanContext.Provider>
-    );
+  if (subState.status === "expired" || subState.status === "none") {
+    // No active subscription — redirect to pricing on the landing page
+    window.location.href = "/pricing";
+    return null;
   }
 
-  // No subscription — let into dashboard with no-plan tier
-  return (
-    <PlanContext.Provider value="none">
-      {children}
-    </PlanContext.Provider>
-  );
+  // Still loading — show spinner
+  return <LoadingScreen label="Checking subscription…" />;
 }
 
 function AuthGate({ children }: { children: React.ReactNode }) {

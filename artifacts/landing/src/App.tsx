@@ -9,7 +9,7 @@ import { QueryClient, QueryClientProvider, useQueryClient } from "@tanstack/reac
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { motion, useScroll, useTransform, AnimatePresence } from "framer-motion";
-import React, { useEffect, useState, useRef } from "react";
+import React, { useEffect, useState, useRef, useContext, useCallback } from "react";
 import { ClerkProvider, Show, useClerk, useUser, useAuth } from "@clerk/react";
 import { 
   Activity, Bell,
@@ -524,6 +524,10 @@ function LiveFeedButton({ hasAccess }: { hasAccess: boolean }) {
   );
 }
 
+// Shared context so components don't each make separate /subscription API calls
+const SubscriptionAccessContext = React.createContext<boolean>(false);
+function useHasAccess() { return useContext(SubscriptionAccessContext); }
+
 function useSubscriptionAccess() {
   const { getToken, isSignedIn } = useAuth();
   const [hasAccess, setHasAccess] = useState(false);
@@ -540,9 +544,9 @@ function useSubscriptionAccess() {
         .then(data => {
           if (stale) return;
           const sub = data.subscription;
+          // Users who cancelled but are still in the paid period remain active
           const active = sub?.status === "active" || sub?.status === "trialing";
-          const cancelled = sub?.cancel_at_period_end === true;
-          setHasAccess(active && !cancelled);
+          setHasAccess(active);
         })
         .catch(() => { if (!stale) setHasAccess(false); });
     });
@@ -560,7 +564,7 @@ function Navbar() {
   const [, navigate] = useLocation();
   const { lang } = useLang();
   const tr = t(lang);
-  const hasAccess = useSubscriptionAccess();
+  const hasAccess = useHasAccess();
 
   useEffect(() => {
     const handleScroll = () => setScrolled(window.scrollY > 50);
@@ -709,6 +713,7 @@ function Hero() {
   const tr = t(lang);
   const heroStats = useHeroStats();
   const { isSignedIn } = useUser();
+  const hasAccess = useHasAccess();
 
   useEffect(() => {
     const load = () =>
@@ -799,13 +804,23 @@ function Hero() {
             className="flex flex-col sm:flex-row items-center gap-4"
           >
             {isSignedIn ? (
-              <button
-                onClick={() => navigate("/pricing")}
-                className="bg-primary text-primary-foreground px-10 py-4 rounded-md font-mono font-bold tracking-wide flex items-center justify-center gap-2 hover:bg-primary/90 transition-colors shadow-[0_0_30px_hsl(var(--primary)/0.35)]"
-                data-testid="btn-plans"
-              >
-                {tr.nav.pricing} <ChevronRight className="w-5 h-5" />
-              </button>
+              hasAccess ? (
+                <button
+                  onClick={() => { window.location.href = "/app/"; }}
+                  className="bg-primary text-primary-foreground px-10 py-4 rounded-md font-mono font-bold tracking-wide flex items-center justify-center gap-2 hover:bg-primary/90 transition-colors shadow-[0_0_30px_hsl(var(--primary)/0.35)]"
+                  data-testid="btn-live-feed"
+                >
+                  <TrendingDown className="w-5 h-5" /> Live Feed <ChevronRight className="w-5 h-5" />
+                </button>
+              ) : (
+                <button
+                  onClick={() => navigate("/pricing")}
+                  className="bg-primary text-primary-foreground px-10 py-4 rounded-md font-mono font-bold tracking-wide flex items-center justify-center gap-2 hover:bg-primary/90 transition-colors shadow-[0_0_30px_hsl(var(--primary)/0.35)]"
+                  data-testid="btn-plans"
+                >
+                  {tr.nav.pricing} <ChevronRight className="w-5 h-5" />
+                </button>
+              )
             ) : (
               <>
                 <button
@@ -2447,12 +2462,158 @@ function SharpDataSection() {
   );
 }
 
-function AppContent() {
+function UserDashboardSection() {
+  const { isSignedIn, user } = useUser();
+  const { getToken } = useAuth();
+  const hasAccess = useHasAccess();
+  const [sub, setSub] = useState<null | { status: string; planTier: string | null; cancel_at_period_end: boolean; current_period_end: number | null; trial_end: number | null }>(null);
+  const [portalLoading, setPortalLoading] = useState(false);
+
+  useEffect(() => {
+    if (!isSignedIn) return;
+    getToken().then(token =>
+      fetch("/api/stripe/subscription", {
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+        credentials: "include",
+      })
+        .then(r => r.json())
+        .then(data => {
+          const s = data.subscription;
+          setSub({
+            status: s?.status ?? "none",
+            planTier: data.planTier ?? null,
+            cancel_at_period_end: s?.cancel_at_period_end ?? false,
+            current_period_end: s?.current_period_end ?? null,
+            trial_end: s?.trial_end ?? null,
+          });
+        })
+        .catch(() => {})
+    );
+  }, [isSignedIn, getToken]);
+
+  const openPortal = useCallback(async () => {
+    setPortalLoading(true);
+    try {
+      const token = await getToken();
+      const res = await fetch("/api/stripe/portal", {
+        method: "POST",
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+        credentials: "include",
+      });
+      const data = await res.json();
+      if (data.url) window.location.href = data.url;
+    } catch {
+      // silent — portal unavailable
+    } finally {
+      setPortalLoading(false);
+    }
+  }, [getToken]);
+
+  if (!isSignedIn) return null;
+
+  const displayName = user?.firstName ?? user?.emailAddresses?.[0]?.emailAddress?.split("@")[0] ?? "Subscriber";
+  const tierLabel = sub?.planTier
+    ? sub.planTier.charAt(0).toUpperCase() + sub.planTier.slice(1)
+    : null;
+  const isActive = sub?.status === "active" || sub?.status === "trialing";
+  const willCancel = sub?.cancel_at_period_end ?? false;
+  const formatDate = (ts: number | null) =>
+    ts ? new Date(ts * 1000).toLocaleDateString(undefined, { year: "numeric", month: "short", day: "numeric" }) : "—";
+
   return (
+    <section className="py-14 border-b border-border/30 bg-card/30">
+      <div className="container mx-auto px-6 max-w-4xl">
+        <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
+          {/* Left: greeting + status */}
+          <div>
+            <p className="text-xs font-mono text-muted-foreground mb-1 uppercase tracking-widest">Your Account</p>
+            <h2 className="text-2xl font-bold mb-3">Welcome back, {displayName}</h2>
+            {sub === null ? (
+              <div className="h-5 w-40 rounded bg-border/40 animate-pulse" />
+            ) : isActive ? (
+              <div className="flex items-center gap-2">
+                <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-mono font-bold border ${
+                  sub.status === "trialing"
+                    ? "bg-blue-950/60 border-blue-500/30 text-blue-300"
+                    : willCancel
+                    ? "bg-amber-950/60 border-amber-500/30 text-amber-300"
+                    : "bg-green-950/60 border-green-500/30 text-green-300"
+                }`}>
+                  <span className={`w-1.5 h-1.5 rounded-full ${
+                    sub.status === "trialing" ? "bg-blue-400 animate-pulse"
+                    : willCancel ? "bg-amber-400"
+                    : "bg-green-400"
+                  }`} />
+                  {sub.status === "trialing"
+                    ? `Trial — ends ${formatDate(sub.trial_end)}`
+                    : willCancel
+                    ? `Cancels ${formatDate(sub.current_period_end)}`
+                    : `Active — renews ${formatDate(sub.current_period_end)}`}
+                </span>
+                {tierLabel && (
+                  <span className="text-xs font-mono font-semibold text-primary border border-primary/30 bg-primary/5 px-2.5 py-1 rounded-full">
+                    {tierLabel}
+                  </span>
+                )}
+              </div>
+            ) : (
+              <span className="text-sm font-mono text-muted-foreground">No active subscription</span>
+            )}
+          </div>
+
+          {/* Right: actions */}
+          <div className="flex flex-wrap items-center gap-3">
+            {hasAccess && (
+              <button
+                onClick={() => { window.location.href = "/app/"; }}
+                className="flex items-center gap-2 bg-primary text-primary-foreground px-5 py-2.5 rounded-md font-mono text-sm font-bold hover:bg-primary/90 transition-colors shadow-[0_0_20px_hsl(var(--primary)/0.25)]"
+              >
+                <TrendingDown className="w-4 h-4" />
+                Live Feed
+              </button>
+            )}
+            {isActive && (
+              <button
+                onClick={openPortal}
+                disabled={portalLoading}
+                className="flex items-center gap-2 bg-secondary border border-border text-foreground/80 px-5 py-2.5 rounded-md font-mono text-sm hover:border-primary/40 hover:text-primary transition-colors disabled:opacity-60"
+              >
+                {portalLoading ? "Opening…" : "Manage Billing"}
+              </button>
+            )}
+            {isActive && (
+              <button
+                onClick={openPortal}
+                disabled={portalLoading}
+                className="flex items-center gap-2 text-red-400 border border-red-500/20 bg-red-950/20 px-5 py-2.5 rounded-md font-mono text-sm hover:bg-red-950/40 hover:border-red-500/40 transition-colors disabled:opacity-60"
+              >
+                {portalLoading ? "Opening…" : "Cancel Subscription"}
+              </button>
+            )}
+            {!isActive && (
+              <button
+                onClick={() => { window.location.href = "/pricing"; }}
+                className="flex items-center gap-2 bg-primary text-primary-foreground px-5 py-2.5 rounded-md font-mono text-sm font-bold hover:bg-primary/90 transition-colors"
+              >
+                View Plans <ChevronRight className="w-4 h-4" />
+              </button>
+            )}
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+function AppContent() {
+  const hasAccess = useSubscriptionAccess();
+  return (
+    <SubscriptionAccessContext.Provider value={hasAccess}>
     <div className="min-h-[100dvh] bg-background text-foreground font-sans selection:bg-primary/30 selection:text-primary">
       <Navbar />
       <main>
         <Hero />
+        <UserDashboardSection />
         <FeaturesGrid />
         <FeatureStripSection />
         <BankrollFeatureCards />
@@ -2464,6 +2625,7 @@ function AppContent() {
       </main>
       <Footer />
     </div>
+    </SubscriptionAccessContext.Provider>
   );
 }
 
