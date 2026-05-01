@@ -17,6 +17,7 @@ export const stripeService = {
     successUrl: string,
     cancelUrl: string,
     clerkUserId: string,
+    trialEligible = false,
   ) {
     const stripe = await getUncachableStripeClient();
     return stripe.checkout.sessions.create({
@@ -28,6 +29,9 @@ export const stripeService = {
       success_url: successUrl,
       cancel_url: cancelUrl,
       allow_promotion_codes: true,
+      ...(trialEligible
+        ? { subscription_data: { trial_period_days: 14 } }
+        : {}),
     });
   },
 
@@ -51,6 +55,32 @@ export const stripeService = {
   async retrieveSubscription(subscriptionId: string) {
     const stripe = await getUncachableStripeClient();
     return stripe.subscriptions.retrieve(subscriptionId, { expand: ['items.data.price.product'] });
+  },
+
+  /**
+   * Check whether any Stripe customer at `email` (excluding `excludeCustomerId`)
+   * has ever had a trialing or active subscription. Used to prevent trial abuse
+   * when a user signs up with the same email via a different Clerk account.
+   */
+  async checkEmailHasUsedTrial(email: string, excludeCustomerId?: string): Promise<boolean> {
+    try {
+      const stripe = await getUncachableStripeClient();
+      const customers = await stripe.customers.list({ email, limit: 10 });
+      for (const customer of customers.data) {
+        if (excludeCustomerId && customer.id === excludeCustomerId) continue;
+        const subs = await stripe.subscriptions.list({
+          customer: customer.id,
+          limit: 5,
+        });
+        for (const sub of subs.data) {
+          if (sub.trial_start != null) return true;
+        }
+      }
+      return false;
+    } catch (err) {
+      logger.warn({ err, email }, 'checkEmailHasUsedTrial failed — assuming no trial used');
+      return false;
+    }
   },
 
   async recoverSubscriptionByCustomerId(userId: string, customerId: string) {

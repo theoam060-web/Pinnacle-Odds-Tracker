@@ -24,11 +24,12 @@ export async function fulfillCheckout(sessionId: string) {
     throw new Error('Session missing client_reference_id (Clerk user ID)');
   }
 
-  // Retrieve subscription to get plan tier
+  // Retrieve subscription to get plan tier and real status
   const sub = await stripeService.retrieveSubscription(subscriptionId);
   const tier = getPlanTierFromSub(sub);
-  const status =
-    sub.status === 'active' || sub.status === 'trialing' ? 'active' : sub.status ?? 'active';
+  const trialActive = sub.status === 'trialing';
+  // Store actual status so access-gate can distinguish trialing vs active
+  const status = sub.status === 'active' || sub.status === 'trialing' ? sub.status : (sub.status ?? 'active');
 
   const customerEmail =
     typeof session.customer === 'object' ? (session.customer as any)?.email : undefined;
@@ -37,7 +38,7 @@ export async function fulfillCheckout(sessionId: string) {
   const user = await storage.getUser(clerkUserId);
   if (user?.stripeSubscriptionId === subscriptionId) {
     logger.info({ clerkUserId, subscriptionId }, 'Checkout already fulfilled');
-    return { plan: tier, alreadyFulfilled: true };
+    return { plan: tier, trialActive, alreadyFulfilled: true };
   }
 
   await storage.upsertUserFromStripe(
@@ -47,8 +48,14 @@ export async function fulfillCheckout(sessionId: string) {
     subscriptionId,
     status,
     tier,
+    trialActive ? true : undefined,
   );
 
-  logger.info({ clerkUserId, subscriptionId, tier }, 'Checkout fulfilled');
-  return { plan: tier, alreadyFulfilled: false };
+  // Mark trial as used so they can't claim another one
+  if (trialActive) {
+    await storage.markTrialUsed(clerkUserId);
+  }
+
+  logger.info({ clerkUserId, subscriptionId, tier, trialActive }, 'Checkout fulfilled');
+  return { plan: tier, trialActive, alreadyFulfilled: false };
 }
