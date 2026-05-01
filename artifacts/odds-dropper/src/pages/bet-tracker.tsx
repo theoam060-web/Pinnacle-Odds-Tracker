@@ -8,8 +8,10 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { BookMarked, Trash2, CalendarDays, Pencil } from "lucide-react";
+import { BookMarked, Trash2, CalendarDays, Pencil, Lock } from "lucide-react";
 import { formatOdds, formatDate, formatTime } from "@/lib/format";
+import { usePlan } from "@/lib/plan-context";
+import { useUpgradePortal } from "@/hooks/use-upgrade";
 
 type TimeFilter = "all" | "today" | "7d" | "30d" | "this_month";
 
@@ -100,6 +102,9 @@ function ClosingOddsCell({ bet, onUpdate }: { bet: LoggedBet; onUpdate: (closing
 }
 
 export default function BetTrackerPage() {
+  // All hooks must be called before any early return (Rules of Hooks)
+  const tier = usePlan();
+  const { openPortal, loading: portalLoading } = useUpgradePortal();
   const { bets, currency, setCurrency, updateBet, removeBet } = useBetStore();
   const { settings } = useSettings();
   const sym = getCurrencySymbol(currency);
@@ -115,6 +120,34 @@ export default function BetTrackerPage() {
   }, [editBet]);
 
   const filteredBets = filterByTime(bets, timeFilter);
+
+  // Silver & unsubscribed: Bet Tracker is a Gold+ feature
+  if (tier === "silver" || tier === "none") {
+    return (
+      <Layout>
+        <div className="flex flex-col items-center justify-center min-h-[60vh] text-center gap-6 px-4">
+          <div className="w-16 h-16 rounded-2xl bg-primary/10 border border-primary/20 flex items-center justify-center">
+            <Lock className="w-8 h-8 text-primary/60" />
+          </div>
+          <div>
+            <h2 className="text-xl font-bold mb-2">Bet Tracker</h2>
+            <p className="text-muted-foreground text-sm max-w-xs">
+              Bet Tracker is available on the <span className="text-primary font-semibold">Gold</span> and{" "}
+              <span className="text-violet-400 font-semibold">Platinum</span> plans.
+              Upgrade to track your bets and measure your edge.
+            </p>
+          </div>
+          <button
+            onClick={openPortal}
+            disabled={portalLoading}
+            className="inline-flex items-center gap-2 bg-primary text-primary-foreground font-mono text-sm font-bold px-6 py-2.5 rounded-lg hover:bg-primary/90 transition-colors disabled:opacity-60"
+          >
+            {portalLoading ? "Loading…" : "Upgrade Plan"}
+          </button>
+        </div>
+      </Layout>
+    );
+  }
 
 
   return (
