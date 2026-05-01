@@ -70,11 +70,11 @@ router.post('/stripe/checkout', requireAuth, async (req: any, res) => {
       if (emailTrialUsed) trialEligible = false;
     }
 
-    // Resolve price ID — first try DB, then Stripe API directly
-    let priceId = await storage.getPriceIdByPlan(plan);
-    if (!priceId) priceId = await storage.getPriceIdByPlanFromStripe(plan);
+    // Resolve price ID — query live Stripe API first (always fresh), fall back to DB cache
+    let priceId = await storage.getPriceIdByPlanFromStripe(plan);
+    if (!priceId) priceId = await storage.getPriceIdByPlan(plan);
     if (!priceId) {
-      return res.status(400).json({ error: `No active price found for plan: ${plan}. Make sure Stripe products are seeded.` });
+      return res.status(400).json({ error: `No active price found for plan: ${plan}. Make sure Stripe products are seeded with plan metadata.` });
     }
 
     const host = req.headers.host ?? '';

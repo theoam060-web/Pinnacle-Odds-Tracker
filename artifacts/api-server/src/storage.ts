@@ -131,12 +131,26 @@ export class Storage {
     try {
       const { getUncachableStripeClient } = await import('./stripeClient.js');
       const stripe = await getUncachableStripeClient();
-      const products = await stripe.products.search({
-        query: `metadata['plan']:'${plan}' AND active:'true'`,
-        limit: 1,
-      });
-      if (products.data.length === 0) return null;
-      const productId = products.data[0].id;
+
+      // 1) Search by plan metadata (preferred — most explicit)
+      let productId: string | null = null;
+      try {
+        const byMeta = await stripe.products.search({
+          query: `metadata['plan']:'${plan}' AND active:'true'`,
+          limit: 1,
+        });
+        if (byMeta.data.length > 0) productId = byMeta.data[0].id;
+      } catch { /* search API may not be available in all Stripe modes */ }
+
+      // 2) Fallback: match product name case-insensitively (SharpTracker Silver → silver)
+      if (!productId) {
+        const all = await stripe.products.list({ active: true, limit: 100 });
+        const match = all.data.find(p => p.name.toLowerCase().includes(plan.toLowerCase()));
+        if (match) productId = match.id;
+      }
+
+      if (!productId) return null;
+
       const prices = await stripe.prices.list({
         product: productId,
         active: true,

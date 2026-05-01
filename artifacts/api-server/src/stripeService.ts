@@ -86,15 +86,18 @@ export const stripeService = {
   async recoverSubscriptionByCustomerId(userId: string, customerId: string) {
     try {
       const stripe = await getUncachableStripeClient();
+      // List without deep expand (Stripe limits list expands to 4 levels max)
       const subs = await stripe.subscriptions.list({
         customer: customerId,
         status: 'active',
         limit: 1,
-        expand: ['data.items.data.price.product'],
       });
       if (subs.data.length === 0) return { subscriptionId: null };
 
-      const sub = subs.data[0];
+      // Retrieve individually with product expand (4 levels for single object)
+      const sub = await stripe.subscriptions.retrieve(subs.data[0].id, {
+        expand: ['items.data.price.product'],
+      });
       const status = sub.status === 'active' || sub.status === 'trialing' ? 'active' : sub.status;
       const tier = getPlanTierFromSub(sub);
 
@@ -116,14 +119,17 @@ export const stripeService = {
       const stripe = await getUncachableStripeClient();
       const customers = await stripe.customers.list({ email, limit: 5 });
       for (const customer of customers.data) {
+        // List without deep expand
         const subs = await stripe.subscriptions.list({
           customer: customer.id,
           status: 'active',
           limit: 1,
-          expand: ['data.items.data.price.product'],
         });
         if (subs.data.length > 0) {
-          const sub = subs.data[0];
+          // Retrieve individually with product expand
+          const sub = await stripe.subscriptions.retrieve(subs.data[0].id, {
+            expand: ['items.data.price.product'],
+          });
           const status = sub.status === 'active' || sub.status === 'trialing' ? 'active' : sub.status;
           const tier = getPlanTierFromSub(sub);
           await storage.updateUserStripeInfo(userId, {
