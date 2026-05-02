@@ -10,6 +10,7 @@ export const usersTable = pgTable("users", {
   subscriptionStatus: text("subscription_status"),
   subscriptionPlan: text("subscription_plan"),
   trialUsed: boolean("trial_used").notNull().default(false),
+  notificationsEnabled: boolean("notifications_enabled").notNull().default(true),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 });
 

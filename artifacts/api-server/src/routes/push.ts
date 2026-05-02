@@ -1,6 +1,7 @@
 import { Router } from "express";
 import webpush from "web-push";
 import { requireAuth } from "@clerk/express";
+import { storage } from "../storage.js";
 
 const router = Router();
 
@@ -12,9 +13,7 @@ if (VAPID_PRIVATE_KEY) {
   webpush.setVapidDetails(VAPID_EMAIL, VAPID_PUBLIC_KEY, VAPID_PRIVATE_KEY);
 }
 
-const subscriptionsByUser = new Map<string, webpush.PushSubscription[]>();
-
-export function sendPushToAll(payload: {
+export async function sendPushToAll(payload: {
   title: string;
   body: string;
   sport?: string;
@@ -26,20 +25,32 @@ export function sendPushToAll(payload: {
 }) {
   if (!VAPID_PRIVATE_KEY) return;
   const data = JSON.stringify(payload);
-  for (const [userId, subs] of subscriptionsByUser.entries()) {
-    for (const sub of subs) {
-      webpush.sendNotification(sub, data).catch((err) => {
-        if (err.statusCode === 410 || err.statusCode === 404) {
-          const remaining = subscriptionsByUser.get(userId)?.filter((s) => s.endpoint !== sub.endpoint) ?? [];
-          if (remaining.length === 0) subscriptionsByUser.delete(userId);
-          else subscriptionsByUser.set(userId, remaining);
-        }
-      });
+
+  let allSubs: { userId: string; sub: webpush.PushSubscription }[];
+  try {
+    allSubs = await storage.getAllPushSubscriptions();
+  } catch {
+    return;
+  }
+
+  for (const { userId, sub } of allSubs) {
+    // Respect per-user notification preference
+    try {
+      const enabled = await storage.getUserNotificationsEnabled(userId);
+      if (!enabled) continue;
+    } catch {
+      continue;
     }
+
+    webpush.sendNotification(sub, data).catch(async (err) => {
+      if (err.statusCode === 410 || err.statusCode === 404) {
+        await storage.deletePushSubscription(sub.endpoint).catch(() => {});
+      }
+    });
   }
 }
 
-router.post("/push/subscribe", requireAuth(), (req, res) => {
+router.post("/push/subscribe", requireAuth(), async (req, res) => {
   const userId = req.auth?.userId;
   if (!userId) return res.status(401).json({ error: "Unauthorized" });
   if (!VAPID_PRIVATE_KEY) return res.status(503).json({ error: "Push not configured" });
@@ -47,36 +58,44 @@ router.post("/push/subscribe", requireAuth(), (req, res) => {
   const subscription: webpush.PushSubscription = req.body;
   if (!subscription?.endpoint) return res.status(400).json({ error: "Invalid subscription" });
 
-  const existing = subscriptionsByUser.get(userId) ?? [];
-  const alreadyRegistered = existing.some((s) => s.endpoint === subscription.endpoint);
-  if (!alreadyRegistered) {
-    subscriptionsByUser.set(userId, [...existing, subscription]);
+  try {
+    await storage.savePushSubscription(userId, subscription);
+    res.json({ ok: true });
+  } catch (err) {
+    res.status(500).json({ error: "Failed to save subscription" });
   }
-
-  res.json({ ok: true });
 });
 
-router.delete("/push/subscribe", requireAuth(), (req, res) => {
+router.delete("/push/subscribe", requireAuth(), async (req, res) => {
   const userId = req.auth?.userId;
   if (!userId) return res.status(401).json({ error: "Unauthorized" });
 
   const { endpoint } = req.body;
-  if (endpoint) {
-    const existing = subscriptionsByUser.get(userId) ?? [];
-    subscriptionsByUser.set(userId, existing.filter((s) => s.endpoint !== endpoint));
-  } else {
-    subscriptionsByUser.delete(userId);
+  try {
+    if (endpoint) {
+      await storage.deletePushSubscription(endpoint);
+    } else {
+      await storage.deleteAllPushSubscriptionsForUser(userId);
+    }
+    res.json({ ok: true });
+  } catch {
+    res.status(500).json({ error: "Failed to remove subscription" });
   }
-  res.json({ ok: true });
 });
 
-router.post("/push/test", requireAuth(), (req, res) => {
+router.post("/push/test", requireAuth(), async (req, res) => {
   if (!VAPID_PRIVATE_KEY) return res.status(503).json({ error: "Push not configured" });
   const userId = req.auth?.userId;
   if (!userId) return res.status(401).json({ error: "Unauthorized" });
 
-  const subs = subscriptionsByUser.get(userId);
-  if (!subs?.length) return res.status(404).json({ error: "No subscription found for this user" });
+  let subs: webpush.PushSubscription[];
+  try {
+    subs = await storage.getPushSubscriptionsForUser(userId);
+  } catch {
+    return res.status(500).json({ error: "Failed to fetch subscriptions" });
+  }
+
+  if (!subs.length) return res.status(404).json({ error: "No subscription found for this user" });
 
   const payload = JSON.stringify({
     title: "⚡ Sharp Drop Detected",
@@ -86,13 +105,12 @@ router.post("/push/test", requireAuth(), (req, res) => {
     bookmaker: "Pinnacle",
     drop: 3.2,
     tag: "test-alert",
-    url: "/",
+    url: "/app/",
   });
 
-  Promise.allSettled(subs.map((sub) => webpush.sendNotification(sub, payload))).then((results) => {
-    const succeeded = results.filter((r) => r.status === "fulfilled").length;
-    res.json({ sent: succeeded, total: subs.length });
-  });
+  const results = await Promise.allSettled(subs.map((sub) => webpush.sendNotification(sub, payload)));
+  const succeeded = results.filter((r) => r.status === "fulfilled").length;
+  res.json({ sent: succeeded, total: subs.length });
 });
 
 router.get("/push/vapid-public-key", (_req, res) => {

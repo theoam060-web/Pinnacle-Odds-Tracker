@@ -1,6 +1,7 @@
-import { usersTable, cardFingerprintsTable } from '@workspace/db';
+import { usersTable, cardFingerprintsTable, pushSubscriptionsTable } from '@workspace/db';
 import { eq, sql } from 'drizzle-orm';
 import { db } from '@workspace/db';
+import type webpush from 'web-push';
 
 export class Storage {
   async getUser(id: string) {
@@ -88,6 +89,48 @@ export class Storage {
       .onConflictDoNothing();
 
     return true;
+  }
+
+  async getUserNotificationsEnabled(userId: string): Promise<boolean> {
+    const [user] = await db.select({ notificationsEnabled: usersTable.notificationsEnabled })
+      .from(usersTable).where(eq(usersTable.id, userId));
+    return user?.notificationsEnabled ?? true;
+  }
+
+  async setUserNotificationsEnabled(userId: string, enabled: boolean): Promise<void> {
+    await db.update(usersTable).set({ notificationsEnabled: enabled }).where(eq(usersTable.id, userId));
+  }
+
+  async savePushSubscription(userId: string, sub: webpush.PushSubscription): Promise<void> {
+    await db.insert(pushSubscriptionsTable).values({
+      id: crypto.randomUUID(),
+      userId,
+      endpoint: sub.endpoint,
+      subscription: sub as any,
+    }).onConflictDoUpdate({
+      target: pushSubscriptionsTable.endpoint,
+      set: { subscription: sub as any, userId },
+    });
+  }
+
+  async deletePushSubscription(endpoint: string): Promise<void> {
+    await db.delete(pushSubscriptionsTable).where(eq(pushSubscriptionsTable.endpoint, endpoint));
+  }
+
+  async deleteAllPushSubscriptionsForUser(userId: string): Promise<void> {
+    await db.delete(pushSubscriptionsTable).where(eq(pushSubscriptionsTable.userId, userId));
+  }
+
+  async getPushSubscriptionsForUser(userId: string): Promise<webpush.PushSubscription[]> {
+    const rows = await db.select({ subscription: pushSubscriptionsTable.subscription })
+      .from(pushSubscriptionsTable).where(eq(pushSubscriptionsTable.userId, userId));
+    return rows.map(r => r.subscription as unknown as webpush.PushSubscription);
+  }
+
+  async getAllPushSubscriptions(): Promise<{ userId: string; sub: webpush.PushSubscription }[]> {
+    const rows = await db.select({ userId: pushSubscriptionsTable.userId, subscription: pushSubscriptionsTable.subscription })
+      .from(pushSubscriptionsTable);
+    return rows.map(r => ({ userId: r.userId, sub: r.subscription as unknown as webpush.PushSubscription }));
   }
 
   async upsertUserFromStripe(

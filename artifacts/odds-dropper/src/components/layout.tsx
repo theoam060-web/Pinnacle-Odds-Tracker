@@ -42,14 +42,14 @@ interface LayoutProps {
   notificationFilters?: OddsStreamFilters;
 }
 
-function MobileAppComingSoon() {
+function InstallPWABadge() {
   return (
     <div className="mx-3 mb-3">
-      <div className="w-full flex items-center gap-2 px-3 py-2.5 rounded-xl text-xs font-mono bg-amber-400/[0.04] border border-amber-400/20 text-amber-300/60">
+      <div className="w-full flex items-center gap-2 px-3 py-2.5 rounded-xl text-xs font-mono bg-cyan-400/[0.06] border border-cyan-400/20 text-cyan-300/70">
         <span className="relative flex-shrink-0">
-          <span className="w-1.5 h-1.5 rounded-full bg-amber-400/80 block animate-pulse" />
+          <span className="w-1.5 h-1.5 rounded-full bg-cyan-400/80 block animate-pulse" />
         </span>
-        <span>Mobile app — coming soon</span>
+        <span>Install app → Settings → App</span>
       </div>
     </div>
   );
@@ -208,7 +208,7 @@ export function Layout({ children, notificationFilters }: LayoutProps) {
           </div>
         </div>
 
-        <MobileAppComingSoon />
+        <InstallPWABadge />
 
         {/* Footer settings */}
         <div className="mt-auto border-t border-border/30">

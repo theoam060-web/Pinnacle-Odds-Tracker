@@ -1,4 +1,5 @@
-import { useClerk } from "@clerk/react";
+import { useState, useEffect } from "react";
+import { useClerk, useAuth } from "@clerk/react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Label } from "@/components/ui/label";
@@ -8,7 +9,8 @@ import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useSettings, Theme, BetSizeMethod, calcKellyStake, calcUnitStake } from "@/lib/settings-context";
 import { useBetStore, CURRENCIES } from "@/lib/bet-store";
-import { Info, Palette, Calculator, DollarSign, LogOut } from "lucide-react";
+import { usePushNotifications } from "@/lib/push-notifications";
+import { Info, Palette, Calculator, DollarSign, LogOut, Smartphone, Bell, BellOff, Download, CheckCircle2 } from "lucide-react";
 
 interface Props {
   onClose: () => void;
@@ -19,6 +21,241 @@ const THEMES: { value: Theme; label: string; description: string }[] = [
   { value: "midnight", label: "Midnight", description: "Deep navy blue tones" },
   { value: "light", label: "Light", description: "White / light grey background" },
 ];
+
+function AppTab() {
+  const { getToken } = useAuth();
+  const push = usePushNotifications();
+  const bypassAuth = import.meta.env.VITE_DEV_BYPASS_AUTH === "true";
+
+  const [notificationsEnabled, setNotificationsEnabled] = useState(true);
+  const [settingsLoading, setSettingsLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [subscribeLoading, setSubscribeLoading] = useState(false);
+  const [testSent, setTestSent] = useState(false);
+  const [installPrompt, setInstallPrompt] = useState<any>(null);
+  const [isInstalled, setIsInstalled] = useState(false);
+
+  // Fetch user notification setting from server
+  useEffect(() => {
+    if (bypassAuth) { setSettingsLoading(false); return; }
+    getToken().then(token => {
+      return fetch("/api/user/settings", {
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+        credentials: "include",
+      });
+    }).then(r => r.json()).then(data => {
+      setNotificationsEnabled(data.notificationsEnabled ?? true);
+    }).catch(() => {}).finally(() => setSettingsLoading(false));
+  }, [getToken, bypassAuth]);
+
+  // Capture the beforeinstallprompt event
+  useEffect(() => {
+    const handler = (e: Event) => { e.preventDefault(); setInstallPrompt(e); };
+    window.addEventListener("beforeinstallprompt", handler);
+    // Check if already installed
+    const mq = window.matchMedia("(display-mode: standalone)");
+    setIsInstalled(mq.matches || (navigator as any).standalone === true);
+    mq.addEventListener("change", (e) => setIsInstalled(e.matches));
+    return () => window.removeEventListener("beforeinstallprompt", handler);
+  }, []);
+
+  async function handleNotificationsToggle(enabled: boolean) {
+    setNotificationsEnabled(enabled);
+    setSaving(true);
+    try {
+      const token = await getToken();
+      await fetch("/api/user/settings", {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
+        credentials: "include",
+        body: JSON.stringify({ notificationsEnabled: enabled }),
+      });
+      // If disabling, unsubscribe from push
+      if (!enabled && push.isSubscribed) {
+        await push.unsubscribe();
+      }
+      // If enabling and not subscribed yet, try to subscribe
+      if (enabled && !push.isSubscribed && push.isSupported) {
+        await push.requestAndSubscribe();
+      }
+    } catch {
+      // revert optimistic update
+      setNotificationsEnabled(!enabled);
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  async function handleEnablePush() {
+    setSubscribeLoading(true);
+    try {
+      const granted = await push.requestAndSubscribe();
+      if (granted) {
+        setNotificationsEnabled(true);
+        const token = await getToken();
+        await fetch("/api/user/settings", {
+          method: "PATCH",
+          headers: {
+            "Content-Type": "application/json",
+            ...(token ? { Authorization: `Bearer ${token}` } : {}),
+          },
+          credentials: "include",
+          body: JSON.stringify({ notificationsEnabled: true }),
+        });
+      }
+    } finally {
+      setSubscribeLoading(false);
+    }
+  }
+
+  async function handleTestNotification() {
+    await push.sendTestNotification();
+    setTestSent(true);
+    setTimeout(() => setTestSent(false), 3000);
+  }
+
+  async function handleInstall() {
+    if (!installPrompt) return;
+    installPrompt.prompt();
+    const { outcome } = await installPrompt.userChoice;
+    if (outcome === "accepted") {
+      setInstallPrompt(null);
+      setIsInstalled(true);
+    }
+  }
+
+  return (
+    <div className="space-y-6">
+      {/* Install to Home Screen */}
+      <div>
+        <Label className="text-xs font-semibold mb-3 block">Home Screen</Label>
+        <div className="rounded-lg border border-border p-4 space-y-3">
+          <div className="flex items-start gap-3">
+            <div className="mt-0.5 p-2 rounded-md bg-primary/10">
+              <Smartphone className="w-4 h-4 text-primary" />
+            </div>
+            <div className="flex-1">
+              <div className="text-xs font-semibold">Install SharpTracker</div>
+              <p className="text-[10px] text-muted-foreground mt-0.5 leading-relaxed">
+                Add to your home screen for a full-screen app experience. Works on iOS (Safari) and Android (Chrome).
+              </p>
+            </div>
+          </div>
+
+          {isInstalled ? (
+            <div className="flex items-center gap-2 text-xs text-green-400">
+              <CheckCircle2 className="w-3.5 h-3.5" />
+              App is installed on this device
+            </div>
+          ) : installPrompt ? (
+            <Button size="sm" className="h-8 text-xs gap-1.5 w-full" onClick={handleInstall}>
+              <Download className="w-3.5 h-3.5" />
+              Add to Home Screen
+            </Button>
+          ) : (
+            <div className="text-[10px] text-muted-foreground bg-muted/30 rounded-md px-3 py-2 leading-relaxed">
+              <strong className="text-foreground">iOS Safari:</strong> Tap the Share button → "Add to Home Screen"
+              <br />
+              <strong className="text-foreground">Android Chrome:</strong> Tap the menu (⋮) → "Add to Home Screen"
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Push Notifications */}
+      <div>
+        <Label className="text-xs font-semibold mb-3 block">Push Notifications</Label>
+        <div className="rounded-lg border border-border p-4 space-y-4">
+          {!push.isSupported ? (
+            <p className="text-[10px] text-muted-foreground">
+              Push notifications are not supported in this browser. Try Chrome or Firefox.
+            </p>
+          ) : push.permission === "denied" ? (
+            <div className="flex items-start gap-2">
+              <BellOff className="w-3.5 h-3.5 text-red-400 mt-0.5 shrink-0" />
+              <div>
+                <p className="text-xs font-semibold text-red-400">Notifications blocked</p>
+                <p className="text-[10px] text-muted-foreground mt-0.5">
+                  You've blocked notifications for this site. To enable them, go to your browser settings and allow notifications for this site.
+                </p>
+              </div>
+            </div>
+          ) : (
+            <>
+              {/* Master toggle */}
+              <div className="flex items-center justify-between">
+                <div>
+                  <Label className="text-xs font-semibold">Enable Notifications</Label>
+                  <p className="text-[10px] text-muted-foreground mt-0.5">
+                    Receive alerts for significant odds drops
+                  </p>
+                </div>
+                <Switch
+                  checked={notificationsEnabled}
+                  onCheckedChange={handleNotificationsToggle}
+                  disabled={settingsLoading || saving}
+                />
+              </div>
+
+              {notificationsEnabled && (
+                <div className="space-y-3 pl-0.5">
+                  {/* Subscribe button if not yet subscribed */}
+                  {!push.isSubscribed ? (
+                    <div className="space-y-2">
+                      <p className="text-[10px] text-amber-400/90">
+                        You need to grant browser permission to receive push notifications.
+                      </p>
+                      <Button
+                        size="sm"
+                        className="h-8 text-xs gap-1.5"
+                        onClick={handleEnablePush}
+                        disabled={subscribeLoading}
+                      >
+                        <Bell className="w-3.5 h-3.5" />
+                        {subscribeLoading ? "Requesting…" : "Allow Notifications"}
+                      </Button>
+                    </div>
+                  ) : (
+                    <div className="flex items-center gap-2 text-xs text-green-400">
+                      <CheckCircle2 className="w-3.5 h-3.5" />
+                      Notifications active on this device
+                    </div>
+                  )}
+
+                  {/* Test notification */}
+                  {push.isSubscribed && (
+                    <div className="flex items-center gap-2">
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="h-7 text-[11px] gap-1.5"
+                        onClick={handleTestNotification}
+                        disabled={testSent}
+                      >
+                        {testSent ? (
+                          <><CheckCircle2 className="w-3 h-3 text-green-400" /> Sent!</>
+                        ) : (
+                          <><Bell className="w-3 h-3" /> Send test notification</>
+                        )}
+                      </Button>
+                    </div>
+                  )}
+                </div>
+              )}
+            </>
+          )}
+        </div>
+      </div>
+
+      <p className="text-[10px] text-muted-foreground">
+        Notification settings are saved to your account and apply across all your devices.
+      </p>
+    </div>
+  );
+}
 
 export function SettingsModal({ onClose }: Props) {
   const { settings, updateSettings } = useSettings();
@@ -39,7 +276,7 @@ export function SettingsModal({ onClose }: Props) {
         </DialogHeader>
 
         <Tabs defaultValue="preferences" className="mt-2">
-          <TabsList className="grid grid-cols-4 w-full mb-4 h-auto">
+          <TabsList className="grid grid-cols-5 w-full mb-4 h-auto">
             <TabsTrigger value="preferences" className="text-[11px] flex flex-col gap-0.5 py-2">
               <Palette className="w-3.5 h-3.5" />
               Prefs
@@ -51,6 +288,10 @@ export function SettingsModal({ onClose }: Props) {
             <TabsTrigger value="currency" className="text-[11px] flex flex-col gap-0.5 py-2">
               <DollarSign className="w-3.5 h-3.5" />
               Currency
+            </TabsTrigger>
+            <TabsTrigger value="app" className="text-[11px] flex flex-col gap-0.5 py-2">
+              <Smartphone className="w-3.5 h-3.5" />
+              App
             </TabsTrigger>
             <TabsTrigger value="about" className="text-[11px] flex flex-col gap-0.5 py-2">
               <Info className="w-3.5 h-3.5" />
@@ -276,6 +517,11 @@ export function SettingsModal({ onClose }: Props) {
             </div>
           </TabsContent>
 
+          {/* ── APP (PWA + NOTIFICATIONS) ── */}
+          <TabsContent value="app">
+            <AppTab />
+          </TabsContent>
+
           {/* ── ABOUT / LEGAL ── */}
           <TabsContent value="about" className="space-y-5 text-xs">
             <div className="space-y-2">
@@ -315,9 +561,9 @@ export function SettingsModal({ onClose }: Props) {
               <h3 className="font-semibold">Privacy Policy</h3>
               <div className="text-muted-foreground leading-relaxed space-y-2">
                 <p>
-                  SharpTracker stores all data exclusively in your browser's localStorage. No
-                  personal data, bets, or settings are ever transmitted to external servers beyond
-                  the Pinnacle API calls used to retrieve live market data.
+                  SharpTracker stores app preferences in your browser's localStorage and your
+                  notification settings on our servers (linked to your account). No betting data
+                  is ever transmitted to external servers.
                 </p>
                 <p>
                   We do not use cookies, analytics, or any third-party tracking services.
