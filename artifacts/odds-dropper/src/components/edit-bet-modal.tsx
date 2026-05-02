@@ -67,6 +67,10 @@ export function EditBetModal({ bet, onClose }: Props) {
   const parsedStake = parseFloat(stake);
   const oddsValid = !isNaN(parsedOdds) && parsedOdds > 1;
   const stakeValid = !isNaN(parsedStake) && parsedStake > 0;
+
+  const parsedClosingOdds = closingOdds !== "" ? parseFloat(closingOdds) : undefined;
+  const closingOddsValid = parsedClosingOdds === undefined || (!isNaN(parsedClosingOdds) && parsedClosingOdds > 1);
+
   const canSave = oddsValid && stakeValid && direction.length > 0 && closingOddsValid;
 
   // When market type changes, reset direction to the first valid option
@@ -89,9 +93,6 @@ export function EditBetModal({ bet, onClose }: Props) {
     : result === "loss" && stakeValid
       ? -parsedStake
       : null;
-
-  const parsedClosingOdds = closingOdds !== "" ? parseFloat(closingOdds) : undefined;
-  const closingOddsValid = parsedClosingOdds === undefined || (!isNaN(parsedClosingOdds) && parsedClosingOdds > 1);
 
   function handleSave() {
     if (!canSave) return;
