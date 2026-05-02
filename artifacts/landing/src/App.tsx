@@ -388,7 +388,7 @@ function SubscriptionButton({ closePanel, className, children }: { closePanel: (
   );
 }
 
-function NavUserMenu({ closePanel, hasAccess }: { closePanel: () => void; hasAccess: boolean }) {
+function NavUserMenu({ closePanel }: { closePanel: () => void }) {
   const { user, isLoaded } = useUser();
   const { signOut } = useClerk();
   const [open, setOpen] = useState(false);
@@ -427,7 +427,7 @@ function NavUserMenu({ closePanel, hasAccess }: { closePanel: () => void; hasAcc
             <p className="text-xs font-mono text-muted-foreground truncate">{user.emailAddresses?.[0]?.emailAddress}</p>
           </div>
           <button
-            onClick={() => { window.location.href = hasAccess ? "/app/" : "/pricing"; }}
+            onClick={() => { window.location.href = "/app/"; }}
             className="flex items-center gap-2 w-full px-4 py-2 text-sm font-mono text-primary hover:bg-primary/5 transition-colors"
           >
             Go to Live Feed →
@@ -508,10 +508,10 @@ function LangDropdown() {
   );
 }
 
-function LiveFeedButton({ hasAccess }: { hasAccess: boolean }) {
+function LiveFeedButton() {
   return (
     <button
-      onClick={() => { window.location.href = hasAccess ? "/app/" : "/pricing"; }}
+      onClick={() => { window.location.href = "/app/"; }}
       className="flex items-center gap-2 bg-primary/10 text-primary border border-primary/30 hover:bg-primary hover:text-black px-4 py-2 rounded-md font-mono text-sm font-semibold transition-all shadow-[0_0_15px_rgba(0,255,255,0.08)] hover:shadow-[0_0_20px_rgba(0,255,255,0.3)]"
     >
       <TrendingDown className="w-3.5 h-3.5" />
@@ -521,16 +521,18 @@ function LiveFeedButton({ hasAccess }: { hasAccess: boolean }) {
 }
 
 // Shared context so components don't each make separate /subscription API calls
-const SubscriptionAccessContext = React.createContext<boolean>(false);
+const SubscriptionAccessContext = React.createContext<{ hasAccess: boolean; loading: boolean }>({ hasAccess: false, loading: true });
 function useHasAccess() { return useContext(SubscriptionAccessContext); }
 
 function useSubscriptionAccess() {
   const { getToken, isSignedIn } = useAuth();
   const [hasAccess, setHasAccess] = useState(false);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (!isSignedIn) { setHasAccess(false); return; }
+    if (!isSignedIn) { setHasAccess(false); setLoading(false); return; }
     let stale = false;
+    setLoading(true);
     getToken().then(token => {
       fetch("/api/stripe/subscription", {
         headers: token ? { Authorization: `Bearer ${token}` } : {},
@@ -543,13 +545,14 @@ function useSubscriptionAccess() {
           // Users who cancelled but are still in the paid period remain active
           const active = sub?.status === "active" || sub?.status === "trialing";
           setHasAccess(active);
+          setLoading(false);
         })
-        .catch(() => { if (!stale) setHasAccess(false); });
+        .catch(() => { if (!stale) { setHasAccess(false); setLoading(false); } });
     });
     return () => { stale = true; };
   }, [getToken, isSignedIn]);
 
-  return hasAccess;
+  return { hasAccess, loading };
 }
 
 function Navbar() {
@@ -560,7 +563,7 @@ function Navbar() {
   const [, navigate] = useLocation();
   const { lang } = useLang();
   const tr = t(lang);
-  const hasAccess = useHasAccess();
+  const { hasAccess } = useHasAccess();
 
   useEffect(() => {
     const handleScroll = () => setScrolled(window.scrollY > 50);
@@ -642,8 +645,8 @@ function Navbar() {
             </div>
           </Show>
           <Show when="signed-in">
-            <LiveFeedButton hasAccess={hasAccess} />
-            <NavUserMenu closePanel={closePanel} hasAccess={hasAccess} />
+            <LiveFeedButton />
+            <NavUserMenu closePanel={closePanel} />
           </Show>
         </div>
       </div>
@@ -709,7 +712,7 @@ function Hero() {
   const tr = t(lang);
   const heroStats = useHeroStats();
   const { isSignedIn } = useUser();
-  const hasAccess = useHasAccess();
+  const { hasAccess, loading } = useHasAccess();
 
   useEffect(() => {
     const load = () =>
@@ -800,7 +803,7 @@ function Hero() {
             className="flex flex-col sm:flex-row items-center gap-4"
           >
             {isSignedIn ? (
-              hasAccess ? (
+              (loading || hasAccess) ? (
                 <button
                   onClick={() => { window.location.href = "/app/"; }}
                   className="bg-primary text-primary-foreground px-10 py-4 rounded-md font-mono font-bold tracking-wide flex items-center justify-center gap-2 hover:bg-primary/90 transition-colors shadow-[0_0_30px_hsl(var(--primary)/0.35)]"
@@ -2461,7 +2464,7 @@ function SharpDataSection() {
 function UserDashboardSection() {
   const { isSignedIn, user } = useUser();
   const { getToken } = useAuth();
-  const hasAccess = useHasAccess();
+  const { hasAccess } = useHasAccess();
   const [sub, setSub] = useState<null | { status: string; planTier: string | null; cancel_at_period_end: boolean; current_period_end: number | null; trial_end: number | null }>(null);
   const [portalLoading, setPortalLoading] = useState(false);
 
@@ -2559,9 +2562,9 @@ function UserDashboardSection() {
 
           {/* Right: actions */}
           <div className="flex flex-wrap items-center gap-3">
-            {/* Always visible — routes to Live Feed when active, Pricing when expired */}
+            {/* Always routes to Live Feed — SubscriptionGate handles non-subscribers */}
             <button
-              onClick={() => { window.location.href = hasAccess ? "/app/" : "/pricing"; }}
+              onClick={() => { window.location.href = "/app/"; }}
               className="flex items-center gap-2 bg-primary text-primary-foreground px-5 py-2.5 rounded-md font-mono text-sm font-bold hover:bg-primary/90 transition-colors shadow-[0_0_20px_hsl(var(--primary)/0.25)]"
             >
               <TrendingDown className="w-4 h-4" />
@@ -2593,9 +2596,9 @@ function UserDashboardSection() {
 }
 
 function AppContent() {
-  const hasAccess = useSubscriptionAccess();
+  const { hasAccess, loading } = useSubscriptionAccess();
   return (
-    <SubscriptionAccessContext.Provider value={hasAccess}>
+    <SubscriptionAccessContext.Provider value={{ hasAccess, loading }}>
     <div className="min-h-[100dvh] bg-background text-foreground font-sans selection:bg-primary/30 selection:text-primary">
       <Navbar />
       <main>
