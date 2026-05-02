@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { Link, useLocation } from "wouter";
 import { Activity, Check, Loader2, Star } from "lucide-react";
@@ -102,6 +102,36 @@ const PLATINUM_FEATURES: FeatureDef[] = [
   { text: "Current CLV & Current CV" },
 ];
 
+function useTrialStatus() {
+  const { isSignedIn, isLoaded } = useUser();
+  const { getToken } = useAuth();
+  const [trialUsed, setTrialUsed] = useState(false);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    if (!isLoaded) return;
+    if (!isSignedIn) { setLoading(false); return; }
+    let stale = false;
+    getToken().then(token =>
+      fetch("/api/stripe/subscription", {
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+        credentials: "include",
+      })
+        .then(r => r.json())
+        .then(data => {
+          if (!stale) {
+            setTrialUsed(data.trialUsed === true);
+            setLoading(false);
+          }
+        })
+        .catch(() => { if (!stale) setLoading(false); })
+    );
+    return () => { stale = true; };
+  }, [isSignedIn, isLoaded, getToken]);
+
+  return { trialUsed, loading };
+}
+
 function useCheckout() {
   const [loadingPlan, setLoadingPlan] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -143,6 +173,9 @@ function useCheckout() {
 export default function PricingPage() {
   const { startCheckout, loadingPlan, error } = useCheckout();
   const { isSignedIn } = useUser();
+  const { trialUsed } = useTrialStatus();
+
+  const btnLabel = (isSignedIn && trialUsed) ? "Subscribe" : "Try 14 Days Free";
 
   return (
     <div className="min-h-[100dvh] bg-background text-foreground font-sans">
@@ -157,14 +190,18 @@ export default function PricingPage() {
             transition={{ duration: 0.5 }}
             className="text-center mb-16"
           >
-            <div className="inline-flex items-center gap-1.5 bg-amber-400/10 border border-amber-400/20 text-amber-400 text-[10px] font-mono font-bold uppercase tracking-widest px-3 py-1 rounded-full mb-4">
-              14-day free trial included
-            </div>
+            {!(isSignedIn && trialUsed) && (
+              <div className="inline-flex items-center gap-1.5 bg-amber-400/10 border border-amber-400/20 text-amber-400 text-[10px] font-mono font-bold uppercase tracking-widest px-3 py-1 rounded-full mb-4">
+                14-day free trial included
+              </div>
+            )}
             <h1 className="text-4xl md:text-5xl font-sans font-bold text-foreground mb-0 leading-tight">
               Pricing
             </h1>
             <p className="text-foreground/50 text-sm font-mono mt-3">
-              Card required · No charge during trial · Cancel anytime
+              {(isSignedIn && trialUsed)
+                ? "Cancel anytime"
+                : "Card required · No charge during trial · Cancel anytime"}
             </p>
           </motion.div>
 
@@ -190,7 +227,9 @@ export default function PricingPage() {
                   <span className="text-xl font-bold text-foreground/60 font-sans mb-0.5">.99</span>
                 </div>
                 <p className="text-foreground/40 text-xs mt-0.5 font-mono">per month</p>
-                <p className="text-amber-400/80 text-xs mt-1.5 font-mono font-semibold">14 days free — then €34.99/mo</p>
+                {!(isSignedIn && trialUsed) && (
+                  <p className="text-amber-400/80 text-xs mt-1.5 font-mono font-semibold">14 days free — then €34.99/mo</p>
+                )}
               </div>
 
               <div className="mb-5">
@@ -210,7 +249,7 @@ export default function PricingPage() {
                 className="w-full py-3 rounded-lg border border-border/60 text-foreground/80 font-mono text-sm text-center transition-colors hover:bg-white/5 hover:border-border disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
               >
                 {loadingPlan === "silver" ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
-                Try 14 Days Free
+                {btnLabel}
               </button>
             </motion.div>
 
@@ -234,7 +273,9 @@ export default function PricingPage() {
                   <span className="text-xl font-bold text-foreground/60 font-sans mb-0.5">.99</span>
                 </div>
                 <p className="text-foreground/40 text-xs mt-0.5 font-mono">per month</p>
-                <p className="text-amber-400/80 text-xs mt-1.5 font-mono font-semibold">14 days free — then €84.99/mo</p>
+                {!(isSignedIn && trialUsed) && (
+                  <p className="text-amber-400/80 text-xs mt-1.5 font-mono font-semibold">14 days free — then €84.99/mo</p>
+                )}
               </div>
 
               <div className="mb-5">
@@ -254,7 +295,7 @@ export default function PricingPage() {
                 className="w-full py-3 rounded-lg bg-primary text-background font-mono text-sm font-semibold text-center transition-colors hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
               >
                 {loadingPlan === "gold" ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
-                Try 14 Days Free
+                {btnLabel}
               </button>
             </motion.div>
 
@@ -272,7 +313,9 @@ export default function PricingPage() {
                   <span className="text-xl font-bold text-foreground/60 font-sans mb-0.5">.99</span>
                 </div>
                 <p className="text-foreground/40 text-xs mt-0.5 font-mono">per month</p>
-                <p className="text-amber-400/80 text-xs mt-1.5 font-mono font-semibold">14 days free — then €114.99/mo</p>
+                {!(isSignedIn && trialUsed) && (
+                  <p className="text-amber-400/80 text-xs mt-1.5 font-mono font-semibold">14 days free — then €114.99/mo</p>
+                )}
               </div>
 
               <div className="mb-5">
@@ -292,7 +335,7 @@ export default function PricingPage() {
                 className="w-full py-3 rounded-lg border border-violet-500/40 text-violet-300 font-mono text-sm text-center transition-colors hover:bg-violet-500/10 hover:border-violet-500/60 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
               >
                 {loadingPlan === "platinum" ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
-                {isSignedIn ? "Try 14 Days Free" : "Get Started"}
+                {isSignedIn ? btnLabel : "Get Started"}
               </button>
             </motion.div>
 
