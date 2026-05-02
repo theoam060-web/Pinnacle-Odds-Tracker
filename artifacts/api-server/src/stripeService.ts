@@ -57,6 +57,25 @@ export const stripeService = {
     return stripe.subscriptions.retrieve(subscriptionId, { expand: ['items.data.price.product'] });
   },
 
+  async getSubscriptionPaymentFingerprint(subscriptionId: string): Promise<string | null> {
+    try {
+      const stripe = await getUncachableStripeClient();
+      const sub = await stripe.subscriptions.retrieve(subscriptionId, {
+        expand: ['default_payment_method'],
+      });
+      const pm = sub.default_payment_method as any;
+      return pm?.card?.fingerprint ?? null;
+    } catch (err) {
+      logger.warn({ err, subscriptionId }, 'Could not retrieve payment method fingerprint');
+      return null;
+    }
+  },
+
+  async endTrialNow(subscriptionId: string) {
+    const stripe = await getUncachableStripeClient();
+    return stripe.subscriptions.update(subscriptionId, { trial_end: 'now' } as any);
+  },
+
   /**
    * Check whether any Stripe customer at `email` (excluding `excludeCustomerId`)
    * has ever had a trialing or active subscription. Used to prevent trial abuse

@@ -1,4 +1,4 @@
-import { usersTable } from '@workspace/db';
+import { usersTable, cardFingerprintsTable } from '@workspace/db';
 import { eq, sql } from 'drizzle-orm';
 import { db } from '@workspace/db';
 
@@ -61,6 +61,33 @@ export class Storage {
       .update(usersTable)
       .set({ trialUsed: true })
       .where(eq(usersTable.id, userId));
+  }
+
+  /**
+   * Checks whether a card fingerprint has already been used for a trial.
+   * If it hasn't, records it and returns true (trial OK).
+   * If it has, returns false (trial should be blocked).
+   */
+  async checkAndRecordCardFingerprint(
+    fingerprint: string,
+    clerkUserId: string,
+    stripeCustomerId: string,
+  ): Promise<boolean> {
+    const [existing] = await db
+      .select()
+      .from(cardFingerprintsTable)
+      .where(eq(cardFingerprintsTable.fingerprint, fingerprint));
+
+    if (existing) {
+      return false;
+    }
+
+    await db
+      .insert(cardFingerprintsTable)
+      .values({ fingerprint, clerkUserId, stripeCustomerId })
+      .onConflictDoNothing();
+
+    return true;
   }
 
   async upsertUserFromStripe(
