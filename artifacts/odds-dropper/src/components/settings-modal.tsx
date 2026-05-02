@@ -1,5 +1,4 @@
-import { useState, useEffect } from "react";
-import { useClerk, useAuth } from "@clerk/react";
+import { useState, useEffect, useCallback } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Label } from "@/components/ui/label";
@@ -9,8 +8,26 @@ import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useSettings, Theme, BetSizeMethod, calcKellyStake, calcUnitStake } from "@/lib/settings-context";
 import { useBetStore, CURRENCIES } from "@/lib/bet-store";
-import { usePushNotifications } from "@/lib/push-notifications";
-import { Info, Palette, Calculator, DollarSign, LogOut, Smartphone, Bell, BellOff, Download, CheckCircle2 } from "lucide-react";
+import { Info, Palette, Calculator, DollarSign, LogOut, Smartphone, Bell, BellOff, Download, CheckCircle2, Loader2 } from "lucide-react";
+
+const VAPID_PUBLIC_KEY = "BNFtL8Llx7d_UNrd74MJ1ja7bzLlln6qFdJYdJ3qf2I6PtXob2s5NP9FW79okpFGWWtBzzRJ1jzK5dWkEXDWIRw";
+
+function urlBase64ToUint8Array(base64String: string): Uint8Array {
+  const padding = "=".repeat((4 - (base64String.length % 4)) % 4);
+  const base64 = (base64String + padding).replace(/-/g, "+").replace(/_/g, "/");
+  const rawData = window.atob(base64);
+  const out = new Uint8Array(rawData.length);
+  for (let i = 0; i < rawData.length; i++) out[i] = rawData.charCodeAt(i);
+  return out;
+}
+
+async function getClerkToken(): Promise<string | null> {
+  try {
+    const { useAuth } = await import("@clerk/react");
+    void useAuth;
+  } catch { return null; }
+  return null;
+}
 
 interface Props {
   onClose: () => void;
@@ -22,87 +39,156 @@ const THEMES: { value: Theme; label: string; description: string }[] = [
   { value: "light", label: "Light", description: "White / light grey background" },
 ];
 
+function useGetToken() {
+  const bypassAuth = import.meta.env.VITE_DEV_BYPASS_AUTH === "true";
+  const clerkKey = import.meta.env.VITE_CLERK_PUBLISHABLE_KEY;
+
+  return useCallback(async (): Promise<string | null> => {
+    if (bypassAuth || !clerkKey) return null;
+    try {
+      const { useAuth } = await import("@clerk/react");
+      void useAuth;
+      return null;
+    } catch { return null; }
+  }, [bypassAuth, clerkKey]);
+}
+
 function AppTab() {
-  const { getToken } = useAuth();
-  const push = usePushNotifications();
   const bypassAuth = import.meta.env.VITE_DEV_BYPASS_AUTH === "true";
 
   const [notificationsEnabled, setNotificationsEnabled] = useState(true);
-  const [settingsLoading, setSettingsLoading] = useState(true);
+  const [settingsLoading, setSettingsLoading] = useState(!bypassAuth);
   const [saving, setSaving] = useState(false);
   const [subscribeLoading, setSubscribeLoading] = useState(false);
   const [testSent, setTestSent] = useState(false);
   const [installPrompt, setInstallPrompt] = useState<any>(null);
   const [isInstalled, setIsInstalled] = useState(false);
+  const [swReg, setSwReg] = useState<ServiceWorkerRegistration | null>(null);
+  const [pushPermission, setPushPermission] = useState<NotificationPermission | "unsupported">("default");
+  const [isSubscribed, setIsSubscribed] = useState(false);
 
-  // Fetch user notification setting from server
+  const isSupported = typeof window !== "undefined"
+    && "serviceWorker" in navigator
+    && "PushManager" in window
+    && "Notification" in window;
+
+  const authFetch = useCallback(async (url: string, options: RequestInit = {}) => {
+    let token: string | null = null;
+    if (!bypassAuth) {
+      try {
+        const clerkModule = (window as any).__clerk__;
+        if (clerkModule?.session) token = await clerkModule.session.getToken();
+      } catch { /* no token */ }
+    }
+    return fetch(url, {
+      ...options,
+      headers: {
+        ...(options.headers as Record<string, string> ?? {}),
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      },
+      credentials: "include",
+    });
+  }, [bypassAuth]);
+
   useEffect(() => {
-    if (bypassAuth) { setSettingsLoading(false); return; }
-    getToken().then(token => {
-      return fetch("/api/user/settings", {
-        headers: token ? { Authorization: `Bearer ${token}` } : {},
-        credentials: "include",
-      });
-    }).then(r => r.json()).then(data => {
-      setNotificationsEnabled(data.notificationsEnabled ?? true);
-    }).catch(() => {}).finally(() => setSettingsLoading(false));
-  }, [getToken, bypassAuth]);
+    if (bypassAuth) return;
+    authFetch("/api/user/settings")
+      .then(r => r.ok ? r.json() : { notificationsEnabled: true })
+      .then(data => setNotificationsEnabled(data.notificationsEnabled ?? true))
+      .catch(() => {})
+      .finally(() => setSettingsLoading(false));
+  }, [bypassAuth, authFetch]);
 
-  // Capture the beforeinstallprompt event
+  useEffect(() => {
+    if (!isSupported) { setPushPermission("unsupported"); return; }
+    setPushPermission(Notification.permission);
+    const base = import.meta.env.BASE_URL ?? "/app/";
+    navigator.serviceWorker
+      .register(`${base}sw.js`, { scope: base })
+      .then(reg => {
+        setSwReg(reg);
+        return reg.pushManager.getSubscription();
+      })
+      .then(sub => setIsSubscribed(!!sub))
+      .catch(() => {});
+  }, [isSupported]);
+
   useEffect(() => {
     const handler = (e: Event) => { e.preventDefault(); setInstallPrompt(e); };
     window.addEventListener("beforeinstallprompt", handler);
-    // Check if already installed
     const mq = window.matchMedia("(display-mode: standalone)");
     setIsInstalled(mq.matches || (navigator as any).standalone === true);
-    mq.addEventListener("change", (e) => setIsInstalled(e.matches));
-    return () => window.removeEventListener("beforeinstallprompt", handler);
+    const mqHandler = (e: MediaQueryListEvent) => setIsInstalled(e.matches);
+    mq.addEventListener("change", mqHandler);
+    return () => {
+      window.removeEventListener("beforeinstallprompt", handler);
+      mq.removeEventListener("change", mqHandler);
+    };
   }, []);
 
   async function handleNotificationsToggle(enabled: boolean) {
     setNotificationsEnabled(enabled);
     setSaving(true);
     try {
-      const token = await getToken();
-      await fetch("/api/user/settings", {
+      await authFetch("/api/user/settings", {
         method: "PATCH",
-        headers: {
-          "Content-Type": "application/json",
-          ...(token ? { Authorization: `Bearer ${token}` } : {}),
-        },
-        credentials: "include",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ notificationsEnabled: enabled }),
       });
-      // If disabling, unsubscribe from push
-      if (!enabled && push.isSubscribed) {
-        await push.unsubscribe();
+      if (!enabled && isSubscribed && swReg) {
+        const sub = await swReg.pushManager.getSubscription();
+        if (sub) {
+          const endpoint = sub.endpoint;
+          await sub.unsubscribe();
+          await authFetch("/api/push/subscribe", {
+            method: "DELETE",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ endpoint }),
+          });
+          setIsSubscribed(false);
+        }
       }
-      // If enabling and not subscribed yet, try to subscribe
-      if (enabled && !push.isSubscribed && push.isSupported) {
-        await push.requestAndSubscribe();
+      if (enabled && !isSubscribed && swReg && pushPermission === "granted") {
+        await doSubscribe(swReg);
       }
     } catch {
-      // revert optimistic update
       setNotificationsEnabled(!enabled);
     } finally {
       setSaving(false);
     }
   }
 
+  async function doSubscribe(reg: ServiceWorkerRegistration): Promise<boolean> {
+    try {
+      const sub = await reg.pushManager.subscribe({
+        userVisibleOnly: true,
+        applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY),
+      });
+      await authFetch("/api/push/subscribe", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(sub.toJSON()),
+      });
+      setIsSubscribed(true);
+      return true;
+    } catch {
+      return false;
+    }
+  }
+
   async function handleEnablePush() {
+    if (!swReg) return;
     setSubscribeLoading(true);
     try {
-      const granted = await push.requestAndSubscribe();
-      if (granted) {
+      const perm = await Notification.requestPermission();
+      setPushPermission(perm);
+      if (perm !== "granted") return;
+      const ok = await doSubscribe(swReg);
+      if (ok) {
         setNotificationsEnabled(true);
-        const token = await getToken();
-        await fetch("/api/user/settings", {
+        await authFetch("/api/user/settings", {
           method: "PATCH",
-          headers: {
-            "Content-Type": "application/json",
-            ...(token ? { Authorization: `Bearer ${token}` } : {}),
-          },
-          credentials: "include",
+          headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ notificationsEnabled: true }),
         });
       }
@@ -112,19 +198,18 @@ function AppTab() {
   }
 
   async function handleTestNotification() {
-    await push.sendTestNotification();
-    setTestSent(true);
-    setTimeout(() => setTestSent(false), 3000);
+    try {
+      await authFetch("/api/push/test", { method: "POST" });
+      setTestSent(true);
+      setTimeout(() => setTestSent(false), 3000);
+    } catch { /* ignore */ }
   }
 
   async function handleInstall() {
     if (!installPrompt) return;
     installPrompt.prompt();
     const { outcome } = await installPrompt.userChoice;
-    if (outcome === "accepted") {
-      setInstallPrompt(null);
-      setIsInstalled(true);
-    }
+    if (outcome === "accepted") { setInstallPrompt(null); setIsInstalled(true); }
   }
 
   return (
@@ -169,23 +254,27 @@ function AppTab() {
       <div>
         <Label className="text-xs font-semibold mb-3 block">Push Notifications</Label>
         <div className="rounded-lg border border-border p-4 space-y-4">
-          {!push.isSupported ? (
+          {settingsLoading ? (
+            <div className="flex items-center gap-2 text-xs text-muted-foreground">
+              <Loader2 className="w-3.5 h-3.5 animate-spin" />
+              Loading…
+            </div>
+          ) : pushPermission === "unsupported" ? (
             <p className="text-[10px] text-muted-foreground">
               Push notifications are not supported in this browser. Try Chrome or Firefox.
             </p>
-          ) : push.permission === "denied" ? (
+          ) : pushPermission === "denied" ? (
             <div className="flex items-start gap-2">
               <BellOff className="w-3.5 h-3.5 text-red-400 mt-0.5 shrink-0" />
               <div>
                 <p className="text-xs font-semibold text-red-400">Notifications blocked</p>
                 <p className="text-[10px] text-muted-foreground mt-0.5">
-                  You've blocked notifications for this site. To enable them, go to your browser settings and allow notifications for this site.
+                  Notifications are blocked for this site. Go to your browser settings and allow notifications.
                 </p>
               </div>
             </div>
           ) : (
             <>
-              {/* Master toggle */}
               <div className="flex items-center justify-between">
                 <div>
                   <Label className="text-xs font-semibold">Enable Notifications</Label>
@@ -196,17 +285,16 @@ function AppTab() {
                 <Switch
                   checked={notificationsEnabled}
                   onCheckedChange={handleNotificationsToggle}
-                  disabled={settingsLoading || saving}
+                  disabled={saving}
                 />
               </div>
 
               {notificationsEnabled && (
                 <div className="space-y-3 pl-0.5">
-                  {/* Subscribe button if not yet subscribed */}
-                  {!push.isSubscribed ? (
+                  {!isSubscribed ? (
                     <div className="space-y-2">
                       <p className="text-[10px] text-amber-400/90">
-                        You need to grant browser permission to receive push notifications.
+                        Grant browser permission to receive push notifications.
                       </p>
                       <Button
                         size="sm"
@@ -214,7 +302,7 @@ function AppTab() {
                         onClick={handleEnablePush}
                         disabled={subscribeLoading}
                       >
-                        <Bell className="w-3.5 h-3.5" />
+                        {subscribeLoading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Bell className="w-3.5 h-3.5" />}
                         {subscribeLoading ? "Requesting…" : "Allow Notifications"}
                       </Button>
                     </div>
@@ -225,8 +313,7 @@ function AppTab() {
                     </div>
                   )}
 
-                  {/* Test notification */}
-                  {push.isSubscribed && (
+                  {isSubscribed && (
                     <div className="flex items-center gap-2">
                       <Button
                         size="sm"
@@ -260,13 +347,23 @@ function AppTab() {
 export function SettingsModal({ onClose }: Props) {
   const { settings, updateSettings } = useSettings();
   const { currency, setCurrency } = useBetStore();
-  const { signOut } = useClerk();
+  const bypassAuth = import.meta.env.VITE_DEV_BYPASS_AUTH === "true";
+  const clerkKey = import.meta.env.VITE_CLERK_PUBLISHABLE_KEY;
 
   const previewStake = settings.betSizingEnabled
     ? settings.betSizeMethod === "kelly"
       ? calcKellyStake(settings.bankroll, settings.kellyFraction, 2.0, 0.52)
       : calcUnitStake(settings.bankroll, settings.unitSizePercent)
     : null;
+
+  async function handleSignOut() {
+    if (bypassAuth || !clerkKey) return;
+    try {
+      const { useClerk } = await import("@clerk/react");
+      void useClerk;
+    } catch { /* noop */ }
+    window.location.href = "/";
+  }
 
   return (
     <Dialog open onOpenChange={open => !open && onClose()}>
@@ -574,17 +671,36 @@ export function SettingsModal({ onClose }: Props) {
         </Tabs>
 
         <div className="mt-4 pt-4 border-t border-border flex items-center">
-          <Button
-            variant="ghost"
-            size="sm"
-            className="h-8 text-xs text-muted-foreground hover:text-foreground gap-1.5"
-            onClick={() => signOut()}
-          >
-            <LogOut className="w-3.5 h-3.5" />
-            Sign out
-          </Button>
+          {!bypassAuth && clerkKey && (
+            <SignOutButton onSignOut={handleSignOut} />
+          )}
         </div>
       </DialogContent>
     </Dialog>
   );
+}
+
+function SignOutButton({ onSignOut }: { onSignOut: () => void }) {
+  const [clerk, setClerk] = useState<any>(null);
+
+  useEffect(() => {
+    import("@clerk/react").then(m => setClerk(m)).catch(() => {});
+  }, []);
+
+  if (!clerk) return null;
+
+  const Btn = () => {
+    const { signOut } = clerk.useClerk();
+    return (
+      <button
+        className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors h-8 px-2 rounded-md hover:bg-accent"
+        onClick={() => signOut()}
+      >
+        <LogOut className="w-3.5 h-3.5" />
+        Sign out
+      </button>
+    );
+  };
+
+  return <Btn />;
 }
