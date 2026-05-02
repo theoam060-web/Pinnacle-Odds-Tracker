@@ -2,7 +2,8 @@ let _audio: HTMLAudioElement | null = null;
 
 function getAudio(): HTMLAudioElement {
   if (!_audio) {
-    _audio = new Audio("/notification.mp3");
+    const base = import.meta.env.BASE_URL ?? "/app/";
+    _audio = new Audio(`${base}notification.mp3`);
     _audio.preload = "auto";
   }
   return _audio;
