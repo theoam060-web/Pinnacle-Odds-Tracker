@@ -235,10 +235,13 @@ function SubscriptionGate({ children }: { children: React.ReactNode }) {
 
       const tier = data.planTier as PlanTier | null;
       const subStatus = data.subscription?.status as string | undefined;
-      const hasAccess = (subStatus === "active" || subStatus === "trialing") && tier && tier !== "none";
+      const isActive = subStatus === "active" || subStatus === "trialing";
+      // Grant access based on status alone — tier may be null if metadata missing,
+      // fall back to "silver" so paying users are never locked out.
+      const resolvedTier: PlanTier = (tier && tier !== "none") ? tier : "silver";
 
-      if (hasAccess) {
-        setSubState({ status: "active", tier: tier!, isTrialing: subStatus === "trialing" });
+      if (isActive) {
+        setSubState({ status: "active", tier: resolvedTier, isTrialing: subStatus === "trialing" });
       } else if (subStatus === "canceled" || data.subscription != null) {
         setSubState({ status: "expired" });
       } else {

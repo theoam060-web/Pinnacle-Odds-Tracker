@@ -72,8 +72,23 @@ export class WebhookHandlers {
       return;
     }
 
-    await storage.upsertUserFromStripe(clerkUserId, undefined, customerId, subscriptionId, 'active');
-    logger.info({ clerkUserId, subscriptionId }, 'Subscription activated via checkout webhook');
+    // Retrieve the subscription to get the plan tier and real status
+    let tier: string | null = null;
+    let status = 'active';
+    try {
+      const secretKey = await getStripeSecretKey();
+      const stripe = new Stripe(secretKey, { apiVersion: '2025-08-27.basil' as any });
+      const sub = await stripe.subscriptions.retrieve(subscriptionId, {
+        expand: ['items.data.price.product'],
+      });
+      tier = getPlanTierFromSub(sub);
+      status = sub.status === 'active' || sub.status === 'trialing' ? sub.status : 'active';
+    } catch (err) {
+      logger.warn({ err, subscriptionId }, 'Could not retrieve subscription tier in checkout webhook — saving without tier');
+    }
+
+    await storage.upsertUserFromStripe(clerkUserId, undefined, customerId, subscriptionId, status, tier ?? undefined);
+    logger.info({ clerkUserId, subscriptionId, tier, status }, 'Subscription activated via checkout webhook');
   }
 
   private static async handleSubscriptionUpdated(sub: Stripe.Subscription) {

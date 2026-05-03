@@ -1,6 +1,6 @@
 import { Router, type IRouter } from 'express';
 import { storage } from '../storage.js';
-import { stripeService, isAccessAllowed } from '../stripeService.js';
+import { stripeService, isAccessAllowed, getPlanTierFromSub } from '../stripeService.js';
 import { fulfillCheckout } from '../fulfillment.js';
 import { requireAuth } from '../middlewares/requireAuth.js';
 import { getStripePublishableKey } from '../stripeClient.js';
@@ -156,10 +156,25 @@ router.get('/stripe/subscription', requireAuth, async (req: any, res) => {
     const status = user.subscriptionStatus ?? 'unknown';
     const hasAccess = isAccessAllowed(status);
 
-    // Get plan tier from stored field or DB lookup
-    const planTier = hasAccess
-      ? (user.subscriptionPlan ?? (await storage.getSubscriptionPlanTier(user.stripeSubscriptionId)))
-      : null;
+    // Get plan tier — DB field → stripe.subscription_items table → live Stripe API
+    let planTier: string | null = null;
+    if (hasAccess) {
+      planTier = user.subscriptionPlan ?? (await storage.getSubscriptionPlanTier(user.stripeSubscriptionId));
+
+      // Final fallback: query live Stripe API and cache result in DB
+      if (!planTier) {
+        try {
+          const liveSub = await stripeService.retrieveSubscription(user.stripeSubscriptionId);
+          planTier = getPlanTierFromSub(liveSub);
+          if (planTier) {
+            await storage.updateUserStripeInfo(req.userId, { subscriptionPlan: planTier });
+            logger.info({ userId: req.userId, planTier }, 'Recovered and cached plan tier from live Stripe API');
+          }
+        } catch (err) {
+          logger.warn({ err }, 'Failed to recover plan tier from live Stripe API');
+        }
+      }
+    }
 
     // Fetch live subscription details from Stripe for accurate dates
     let stripeSub: any = null;

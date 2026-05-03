@@ -29,7 +29,13 @@ export async function fulfillCheckout(sessionId: string) {
   if (user?.stripeSubscriptionId === subscriptionId) {
     logger.info({ clerkUserId, subscriptionId }, 'Checkout already fulfilled');
     const sub = await stripeService.retrieveSubscription(subscriptionId);
-    return { plan: getPlanTierFromSub(sub), trialActive: sub.status === 'trialing', alreadyFulfilled: true };
+    const tier = getPlanTierFromSub(sub);
+    // Update the tier in DB if the webhook saved it without one
+    if (tier && !user.subscriptionPlan) {
+      await storage.updateUserStripeInfo(clerkUserId, { subscriptionPlan: tier });
+      logger.info({ clerkUserId, tier }, 'Backfilled missing plan tier on already-fulfilled checkout');
+    }
+    return { plan: tier, trialActive: sub.status === 'trialing', alreadyFulfilled: true };
   }
 
   // Retrieve subscription to get plan tier and real status
