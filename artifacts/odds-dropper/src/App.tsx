@@ -327,6 +327,10 @@ function ClerkProviderWithRoutes() {
       signUpUrl={`${basePath}/sign-up`}
       routerPush={(to) => setLocation(stripBase(to))}
       routerReplace={(to) => setLocation(stripBase(to), { replace: true })}
+      localization={{
+        signIn: { start: { title: "Sign in to SharpTracker" } },
+        signUp: { start: { title: "Create your SharpTracker account" } },
+      }}
     >
       <Switch>
         <Route path="/sign-in/*?" component={SignInPage} />

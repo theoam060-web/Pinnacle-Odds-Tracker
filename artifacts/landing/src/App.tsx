@@ -2548,6 +2548,10 @@ function App() {
         proxyUrl={clerkProxyUrl}
         signInUrl="/app/sign-in"
         signUpUrl="/app/sign-up"
+        localization={{
+          signIn: { start: { title: "Sign in to SharpTracker" } },
+          signUp: { start: { title: "Create your SharpTracker account" } },
+        }}
       >
         <AuthProvider>
           <LanguageProvider>
