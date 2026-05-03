@@ -986,22 +986,28 @@ function TerminalSection() {
 type BookLogo = {
   name: string;
   img?: string;
+  /** Visual scale to compensate for logos with squarer aspect ratios
+   *  that fill less of the fixed bounding box.
+   *  Derived from actual image pixel dimensions (see comments). */
+  scale?: number;
 };
 
 const BASE = import.meta.env.BASE_URL;
 
+// Box is 108×28px (ratio 3.86:1). All logos are height-constrained.
+// scale = target_fill / actual_fill so every logo occupies ~78% of box width.
 const BOOKS: BookLogo[] = [
-  { name: "bet365",       img: `${BASE}logos/bet365.png` },
+  { name: "bet365",       img: `${BASE}logos/bet365.png`,      scale: 1.00 }, // 3.00:1 → 84px / 108px = 78 %
   { name: "Unibet" },
   { name: "DraftKings" },
-  { name: "William Hill", img: `${BASE}logos/williamhill.png` },
-  { name: "Betclic",      img: `${BASE}logos/betclic.png` },
-  { name: "FanDuel",      img: `${BASE}logos/fanduel.png` },
-  { name: "Betsson",      img: `${BASE}logos/betsson.png` },
+  { name: "William Hill", img: `${BASE}logos/williamhill.png`, scale: 1.25 }, // 2.00:1 → 56px → × 1.25 = 70px
+  { name: "Betclic",      img: `${BASE}logos/betclic.png`,     scale: 1.00 }, // 2.95:1 → 83px
+  { name: "FanDuel",      img: `${BASE}logos/fanduel.png`,     scale: 1.22 }, // 1.94:1 → 54px → × 1.22 = 66px
+  { name: "Betsson",      img: `${BASE}logos/betsson.png`,     scale: 1.05 }, // 2.66:1 → 74px → × 1.05 = 78px
   { name: "BetMGM" },
-  { name: "Tipico",       img: `${BASE}logos/tipico.png` },
-  { name: "888sport",     img: `${BASE}logos/888sport2.png` },
-  { name: "Betway",       img: `${BASE}logos/betway.png` },
+  { name: "Tipico",       img: `${BASE}logos/tipico.png`,      scale: 1.00 }, // 3.03:1 → 85px
+  { name: "888sport",     img: `${BASE}logos/888sport2.png`,   scale: 1.22 }, // 2.00:1 → 56px → × 1.22 = 68px
+  { name: "Betway",       img: `${BASE}logos/betway.png`,      scale: 1.30 }, // 1.78:1 → 50px → × 1.30 = 65px
   { name: "Ladbrokes" },
   { name: "Pinnacle" },
   { name: "Marathonbet" },
@@ -1031,28 +1037,32 @@ function MarqueeBand() {
       {/* Scrolling track */}
       <div className="animate-marquee items-center" style={{ display: "flex", width: "max-content", gap: 0 }}>
         {doubled.map((book, i) => (
+          /* Outer slot — identical for every item */
           <div
             key={i}
             className="shrink-0 flex items-center justify-center"
-            style={{ width: "148px", height: "48px", padding: "0 20px" }}
+            style={{ width: "148px", height: "48px" }}
           >
             {book.img ? (
-              <img
-                src={book.img}
-                alt={book.name}
-                className="select-none"
-                style={{
-                  height: "28px",
-                  width: "auto",
-                  maxWidth: "108px",
-                  objectFit: "contain",
-                  objectPosition: "center",
-                  filter: "brightness(0) invert(1)",
-                  opacity: 0.38,
-                  imageRendering: "auto",
-                }}
-                draggable={false}
-              />
+              /* Fixed bounding box — every logo lives in the same 108×28 canvas */
+              <div style={{ width: "108px", height: "28px", display: "flex", alignItems: "center", justifyContent: "center", overflow: "hidden" }}>
+                <img
+                  src={book.img}
+                  alt={book.name}
+                  className="select-none"
+                  style={{
+                    width: "100%",
+                    height: "100%",
+                    objectFit: "contain",
+                    objectPosition: "center",
+                    filter: "brightness(0) invert(1)",
+                    opacity: 0.40,
+                    transform: `scale(${book.scale ?? 1})`,
+                    transformOrigin: "center center",
+                  }}
+                  draggable={false}
+                />
+              </div>
             ) : (
               <span
                 className="select-none whitespace-nowrap font-sans font-bold tracking-wide"
