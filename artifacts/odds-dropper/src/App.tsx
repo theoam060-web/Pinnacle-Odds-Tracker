@@ -71,6 +71,39 @@ function GoogleIcon() {
 }
 
 function AuthScreen() {
+  const [authMode, setAuthMode] = useState<"login" | "register">("login");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [error, setError] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
+
+  const handleEmailAuth = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError(null);
+    setLoading(true);
+    try {
+      const endpoint = authMode === "login" ? "/api/auth/login" : "/api/auth/register";
+      const res = await fetch(endpoint, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, password }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setError(data.error ?? "Something went wrong");
+        return;
+      }
+      if (data.token) {
+        try { localStorage.setItem("st_jwt", data.token); } catch {}
+        window.location.reload();
+      }
+    } catch {
+      setError("Network error. Please try again.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-[#0a0b0f] flex flex-col">
       <div className="flex items-center justify-center gap-2 py-6 border-b border-white/5">
@@ -82,7 +115,7 @@ function AuthScreen() {
 
       <div className="flex-1 flex flex-col items-center justify-center px-4 py-8">
         <div className="w-full max-w-[380px]">
-          <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-8 flex flex-col items-center gap-6 shadow-[0_0_60px_rgba(0,0,0,0.6)]">
+          <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-8 flex flex-col gap-5 shadow-[0_0_60px_rgba(0,0,0,0.6)]">
             <div className="text-center">
               <div className="w-12 h-12 rounded-2xl bg-cyan-400/10 border border-cyan-400/20 flex items-center justify-center mx-auto mb-4">
                 <Activity className="w-6 h-6 text-cyan-400" />
@@ -91,6 +124,7 @@ function AuthScreen() {
               <p className="text-sm text-white/50 font-mono">Track sharp odds drops in real time</p>
             </div>
 
+            {/* Google */}
             <button
               onClick={() => { window.location.href = "/api/auth/google"; }}
               className="w-full flex items-center justify-center gap-3 bg-white text-gray-800 font-sans font-semibold text-sm px-5 py-3 rounded-xl hover:bg-gray-100 transition-colors shadow-sm"
@@ -98,6 +132,67 @@ function AuthScreen() {
               <GoogleIcon />
               Continue with Google
             </button>
+
+            {/* Divider */}
+            <div className="flex items-center gap-3">
+              <div className="flex-1 h-px bg-white/10" />
+              <span className="text-xs text-white/30 font-mono">or</span>
+              <div className="flex-1 h-px bg-white/10" />
+            </div>
+
+            {/* Sign in / Create account tabs */}
+            <div className="flex rounded-lg border border-white/10 bg-white/[0.02] p-1 gap-1">
+              <button
+                onClick={() => { setAuthMode("login"); setError(null); }}
+                className={`flex-1 py-1.5 text-xs font-mono rounded-md transition-all ${
+                  authMode === "login"
+                    ? "bg-cyan-400/10 text-cyan-400 border border-cyan-400/20"
+                    : "text-white/40 hover:text-white/60"
+                }`}
+              >
+                Sign in
+              </button>
+              <button
+                onClick={() => { setAuthMode("register"); setError(null); }}
+                className={`flex-1 py-1.5 text-xs font-mono rounded-md transition-all ${
+                  authMode === "register"
+                    ? "bg-cyan-400/10 text-cyan-400 border border-cyan-400/20"
+                    : "text-white/40 hover:text-white/60"
+                }`}
+              >
+                Create account
+              </button>
+            </div>
+
+            {/* Email / password form */}
+            <form onSubmit={handleEmailAuth} className="flex flex-col gap-3">
+              <input
+                type="email"
+                placeholder="Email address"
+                value={email}
+                onChange={e => setEmail(e.target.value)}
+                required
+                className="w-full bg-white/5 border border-white/10 rounded-lg px-4 py-2.5 text-sm text-white placeholder-white/30 font-mono focus:outline-none focus:border-cyan-400/40 transition-all"
+              />
+              <input
+                type="password"
+                placeholder={authMode === "register" ? "Password (min 8 chars)" : "Password"}
+                value={password}
+                onChange={e => setPassword(e.target.value)}
+                required
+                className="w-full bg-white/5 border border-white/10 rounded-lg px-4 py-2.5 text-sm text-white placeholder-white/30 font-mono focus:outline-none focus:border-cyan-400/40 transition-all"
+              />
+              {error && (
+                <p className="text-xs text-red-400 font-mono text-center">{error}</p>
+              )}
+              <button
+                type="submit"
+                disabled={loading}
+                className="w-full bg-cyan-400/10 border border-cyan-400/20 text-cyan-400 font-mono font-semibold text-sm px-5 py-3 rounded-xl hover:bg-cyan-400/15 hover:border-cyan-400/30 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {loading ? "Please wait…" : authMode === "login" ? "Sign in with Email" : "Create Account"}
+              </button>
+            </form>
 
             <p className="text-[11px] text-white/25 text-center font-mono leading-relaxed">
               By signing in you agree to our Terms of Service and Privacy Policy.

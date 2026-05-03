@@ -161,8 +161,22 @@ router.get('/stripe/subscription', requireAuth, async (req: any, res) => {
       ? (user.subscriptionPlan ?? (await storage.getSubscriptionPlanTier(user.stripeSubscriptionId)))
       : null;
 
+    // Fetch live subscription details from Stripe for accurate dates
+    let stripeSub: any = null;
+    try {
+      stripeSub = await stripeService.retrieveSubscription(user.stripeSubscriptionId);
+    } catch {
+      // Non-critical — fall back to DB-only data
+    }
+
     res.json({
-      subscription: { status, id: user.stripeSubscriptionId },
+      subscription: {
+        status,
+        id: user.stripeSubscriptionId,
+        current_period_end: stripeSub?.current_period_end ?? null,
+        cancel_at_period_end: stripeSub?.cancel_at_period_end ?? null,
+        trial_end: stripeSub?.trial_end ?? null,
+      },
       planTier: hasAccess ? planTier : null,
       trialUsed: user.trialUsed,
     });
