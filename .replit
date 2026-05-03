@@ -37,6 +37,7 @@ VAPID_EMAIL = "mailto:alerts@sharptracker.io"
 PINNACLE_SPORT_IDS = "4,19,33,29,15,3"
 MOCK_MODE = "true"
 VITE_ADMIN_EMAILS = "theoam060@gmail.com"
+VITE_CLERK_PUBLISHABLE_KEY = "pk_test_Y2VydGFpbi1lbXUtOTcuY2xlcmsuYWNjb3VudHMuZGV2JA"
 
 [userenv.development]
 GOOGLE_CALLBACK_URL = "https://84e61830-7611-4d35-8623-77d057b02e4e-00-30ovvqhxka0d5.kirk.replit.dev/api/auth/google/callback"

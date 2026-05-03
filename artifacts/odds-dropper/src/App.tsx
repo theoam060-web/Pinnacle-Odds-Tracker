@@ -1,5 +1,6 @@
-import { AuthProvider, useAppAuth } from "@/lib/auth-context";
-import { Switch, Route, Router as WouterRouter } from "wouter";
+import { ClerkProvider, SignIn, SignUp, useAuth } from "@clerk/react";
+import { publishableKeyFromHost } from "@clerk/react/internal";
+import { Switch, Route, Router as WouterRouter, useLocation, Redirect } from "wouter";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -21,6 +22,21 @@ import React, { useState, useEffect, useCallback } from "react";
 import { Activity } from "lucide-react";
 import { PlanContext, type PlanTier } from "@/lib/plan-context";
 
+const basePath = import.meta.env.BASE_URL.replace(/\/$/, "");
+
+const clerkPubKey = publishableKeyFromHost(
+  window.location.hostname,
+  import.meta.env.VITE_CLERK_PUBLISHABLE_KEY,
+);
+
+const clerkProxyUrl = import.meta.env.VITE_CLERK_PROXY_URL;
+
+function stripBase(path: string): string {
+  return basePath && path.startsWith(basePath)
+    ? path.slice(basePath.length) || "/"
+    : path;
+}
+
 function AppServices() {
   useAutoSettle();
   return null;
@@ -32,7 +48,7 @@ const queryClient = new QueryClient({
   },
 });
 
-function Router() {
+function AppRouter() {
   return (
     <Switch>
       <Route path="/" component={FeedPage} />
@@ -59,51 +75,7 @@ function LoadingScreen({ label = "Loading…" }: { label?: string }) {
   );
 }
 
-function GoogleIcon() {
-  return (
-    <svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true">
-      <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
-      <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
-      <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
-      <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
-    </svg>
-  );
-}
-
-function AuthScreen() {
-  const [authMode, setAuthMode] = useState<"login" | "register">("login");
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [error, setError] = useState<string | null>(null);
-  const [loading, setLoading] = useState(false);
-
-  const handleEmailAuth = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setError(null);
-    setLoading(true);
-    try {
-      const endpoint = authMode === "login" ? "/api/auth/login" : "/api/auth/register";
-      const res = await fetch(endpoint, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, password }),
-      });
-      const data = await res.json();
-      if (!res.ok) {
-        setError(data.error ?? "Something went wrong");
-        return;
-      }
-      if (data.token) {
-        try { localStorage.setItem("st_jwt", data.token); } catch {}
-        window.location.reload();
-      }
-    } catch {
-      setError("Network error. Please try again.");
-    } finally {
-      setLoading(false);
-    }
-  };
-
+function SignInPage() {
   return (
     <div className="min-h-screen bg-[#0a0b0f] flex flex-col">
       <div className="flex items-center justify-center gap-2 py-6 border-b border-white/5">
@@ -112,93 +84,101 @@ function AuthScreen() {
           Sharp<span className="text-cyan-400">Tracker</span>
         </span>
       </div>
+      <div className="flex-1 flex items-center justify-center px-4 py-8">
+        <SignIn
+          routing="path"
+          path={`${basePath}/sign-in`}
+          signUpUrl={`${basePath}/sign-up`}
+          fallbackRedirectUrl={`${basePath}/`}
+          appearance={{
+            variables: {
+              colorPrimary: "#22d3ee",
+              colorForeground: "#f8fafc",
+              colorMutedForeground: "#94a3b8",
+              colorDanger: "#f87171",
+              colorBackground: "#0f1117",
+              colorInput: "#1a1d27",
+              colorInputForeground: "#f8fafc",
+              colorNeutral: "#334155",
+              fontFamily: "Inter, sans-serif",
+              borderRadius: "0.75rem",
+            },
+            elements: {
+              rootBox: "w-full flex justify-center",
+              cardBox: "rounded-2xl w-[440px] max-w-full overflow-hidden border border-white/10 shadow-[0_0_60px_rgba(0,0,0,0.6)]",
+              card: "!shadow-none !border-0 !bg-[#0f1117] !rounded-none",
+              footer: "!shadow-none !border-0 !bg-[#0f1117] !rounded-none",
+              headerTitle: "text-white font-bold",
+              headerSubtitle: "text-white/50",
+              socialButtonsBlockButtonText: "text-white/80",
+              formFieldLabel: "text-white/70",
+              footerActionLink: "text-cyan-400 hover:text-cyan-300",
+              footerActionText: "text-white/40",
+              dividerText: "text-white/30",
+              identityPreviewEditButton: "text-cyan-400",
+              formFieldSuccessText: "text-green-400",
+              alertText: "text-white/80",
+              socialButtonsBlockButton: "border-white/10 bg-white/5 hover:bg-white/10",
+              formButtonPrimary: "bg-cyan-500 hover:bg-cyan-400 text-black font-semibold",
+              formFieldInput: "bg-white/5 border-white/10 text-white placeholder:text-white/30",
+              dividerLine: "bg-white/10",
+            },
+          }}
+        />
+      </div>
+    </div>
+  );
+}
 
-      <div className="flex-1 flex flex-col items-center justify-center px-4 py-8">
-        <div className="w-full max-w-[380px]">
-          <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-8 flex flex-col gap-5 shadow-[0_0_60px_rgba(0,0,0,0.6)]">
-            <div className="text-center">
-              <div className="w-12 h-12 rounded-2xl bg-cyan-400/10 border border-cyan-400/20 flex items-center justify-center mx-auto mb-4">
-                <Activity className="w-6 h-6 text-cyan-400" />
-              </div>
-              <h1 className="text-xl font-bold text-white font-sans mb-1">Sign in to SharpTracker</h1>
-              <p className="text-sm text-white/50 font-mono">Track sharp odds drops in real time</p>
-            </div>
-
-            {/* Google */}
-            <button
-              onClick={() => { window.location.href = "/api/auth/google"; }}
-              className="w-full flex items-center justify-center gap-3 bg-white text-gray-800 font-sans font-semibold text-sm px-5 py-3 rounded-xl hover:bg-gray-100 transition-colors shadow-sm"
-            >
-              <GoogleIcon />
-              Continue with Google
-            </button>
-
-            {/* Divider */}
-            <div className="flex items-center gap-3">
-              <div className="flex-1 h-px bg-white/10" />
-              <span className="text-xs text-white/30 font-mono">or</span>
-              <div className="flex-1 h-px bg-white/10" />
-            </div>
-
-            {/* Sign in / Create account tabs */}
-            <div className="flex rounded-lg border border-white/10 bg-white/[0.02] p-1 gap-1">
-              <button
-                onClick={() => { setAuthMode("login"); setError(null); }}
-                className={`flex-1 py-1.5 text-xs font-mono rounded-md transition-all ${
-                  authMode === "login"
-                    ? "bg-cyan-400/10 text-cyan-400 border border-cyan-400/20"
-                    : "text-white/40 hover:text-white/60"
-                }`}
-              >
-                Sign in
-              </button>
-              <button
-                onClick={() => { setAuthMode("register"); setError(null); }}
-                className={`flex-1 py-1.5 text-xs font-mono rounded-md transition-all ${
-                  authMode === "register"
-                    ? "bg-cyan-400/10 text-cyan-400 border border-cyan-400/20"
-                    : "text-white/40 hover:text-white/60"
-                }`}
-              >
-                Create account
-              </button>
-            </div>
-
-            {/* Email / password form */}
-            <form onSubmit={handleEmailAuth} className="flex flex-col gap-3">
-              <input
-                type="email"
-                placeholder="Email address"
-                value={email}
-                onChange={e => setEmail(e.target.value)}
-                required
-                className="w-full bg-white/5 border border-white/10 rounded-lg px-4 py-2.5 text-sm text-white placeholder-white/30 font-mono focus:outline-none focus:border-cyan-400/40 transition-all"
-              />
-              <input
-                type="password"
-                placeholder={authMode === "register" ? "Password (min 8 chars)" : "Password"}
-                value={password}
-                onChange={e => setPassword(e.target.value)}
-                required
-                className="w-full bg-white/5 border border-white/10 rounded-lg px-4 py-2.5 text-sm text-white placeholder-white/30 font-mono focus:outline-none focus:border-cyan-400/40 transition-all"
-              />
-              {error && (
-                <p className="text-xs text-red-400 font-mono text-center">{error}</p>
-              )}
-              <button
-                type="submit"
-                disabled={loading}
-                className="w-full bg-cyan-400/10 border border-cyan-400/20 text-cyan-400 font-mono font-semibold text-sm px-5 py-3 rounded-xl hover:bg-cyan-400/15 hover:border-cyan-400/30 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                {loading ? "Please wait…" : authMode === "login" ? "Sign in with Email" : "Create Account"}
-              </button>
-            </form>
-
-            <p className="text-[11px] text-white/25 text-center font-mono leading-relaxed">
-              By signing in you agree to our Terms of Service and Privacy Policy.
-            </p>
-          </div>
-        </div>
+function SignUpPage() {
+  return (
+    <div className="min-h-screen bg-[#0a0b0f] flex flex-col">
+      <div className="flex items-center justify-center gap-2 py-6 border-b border-white/5">
+        <Activity className="w-5 h-5 text-cyan-400" />
+        <span className="font-bold text-lg text-white tracking-tight">
+          Sharp<span className="text-cyan-400">Tracker</span>
+        </span>
+      </div>
+      <div className="flex-1 flex items-center justify-center px-4 py-8">
+        <SignUp
+          routing="path"
+          path={`${basePath}/sign-up`}
+          signInUrl={`${basePath}/sign-in`}
+          fallbackRedirectUrl={`${basePath}/`}
+          appearance={{
+            variables: {
+              colorPrimary: "#22d3ee",
+              colorForeground: "#f8fafc",
+              colorMutedForeground: "#94a3b8",
+              colorDanger: "#f87171",
+              colorBackground: "#0f1117",
+              colorInput: "#1a1d27",
+              colorInputForeground: "#f8fafc",
+              colorNeutral: "#334155",
+              fontFamily: "Inter, sans-serif",
+              borderRadius: "0.75rem",
+            },
+            elements: {
+              rootBox: "w-full flex justify-center",
+              cardBox: "rounded-2xl w-[440px] max-w-full overflow-hidden border border-white/10 shadow-[0_0_60px_rgba(0,0,0,0.6)]",
+              card: "!shadow-none !border-0 !bg-[#0f1117] !rounded-none",
+              footer: "!shadow-none !border-0 !bg-[#0f1117] !rounded-none",
+              headerTitle: "text-white font-bold",
+              headerSubtitle: "text-white/50",
+              socialButtonsBlockButtonText: "text-white/80",
+              formFieldLabel: "text-white/70",
+              footerActionLink: "text-cyan-400 hover:text-cyan-300",
+              footerActionText: "text-white/40",
+              dividerText: "text-white/30",
+              formFieldSuccessText: "text-green-400",
+              alertText: "text-white/80",
+              socialButtonsBlockButton: "border-white/10 bg-white/5 hover:bg-white/10",
+              formButtonPrimary: "bg-cyan-500 hover:bg-cyan-400 text-black font-semibold",
+              formFieldInput: "bg-white/5 border-white/10 text-white placeholder:text-white/30",
+              dividerLine: "bg-white/10",
+            },
+          }}
+        />
       </div>
     </div>
   );
@@ -212,7 +192,7 @@ type SubState =
 
 function SubscriptionGate({ children }: { children: React.ReactNode }) {
   const bypassAuth = import.meta.env.VITE_DEV_BYPASS_AUTH === "true";
-  const { isSignedIn, isLoaded, getToken } = useAppAuth();
+  const { isSignedIn, isLoaded } = useAuth();
   const [subState, setSubState] = useState<SubState>({ status: "loading" });
 
   const fetchSubscription = useCallback(async (sessionId?: string) => {
@@ -224,9 +204,7 @@ function SubscriptionGate({ children }: { children: React.ReactNode }) {
         });
       }
 
-      const token = getToken();
       const res = await fetch("/api/stripe/subscription", {
-        headers: token ? { Authorization: `Bearer ${token}` } : {},
         credentials: "include",
       });
       const data = await res.json();
@@ -243,7 +221,7 @@ function SubscriptionGate({ children }: { children: React.ReactNode }) {
     } catch {
       setSubState({ status: "none" });
     }
-  }, [getToken]);
+  }, []);
 
   useEffect(() => {
     if (bypassAuth) return;
@@ -289,46 +267,67 @@ function SubscriptionGate({ children }: { children: React.ReactNode }) {
 
 function AuthGate({ children }: { children: React.ReactNode }) {
   const bypassAuth = import.meta.env.VITE_DEV_BYPASS_AUTH === "true";
-  const { isLoaded, isSignedIn } = useAppAuth();
+  const { isLoaded, isSignedIn } = useAuth();
 
   if (bypassAuth) return <>{children}</>;
   if (!isLoaded) return <LoadingScreen />;
-  if (!isSignedIn) return <AuthScreen />;
+  if (!isSignedIn) return <Redirect to="/sign-in" />;
 
   return <>{children}</>;
 }
 
-function AppContent() {
+function MainApp() {
   return (
     <LangProvider>
-    <QueryClientProvider client={queryClient}>
-      <SettingsProvider>
-        <AlertStoreProvider>
-          <BetStoreProvider>
-            <TooltipProvider>
-              <AuthGate>
-                <SubscriptionGate>
-                  <AppServices />
-                  <WouterRouter base={import.meta.env.BASE_URL?.replace(/\/$/, "") || ""}>
-                    <Router />
-                  </WouterRouter>
-                  <Toaster />
-                </SubscriptionGate>
-              </AuthGate>
-            </TooltipProvider>
-          </BetStoreProvider>
-        </AlertStoreProvider>
-      </SettingsProvider>
-    </QueryClientProvider>
+      <QueryClientProvider client={queryClient}>
+        <SettingsProvider>
+          <AlertStoreProvider>
+            <BetStoreProvider>
+              <TooltipProvider>
+                <AuthGate>
+                  <SubscriptionGate>
+                    <AppServices />
+                    <AppRouter />
+                    <Toaster />
+                  </SubscriptionGate>
+                </AuthGate>
+              </TooltipProvider>
+            </BetStoreProvider>
+          </AlertStoreProvider>
+        </SettingsProvider>
+      </QueryClientProvider>
     </LangProvider>
+  );
+}
+
+function ClerkProviderWithRoutes() {
+  const [, setLocation] = useLocation();
+
+  return (
+    <ClerkProvider
+      publishableKey={clerkPubKey ?? ""}
+      proxyUrl={clerkProxyUrl}
+      signInUrl={`${basePath}/sign-in`}
+      signUpUrl={`${basePath}/sign-up`}
+      routerPush={(to) => setLocation(stripBase(to))}
+      routerReplace={(to) => setLocation(stripBase(to), { replace: true })}
+    >
+      <Switch>
+        <Route path="/sign-in/*?" component={SignInPage} />
+        <Route path="/sign-up/*?" component={SignUpPage} />
+        <Route>
+          <MainApp />
+        </Route>
+      </Switch>
+    </ClerkProvider>
   );
 }
 
 function App() {
   return (
-    <AuthProvider>
-      <AppContent />
-    </AuthProvider>
+    <WouterRouter base={basePath}>
+      <ClerkProviderWithRoutes />
+    </WouterRouter>
   );
 }
 

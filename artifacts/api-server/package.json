@@ -11,6 +11,8 @@
     "seed:stripe": "tsx src/scripts/seed-products.ts"
   },
   "dependencies": {
+    "@clerk/express": "^2.1.12",
+    "@clerk/shared": "^4.9.0",
     "@workspace/api-zod": "workspace:*",
     "@workspace/db": "workspace:*",
     "bcryptjs": "^3.0.3",
@@ -19,6 +21,7 @@
     "drizzle-orm": "catalog:",
     "express": "^5",
     "google-auth-library": "^10.6.2",
+    "http-proxy-middleware": "^3.0.5",
     "jsonwebtoken": "^9.0.3",
     "openai": "^6.34.0",
     "pino": "^9",

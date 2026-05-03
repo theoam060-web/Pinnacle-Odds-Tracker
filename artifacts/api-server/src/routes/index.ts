@@ -10,7 +10,6 @@ import stripeRouter from "./stripe.js";
 import softOddsRouter from "./soft-odds.js";
 import pushRouter from "./push.js";
 import chatRouter from "./chat.js";
-import authRouter from "./auth.js";
 
 const router: IRouter = Router();
 
@@ -25,6 +24,5 @@ router.use(stripeRouter);
 router.use(softOddsRouter);
 router.use(pushRouter);
 router.use(chatRouter);
-router.use(authRouter);
 
 export default router;

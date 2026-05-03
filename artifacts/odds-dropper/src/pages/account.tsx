@@ -64,7 +64,7 @@ function formatDate(ts?: number) {
 }
 
 export default function AccountPage() {
-  const { user, signOut, getToken } = useAppAuth();
+  const { user, signOut } = useAppAuth();
   const tier = usePlan();
 
   const [sub, setSub] = useState<SubData | null>(null);
@@ -75,9 +75,7 @@ export default function AccountPage() {
   useEffect(() => {
     (async () => {
       try {
-        const token = getToken();
         const res = await fetch("/api/stripe/subscription", {
-          headers: token ? { Authorization: `Bearer ${token}` } : {},
           credentials: "include",
         });
         const data = await res.json();
@@ -88,16 +86,14 @@ export default function AccountPage() {
         setSubLoading(false);
       }
     })();
-  }, [getToken]);
+  }, []);
 
   const openPortal = async () => {
     setPortalError(null);
     setPortalLoading(true);
     try {
-      const token = getToken();
       const res = await fetch("/api/stripe/portal", {
         method: "POST",
-        headers: token ? { Authorization: `Bearer ${token}` } : {},
         credentials: "include",
       });
       const data = await res.json();
