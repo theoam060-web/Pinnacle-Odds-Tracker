@@ -986,25 +986,23 @@ function TerminalSection() {
 type BookLogo = {
   name: string;
   img?: string;
-  large?: boolean;
-  xlarge?: boolean;
 };
 
 const BASE = import.meta.env.BASE_URL;
 
 const BOOKS: BookLogo[] = [
-  { name: "bet365",       img: `${BASE}logos/bet365.png`, large: true },
-  { name: "Unibet",       large: true },
+  { name: "bet365",       img: `${BASE}logos/bet365.png` },
+  { name: "Unibet" },
   { name: "DraftKings" },
-  { name: "William Hill", img: `${BASE}logos/williamhill.png`, large: true },
+  { name: "William Hill", img: `${BASE}logos/williamhill.png` },
   { name: "Betclic",      img: `${BASE}logos/betclic.png` },
-  { name: "FanDuel",      img: `${BASE}logos/fanduel.png`,    large: true },
+  { name: "FanDuel",      img: `${BASE}logos/fanduel.png` },
   { name: "Betsson",      img: `${BASE}logos/betsson.png` },
-  { name: "BetMGM",       large: true },
+  { name: "BetMGM" },
   { name: "Tipico",       img: `${BASE}logos/tipico.png` },
-  { name: "888sport",     img: `${BASE}logos/888sport2.png`,  large: true },
-  { name: "Betway",       img: `${BASE}logos/betway.png`,     xlarge: true },
-  { name: "Ladbrokes",    large: true },
+  { name: "888sport",     img: `${BASE}logos/888sport2.png` },
+  { name: "Betway",       img: `${BASE}logos/betway.png` },
+  { name: "Ladbrokes" },
   { name: "Pinnacle" },
   { name: "Marathonbet" },
   { name: "Interwetten" },
@@ -1030,13 +1028,13 @@ function MarqueeBand() {
       {/* Right fade */}
       <div className="absolute right-0 top-0 bottom-0 z-10 bg-gradient-to-l from-background to-transparent w-20 pointer-events-none" />
 
-      {/* Scrolling track — width: max-content ensures translateX(-50%) = exactly one set of logos */}
-      <div className="animate-marquee items-center gap-0" style={{ display: "flex", width: "max-content" }}>
+      {/* Scrolling track */}
+      <div className="animate-marquee items-center" style={{ display: "flex", width: "max-content", gap: 0 }}>
         {doubled.map((book, i) => (
           <div
             key={i}
-            className="shrink-0 px-5 flex items-center justify-center"
-            style={{ width: book.xlarge ? "190px" : book.large ? "150px" : "120px" }}
+            className="shrink-0 flex items-center justify-center"
+            style={{ width: "148px", height: "48px", padding: "0 20px" }}
           >
             {book.img ? (
               <img
@@ -1044,12 +1042,14 @@ function MarqueeBand() {
                 alt={book.name}
                 className="select-none"
                 style={{
-                  width: "100%",
-                  height: book.xlarge ? "64px" : book.large ? "46px" : "30px",
+                  height: "28px",
+                  width: "auto",
+                  maxWidth: "108px",
                   objectFit: "contain",
                   objectPosition: "center",
                   filter: "brightness(0) invert(1)",
-                  opacity: 0.35,
+                  opacity: 0.38,
+                  imageRendering: "auto",
                 }}
                 draggable={false}
               />
@@ -1057,8 +1057,9 @@ function MarqueeBand() {
               <span
                 className="select-none whitespace-nowrap font-sans font-bold tracking-wide"
                 style={{
-                  fontSize: book.xlarge ? "20px" : book.large ? "16px" : "13px",
-                  color: "rgba(255,255,255,0.30)",
+                  fontSize: "14px",
+                  color: "rgba(255,255,255,0.32)",
+                  letterSpacing: "0.02em",
                 }}
               >
                 {book.name}
