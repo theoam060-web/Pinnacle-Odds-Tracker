@@ -160,7 +160,7 @@ function SignUpPage() {
           routing="path"
           path={`${basePath}/sign-up`}
           signInUrl={`${basePath}/sign-in`}
-          fallbackRedirectUrl={`${basePath}/`}
+          fallbackRedirectUrl="/"
           appearance={{
             variables: {
               colorPrimary: "#22d3ee",
@@ -273,9 +273,14 @@ function SubscriptionGate({ children }: { children: React.ReactNode }) {
     );
   }
 
+  useEffect(() => {
+    if (subState.status === "expired" || subState.status === "none") {
+      window.location.href = "/pricing";
+    }
+  }, [subState.status]);
+
   if (subState.status === "expired" || subState.status === "none") {
-    window.location.href = "/pricing";
-    return null;
+    return <LoadingScreen label="Redirecting…" />;
   }
 
   return <LoadingScreen label="Checking subscription…" />;
