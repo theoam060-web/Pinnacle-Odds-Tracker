@@ -986,29 +986,25 @@ function TerminalSection() {
 type BookLogo = {
   name: string;
   img?: string;
-  /** Visual scale to compensate for logos with squarer aspect ratios
-   *  that fill less of the fixed bounding box.
-   *  Derived from actual image pixel dimensions (see comments). */
-  scale?: number;
+  large?: boolean;
+  xlarge?: boolean;
 };
 
 const BASE = import.meta.env.BASE_URL;
 
-// Box is 108×28px (ratio 3.86:1). All logos are height-constrained.
-// scale = target_fill / actual_fill so every logo occupies ~78% of box width.
 const BOOKS: BookLogo[] = [
-  { name: "bet365",       img: `${BASE}logos/bet365.png`,      scale: 1.00 }, // 3.00:1 → 84px / 108px = 78 %
-  { name: "Unibet" },
+  { name: "bet365",       img: `${BASE}logos/bet365.png`, large: true },
+  { name: "Unibet",       large: true },
   { name: "DraftKings" },
-  { name: "William Hill", img: `${BASE}logos/williamhill.png`, scale: 1.25 }, // 2.00:1 → 56px → × 1.25 = 70px
-  { name: "Betclic",      img: `${BASE}logos/betclic.png`,     scale: 1.00 }, // 2.95:1 → 83px
-  { name: "FanDuel",      img: `${BASE}logos/fanduel.png`,     scale: 1.22 }, // 1.94:1 → 54px → × 1.22 = 66px
-  { name: "Betsson",      img: `${BASE}logos/betsson.png`,     scale: 1.05 }, // 2.66:1 → 74px → × 1.05 = 78px
-  { name: "BetMGM" },
-  { name: "Tipico",       img: `${BASE}logos/tipico.png`,      scale: 1.00 }, // 3.03:1 → 85px
-  { name: "888sport",     img: `${BASE}logos/888sport2.png`,   scale: 1.22 }, // 2.00:1 → 56px → × 1.22 = 68px
-  { name: "Betway",       img: `${BASE}logos/betway.png`,      scale: 1.30 }, // 1.78:1 → 50px → × 1.30 = 65px
-  { name: "Ladbrokes" },
+  { name: "William Hill", img: `${BASE}logos/williamhill.png`, large: true },
+  { name: "Betclic",      img: `${BASE}logos/betclic.png` },
+  { name: "FanDuel",      img: `${BASE}logos/fanduel.png`,    large: true },
+  { name: "Betsson",      img: `${BASE}logos/betsson.png` },
+  { name: "BetMGM",       large: true },
+  { name: "Tipico",       img: `${BASE}logos/tipico.png` },
+  { name: "888sport",     img: `${BASE}logos/888sport2.png`,  large: true },
+  { name: "Betway",       img: `${BASE}logos/betway.png`,     xlarge: true },
+  { name: "Ladbrokes",    large: true },
   { name: "Pinnacle" },
   { name: "Marathonbet" },
   { name: "Interwetten" },
@@ -1034,42 +1030,35 @@ function MarqueeBand() {
       {/* Right fade */}
       <div className="absolute right-0 top-0 bottom-0 z-10 bg-gradient-to-l from-background to-transparent w-20 pointer-events-none" />
 
-      {/* Scrolling track */}
-      <div className="animate-marquee items-center" style={{ display: "flex", width: "max-content", gap: 0 }}>
+      {/* Scrolling track — width: max-content ensures translateX(-50%) = exactly one set of logos */}
+      <div className="animate-marquee items-center gap-0" style={{ display: "flex", width: "max-content" }}>
         {doubled.map((book, i) => (
-          /* Outer slot — identical for every item */
           <div
             key={i}
-            className="shrink-0 flex items-center justify-center"
-            style={{ width: "148px", height: "48px" }}
+            className="shrink-0 px-5 flex items-center justify-center"
+            style={{ width: book.xlarge ? "190px" : book.large ? "150px" : "120px" }}
           >
             {book.img ? (
-              /* Fixed bounding box — every logo lives in the same 108×28 canvas */
-              <div style={{ width: "108px", height: "28px", display: "flex", alignItems: "center", justifyContent: "center", overflow: "hidden" }}>
-                <img
-                  src={book.img}
-                  alt={book.name}
-                  className="select-none"
-                  style={{
-                    width: "100%",
-                    height: "100%",
-                    objectFit: "contain",
-                    objectPosition: "center",
-                    filter: "brightness(0) invert(1)",
-                    opacity: 0.40,
-                    transform: `scale(${book.scale ?? 1})`,
-                    transformOrigin: "center center",
-                  }}
-                  draggable={false}
-                />
-              </div>
+              <img
+                src={book.img}
+                alt={book.name}
+                className="select-none"
+                style={{
+                  width: "100%",
+                  height: book.xlarge ? "64px" : book.large ? "46px" : "30px",
+                  objectFit: "contain",
+                  objectPosition: "center",
+                  filter: "brightness(0) invert(1)",
+                  opacity: 0.35,
+                }}
+                draggable={false}
+              />
             ) : (
               <span
                 className="select-none whitespace-nowrap font-sans font-bold tracking-wide"
                 style={{
-                  fontSize: "14px",
-                  color: "rgba(255,255,255,0.32)",
-                  letterSpacing: "0.02em",
+                  fontSize: book.xlarge ? "20px" : book.large ? "16px" : "13px",
+                  color: "rgba(255,255,255,0.30)",
                 }}
               >
                 {book.name}
