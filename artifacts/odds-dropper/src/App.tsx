@@ -9,7 +9,7 @@ import { BetStoreProvider } from "@/lib/bet-store";
 import { SettingsProvider } from "@/lib/settings-context";
 import { LangProvider } from "@/lib/lang-context";
 import { useAutoSettle } from "@/hooks/use-auto-settle";
-import React, { useState, useEffect, useCallback, Suspense } from "react";
+import React, { useState, useEffect, useCallback, useRef, Suspense } from "react";
 import NotFound from "@/pages/not-found";
 import FeedPage from "@/pages/feed";
 
@@ -207,29 +207,36 @@ type SubState =
   | { status: "loading" }
   | { status: "active"; tier: PlanTier; isTrialing: boolean }
   | { status: "expired" }
-  | { status: "none" };
+  | { status: "none" }
+  | { status: "error" };
+
+const MAX_SUB_RETRIES = 3;
 
 function SubscriptionGate({ children }: { children: React.ReactNode }) {
   const bypassAuth = import.meta.env.VITE_DEV_BYPASS_AUTH === "true";
   const { isSignedIn, isLoaded } = useAuth();
   const [subState, setSubState] = useState<SubState>({ status: "loading" });
+  const retryCount = useRef(0);
+  const sessionIdRef = useRef<string | undefined>(undefined);
 
-  const fetchSubscription = useCallback(async (sessionId?: string) => {
-    setSubState({ status: "loading" });
+  const attemptFetch = useCallback(async () => {
     try {
-      if (sessionId) {
-        await fetch(`/api/stripe/checkout/session?session_id=${encodeURIComponent(sessionId)}`, {
-          credentials: "include",
-        });
+      const sessionId = sessionIdRef.current;
+      if (sessionId && retryCount.current === 0) {
+        await fetch(
+          `/api/stripe/checkout/session?session_id=${encodeURIComponent(sessionId)}`,
+          { credentials: "include" }
+        );
       }
 
-      const res = await fetch("/api/stripe/subscription", {
-        credentials: "include",
-      });
+      const res = await fetch("/api/stripe/subscription", { credentials: "include" });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const data = await res.json();
+
       const tier = data.planTier as PlanTier | null;
       const subStatus = data.subscription?.status as string | undefined;
       const hasAccess = (subStatus === "active" || subStatus === "trialing") && tier && tier !== "none";
+
       if (hasAccess) {
         setSubState({ status: "active", tier: tier!, isTrialing: subStatus === "trialing" });
       } else if (subStatus === "canceled" || data.subscription != null) {
@@ -238,9 +245,23 @@ function SubscriptionGate({ children }: { children: React.ReactNode }) {
         setSubState({ status: "none" });
       }
     } catch {
-      setSubState({ status: "none" });
+      if (retryCount.current < MAX_SUB_RETRIES) {
+        retryCount.current += 1;
+        const delay = 1000 * retryCount.current; // 1s, 2s, 3s
+        setTimeout(attemptFetch, delay);
+      } else {
+        // All retries exhausted — show an error state, not a pricing redirect
+        setSubState({ status: "error" });
+      }
     }
   }, []);
+
+  const fetchSubscription = useCallback((sessionId?: string) => {
+    retryCount.current = 0;
+    sessionIdRef.current = sessionId;
+    setSubState({ status: "loading" });
+    attemptFetch();
+  }, [attemptFetch]);
 
   useEffect(() => {
     if (bypassAuth) return;
@@ -249,13 +270,13 @@ function SubscriptionGate({ children }: { children: React.ReactNode }) {
     const params = new URLSearchParams(window.location.search);
     const sessionId = params.get("session_id") ?? undefined;
     if (sessionId) {
-      const cleanUrl = window.location.pathname + window.location.hash;
-      window.history.replaceState({}, "", cleanUrl);
+      window.history.replaceState({}, "", window.location.pathname + window.location.hash);
     }
 
     fetchSubscription(sessionId);
   }, [isLoaded, isSignedIn, bypassAuth, fetchSubscription]);
 
+  // Only redirect to pricing for confirmed no-subscription states (not errors)
   useEffect(() => {
     if (bypassAuth) return;
     if (subState.status === "expired" || subState.status === "none") {
@@ -271,10 +292,6 @@ function SubscriptionGate({ children }: { children: React.ReactNode }) {
     );
   }
 
-  if (subState.status === "loading" && isSignedIn) {
-    return <LoadingScreen label="Checking subscription…" />;
-  }
-
   if (subState.status === "active") {
     return (
       <PlanContext.Provider value={subState.tier}>
@@ -287,6 +304,22 @@ function SubscriptionGate({ children }: { children: React.ReactNode }) {
     return <LoadingScreen label="Redirecting…" />;
   }
 
+  if (subState.status === "error") {
+    return (
+      <div className="min-h-screen bg-[#0a0b0f] flex flex-col items-center justify-center gap-5 px-6 text-center">
+        <Activity className="w-8 h-8 text-primary" />
+        <p className="text-sm text-muted-foreground font-mono">Could not reach the server.<br />Check your connection and try again.</p>
+        <button
+          onClick={() => fetchSubscription()}
+          className="px-5 py-2.5 rounded-lg bg-primary text-primary-foreground text-sm font-mono font-semibold hover:bg-primary/90 transition-all"
+        >
+          Retry
+        </button>
+      </div>
+    );
+  }
+
+  // "loading" state
   return <LoadingScreen label="Checking subscription…" />;
 }
 
