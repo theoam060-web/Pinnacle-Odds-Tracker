@@ -10,6 +10,8 @@ import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { motion, useScroll, useTransform, AnimatePresence } from "framer-motion";
 import React, { useEffect, useState, useRef, useContext, useCallback } from "react";
+import { ClerkProvider, useAuth, useUser } from "@clerk/react";
+import { publishableKeyFromHost } from "@clerk/react/internal";
 import { AuthProvider, useAppAuth } from "@/lib/auth-context";
 import { 
   Activity, Bell,
@@ -517,7 +519,7 @@ const SubscriptionAccessContext = React.createContext<{ hasAccess: boolean; load
 function useHasAccess() { return useContext(SubscriptionAccessContext); }
 
 function useSubscriptionAccess() {
-  const { getToken, isSignedIn } = useAppAuth();
+  const { isSignedIn } = useAppAuth();
   const [hasAccess, setHasAccess] = useState(false);
   const [loading, setLoading] = useState(true);
 
@@ -525,9 +527,7 @@ function useSubscriptionAccess() {
     if (!isSignedIn) { setHasAccess(false); setLoading(false); return; }
     let stale = false;
     setLoading(true);
-    const token = getToken();
     fetch("/api/stripe/subscription", {
-      headers: token ? { Authorization: `Bearer ${token}` } : {},
       credentials: "include",
     })
       .then(r => r.json())
@@ -540,7 +540,7 @@ function useSubscriptionAccess() {
       })
       .catch(() => { if (!stale) { setHasAccess(false); setLoading(false); } });
     return () => { stale = true; };
-  }, [getToken, isSignedIn]);
+  }, [isSignedIn]);
 
   return { hasAccess, loading };
 }
@@ -643,7 +643,7 @@ function Navbar() {
           ) : (
             <div className="flex flex-col items-center gap-0.5">
               <span className="text-[11px] font-bold text-green-400 leading-none tracking-wide">{tr.nav.trialBadge}</span>
-              <button onClick={() => { closePanel(); window.location.href = "/api/auth/google"; }} className="flex items-center gap-2 bg-primary/10 text-primary border border-primary/30 hover:bg-primary hover:text-primary-foreground px-5 py-2 rounded-md font-mono text-sm transition-all shadow-[0_0_15px_rgba(0,255,255,0.1)] hover:shadow-[0_0_20px_rgba(0,255,255,0.3)]" data-testid="btn-get-access">
+              <button onClick={() => { closePanel(); window.location.href = "/app/sign-in"; }} className="flex items-center gap-2 bg-primary/10 text-primary border border-primary/30 hover:bg-primary hover:text-primary-foreground px-5 py-2 rounded-md font-mono text-sm transition-all shadow-[0_0_15px_rgba(0,255,255,0.1)] hover:shadow-[0_0_20px_rgba(0,255,255,0.3)]" data-testid="btn-get-access">
                 <GoogleIcon size={16} />
                 {tr.nav.signup}
               </button>
@@ -2533,20 +2533,34 @@ function Router() {
   );
 }
 
+const clerkPubKey = publishableKeyFromHost(
+  typeof window !== "undefined" ? window.location.hostname : "",
+  import.meta.env.VITE_CLERK_PUBLISHABLE_KEY,
+);
+
+const clerkProxyUrl = import.meta.env.VITE_CLERK_PROXY_URL;
+
 function App() {
   return (
     <WouterRouter base={basePath}>
-      <AuthProvider>
-        <LanguageProvider>
-          <QueryClientProvider client={queryClient}>
-            <TooltipProvider>
-              <ScrollToTop />
-              <Router />
-              <Toaster />
-            </TooltipProvider>
-          </QueryClientProvider>
-        </LanguageProvider>
-      </AuthProvider>
+      <ClerkProvider
+        publishableKey={clerkPubKey ?? ""}
+        proxyUrl={clerkProxyUrl}
+        signInUrl="/app/sign-in"
+        signUpUrl="/app/sign-up"
+      >
+        <AuthProvider>
+          <LanguageProvider>
+            <QueryClientProvider client={queryClient}>
+              <TooltipProvider>
+                <ScrollToTop />
+                <Router />
+                <Toaster />
+              </TooltipProvider>
+            </QueryClientProvider>
+          </LanguageProvider>
+        </AuthProvider>
+      </ClerkProvider>
     </WouterRouter>
   );
 }

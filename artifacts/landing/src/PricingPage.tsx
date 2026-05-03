@@ -19,7 +19,7 @@ function PricingNav() {
         </button>
         {!isSignedIn ? (
           <button
-            onClick={() => { window.location.href = "/api/auth/google"; }}
+            onClick={() => { window.location.href = "/app/sign-in"; }}
             className="flex items-center gap-2 bg-primary/10 text-primary border border-primary/30 hover:bg-primary hover:text-primary-foreground px-5 py-2 rounded-md font-mono text-sm transition-all"
           >
             <GoogleIcon size={16} />
@@ -133,23 +133,19 @@ function useTrialStatus() {
 function useCheckout() {
   const [loadingPlan, setLoadingPlan] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const { isSignedIn, getToken } = useAppAuth();
+  const { isSignedIn } = useAppAuth();
 
   const startCheckout = async (plan: string) => {
     if (!isSignedIn) {
-      window.location.href = "/api/auth/google";
+      window.location.href = "/app/sign-in";
       return;
     }
     setError(null);
     setLoadingPlan(plan);
     try {
-      const token = getToken();
       const res = await fetch("/api/stripe/checkout", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          ...(token ? { Authorization: `Bearer ${token}` } : {}),
-        },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ plan, redirectAfter: "/pricing" }),
         credentials: "include",
       });
