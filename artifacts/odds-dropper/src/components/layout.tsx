@@ -8,15 +8,17 @@ import { useOddsStream, type OddsDropEvent, type OddsStreamFilters } from "@/hoo
 import { useBetStore, getCurrencySymbol, calcEVCurrency } from "@/lib/bet-store";
 import { playChime } from "@/lib/chime";
 import { usePlan } from "@/lib/plan-context";
+import { useLang } from "@/lib/lang-context";
+import { tApp } from "@/lib/i18n";
 
-type NavItem = { href: string; label: string; icon: React.ElementType; goldPlus?: boolean };
+type NavItem = { href: string; labelKey: keyof ReturnType<typeof tApp>["nav"]; icon: React.ElementType; goldPlus?: boolean };
 
 const NAV_ITEMS: NavItem[] = [
-  { href: "/", label: "Live Feed", icon: TrendingDown },
-  { href: "/bet-tracker", label: "Bet Tracker", icon: BookMarked, goldPlus: true },
-  { href: "/bet-stats", label: "Bet Stats", icon: BarChart2, goldPlus: true },
-  { href: "/alert-configurations", label: "Alert Configurations", icon: BellRing },
-  { href: "/account", label: "Account", icon: User },
+  { href: "/", labelKey: "liveFeed", icon: TrendingDown },
+  { href: "/bet-tracker", labelKey: "betTracker", icon: BookMarked, goldPlus: true },
+  { href: "/bet-stats", labelKey: "betStats", icon: BarChart2, goldPlus: true },
+  { href: "/alert-configurations", labelKey: "alertConfigurations", icon: BellRing },
+  { href: "/account", labelKey: "account", icon: User },
 ];
 
 function OddsStreamListener({
@@ -43,13 +45,15 @@ interface LayoutProps {
 }
 
 function InstallPWABadge() {
+  const { lang } = useLang();
+  const tr = tApp(lang);
   return (
     <div className="mx-3 mb-3">
       <div className="w-full flex items-center gap-2 px-3 py-2.5 rounded-xl text-xs font-mono bg-cyan-400/[0.06] border border-cyan-400/20 text-cyan-300/70">
         <span className="relative flex-shrink-0">
           <span className="w-1.5 h-1.5 rounded-full bg-cyan-400/80 block animate-pulse" />
         </span>
-        <span>Install app → Settings → App</span>
+        <span>{tr.sidebar.installHint}</span>
       </div>
     </div>
   );
@@ -59,6 +63,8 @@ export function Layout({ children, notificationFilters }: LayoutProps) {
   const [location] = useLocation();
   const { configs, soundEnabled, setSoundEnabled } = useAlertStore();
   const tier = usePlan();
+  const { lang } = useLang();
+  const tr = tApp(lang);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const activeConfigCount = configs.filter(c => c.enabled).length;
 
@@ -95,7 +101,7 @@ export function Layout({ children, notificationFilters }: LayoutProps) {
 
         {/* Nav */}
         <nav className="flex flex-col gap-0.5 px-2 pt-2 pb-2">
-          {NAV_ITEMS.map(({ href, label, icon: Icon, goldPlus }) => {
+          {NAV_ITEMS.map(({ href, labelKey, icon: Icon, goldPlus }) => {
             const active = location === href;
             const locked = goldPlus && tier === "silver";
             const inner = (
@@ -112,7 +118,7 @@ export function Layout({ children, notificationFilters }: LayoutProps) {
                   <div className="absolute left-0 top-1/2 -translate-y-1/2 w-[3px] h-5 rounded-r-full bg-primary shadow-[0_0_8px_rgba(0,229,255,0.6)]" />
                 )}
                 <Icon className={`w-4 h-4 shrink-0 ${active ? "text-primary" : ""}`} />
-                <span className="flex-1">{label}</span>
+                <span className="flex-1">{tr.nav[labelKey]}</span>
                 {locked && <Lock className="w-3 h-3 shrink-0 text-muted-foreground/40" />}
               </div>
             );
@@ -133,17 +139,17 @@ export function Layout({ children, notificationFilters }: LayoutProps) {
           style={{ background: "linear-gradient(135deg, rgba(0,229,255,0.04) 0%, rgba(0,0,0,0) 100%)" }}>
           <div className="flex items-center gap-2 px-3 pt-2.5 pb-2 border-b border-border/20">
             <Zap className="w-3 h-3 text-primary/70" />
-            <div className="text-[10px] uppercase tracking-widest text-muted-foreground font-semibold">Quick Stats</div>
+            <div className="text-[10px] uppercase tracking-widest text-muted-foreground font-semibold">{tr.sidebar.quickStats}</div>
           </div>
           <div className="px-3 py-2.5 space-y-2">
             <div className="flex justify-between items-center text-xs">
-              <span className="text-muted-foreground">Events</span>
+              <span className="text-muted-foreground">{tr.sidebar.events}</span>
               <span className="font-mono font-bold text-foreground tabular-nums">
                 {summary ? summary.totalEvents : "—"}
               </span>
             </div>
             <div className="flex justify-between items-center text-xs">
-              <span className="text-muted-foreground">Active configs</span>
+              <span className="text-muted-foreground">{tr.sidebar.activeConfigs}</span>
               <span className="font-mono font-bold text-primary tabular-nums">{activeConfigCount}</span>
             </div>
           </div>
@@ -164,7 +170,7 @@ export function Layout({ children, notificationFilters }: LayoutProps) {
             {soundEnabled
               ? <Volume2 className="w-3.5 h-3.5 shrink-0" />
               : <VolumeX className="w-3.5 h-3.5 shrink-0" />}
-            <span className="text-xs font-mono">{soundEnabled ? "Sound: ON" : "Sound: OFF"}</span>
+            <span className="text-xs font-mono">{soundEnabled ? tr.sidebar.soundOn : tr.sidebar.soundOff}</span>
           </button>
         </div>
 
@@ -172,19 +178,19 @@ export function Layout({ children, notificationFilters }: LayoutProps) {
         <div className="mx-3 mb-3 rounded-xl border border-border/30 overflow-hidden"
           style={{ background: "linear-gradient(135deg, rgba(99,102,241,0.04) 0%, rgba(0,0,0,0) 100%)" }}>
           <div className="flex items-center justify-between px-3 pt-2.5 pb-2 border-b border-border/20">
-            <div className="text-[10px] uppercase tracking-widest text-muted-foreground font-semibold">Bets</div>
+            <div className="text-[10px] uppercase tracking-widest text-muted-foreground font-semibold">{tr.sidebar.bets}</div>
             <Link href="/bet-tracker">
-              <span className="text-[10px] text-primary hover:text-primary/80 cursor-pointer transition-colors">View all →</span>
+              <span className="text-[10px] text-primary hover:text-primary/80 cursor-pointer transition-colors">{tr.sidebar.viewAll}</span>
             </Link>
           </div>
 
           <div className="px-3 py-2.5 space-y-2">
             <div className="flex justify-between items-center text-xs">
-              <span className="text-muted-foreground">Unsettled</span>
+              <span className="text-muted-foreground">{tr.sidebar.unsettled}</span>
               <span className="font-mono font-bold text-foreground tabular-nums">{unsettled.length}</span>
             </div>
             <div className="flex justify-between items-center text-xs">
-              <span className="text-muted-foreground">Staked</span>
+              <span className="text-muted-foreground">{tr.sidebar.staked}</span>
               <span className="font-mono font-bold text-foreground tabular-nums">
                 {sym}{totalStaked.toFixed(2)}
               </span>
@@ -192,7 +198,7 @@ export function Layout({ children, notificationFilters }: LayoutProps) {
 
             {/* P/L — highlighted */}
             <div className="flex justify-between items-center text-xs pt-0.5">
-              <span className="text-muted-foreground">P / L</span>
+              <span className="text-muted-foreground">{tr.sidebar.pl}</span>
               <span className={`font-mono font-bold text-sm tabular-nums ${currentPL >= 0 ? "text-green-400" : "text-red-400"}`}
                 style={{ textShadow: currentPL >= 0 ? "0 0 10px rgba(74,222,128,0.4)" : "0 0 10px rgba(248,113,113,0.4)" }}>
                 {currentPL < 0 ? "-" : ""}{sym}{Math.abs(currentPL).toFixed(2)}
@@ -200,7 +206,7 @@ export function Layout({ children, notificationFilters }: LayoutProps) {
             </div>
 
             <div className="flex justify-between items-center text-xs">
-              <span className="text-muted-foreground">Exp. profit</span>
+              <span className="text-muted-foreground">{tr.sidebar.expProfit}</span>
               <span className={`font-mono font-bold tabular-nums ${expectedProfit >= 0 ? "text-sky-400" : "text-red-400"}`}>
                 {expectedProfit >= 0 ? "+" : ""}{sym}{Math.abs(expectedProfit).toFixed(2)}
               </span>
@@ -217,7 +223,7 @@ export function Layout({ children, notificationFilters }: LayoutProps) {
             className="w-full flex items-center gap-2.5 px-5 py-3.5 text-muted-foreground/50 hover:text-foreground hover:bg-white/5 transition-all text-xs"
           >
             <Cog className="w-3.5 h-3.5 shrink-0" />
-            Settings
+            {tr.nav.settings}
           </button>
         </div>
       </aside>

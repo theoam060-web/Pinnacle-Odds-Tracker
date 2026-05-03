@@ -663,9 +663,9 @@ function Navbar() {
             className="absolute top-full left-0 w-full bg-background/95 backdrop-blur-xl border-b border-border/60 shadow-[0_24px_80px_-8px_rgba(0,0,0,0.9)]"
           >
             <div className="container mx-auto px-6 py-8">
-              <p className="text-[10px] font-mono text-muted-foreground uppercase tracking-widest mb-6">All Features</p>
+              <p className="text-[10px] font-mono text-muted-foreground uppercase tracking-widest mb-6">{tr.nav.allFeatures}</p>
               <div className="grid grid-cols-2 md:grid-cols-4 gap-3 pb-2">
-                {FEATURE_ITEMS.map((f) => (
+                {FEATURE_ITEMS.map((f, fi) => (
                   <button
                     key={f.route}
                     onClick={() => goToFeature(f.route)}
@@ -676,10 +676,10 @@ function Navbar() {
                     </div>
                     <div>
                       <div className="text-sm font-sans font-semibold text-foreground group-hover:text-primary transition-colors">
-                        {f.name}
+                        {tr.features.items[fi]?.name ?? f.name}
                       </div>
                       <div className="text-xs font-mono text-muted-foreground mt-1 leading-relaxed">
-                        {f.desc}
+                        {tr.features.items[fi]?.desc ?? f.desc}
                       </div>
                     </div>
                   </button>
@@ -855,6 +855,8 @@ function Hero() {
 }
 
 function TerminalSection() {
+  const { lang } = useLang();
+  const tr = t(lang);
   return (
     <section id="terminal" className="py-24 bg-background relative border-t border-border/20">
       <div className="container mx-auto px-6">
@@ -865,9 +867,9 @@ function TerminalSection() {
           transition={{ duration: 0.5 }}
           className="mb-16 md:mb-24 text-center max-w-3xl mx-auto"
         >
-          <h2 className="text-3xl md:text-5xl font-bold font-sans tracking-tight mb-6">Observe the Matrix.</h2>
+          <h2 className="text-3xl md:text-5xl font-bold font-sans tracking-tight mb-6">{tr.terminal.heading}</h2>
           <p className="text-muted-foreground text-xl">
-            Stop refreshing sportsbooks. Our terminal ingests thousands of WebSocket events per second, surfacing meaningful price discovery instantly.
+            {tr.terminal.subheading}
           </p>
         </motion.div>
 
@@ -881,21 +883,21 @@ function TerminalSection() {
           <div className="lg:col-span-5 space-y-8">
             <div className="space-y-4">
               <div className="inline-flex items-center gap-2 px-3 py-1 rounded bg-secondary text-secondary-foreground text-xs font-mono mb-2 border border-border">
-                <Radar className="w-4 h-4 text-primary" /> Event Stream
+                <Radar className="w-4 h-4 text-primary" /> {tr.terminal.eventStream}
               </div>
-              <h3 className="text-2xl font-bold font-sans">See the steam.</h3>
+              <h3 className="text-2xl font-bold font-sans">{tr.terminal.seeTheSteam}</h3>
               <p className="text-muted-foreground font-mono text-sm leading-relaxed">
-                When a syndicate hits the market, the line moves across books in milliseconds. SharpTracker visualizes these drops instantly, highlighting significant EV+ opportunities before they disappear.
+                {tr.terminal.seeTheSteamDesc}
               </p>
             </div>
             
             <div className="space-y-4">
               <div className="inline-flex items-center gap-2 px-3 py-1 rounded bg-secondary text-secondary-foreground text-xs font-mono mb-2 border border-border">
-                <LineChartIcon className="w-4 h-4 text-primary" /> Price History
+                <LineChartIcon className="w-4 h-4 text-primary" /> {tr.terminal.priceHistory}
               </div>
-              <h3 className="text-2xl font-bold font-sans">Chart the sentiment.</h3>
+              <h3 className="text-2xl font-bold font-sans">{tr.terminal.chartSentiment}</h3>
               <p className="text-muted-foreground font-mono text-sm leading-relaxed">
-                Every line movement is charted tick-by-tick. Identify resistance levels in spreads and totals, and understand the narrative arc of the market leading up to gametime.
+                {tr.terminal.chartSentimentDesc}
               </p>
             </div>
           </div>
@@ -907,10 +909,10 @@ function TerminalSection() {
                 {/* Mockup Top Bar */}
                 <div className="flex border-b border-border/50 text-xs font-mono">
                   <div className="px-4 py-2 bg-muted/50 border-r border-border/50 flex items-center gap-2 text-foreground">
-                    <Activity className="w-3 h-3 text-primary" /> Live Feed
+                    <Activity className="w-3 h-3 text-primary" /> {tr.terminal.liveFeed}
                   </div>
                   <div className="px-4 py-2 text-muted-foreground flex items-center gap-2 hover:bg-muted/30 cursor-pointer">
-                    <BarChart2 className="w-3 h-3" /> Bk. Compare
+                    <BarChart2 className="w-3 h-3" /> {tr.terminal.bkCompare}
                   </div>
                 </div>
                 
@@ -918,7 +920,7 @@ function TerminalSection() {
                 <div className="flex h-[400px]">
                   {/* Left Sidebar */}
                   <div className="w-48 border-r border-border/50 bg-muted/10 p-4 space-y-4 hidden md:block">
-                    <div className="text-[10px] font-mono text-muted-foreground uppercase tracking-widest mb-2">Sports</div>
+                    <div className="text-[10px] font-mono text-muted-foreground uppercase tracking-widest mb-2">{tr.terminal.sports}</div>
                     <div className="space-y-1">
                       {['NBA', 'NFL', 'MLB', 'NHL', 'Soccer'].map((sport, i) => (
                         <div key={sport} className={`text-xs font-mono px-2 py-1.5 rounded cursor-pointer ${i === 0 ? 'bg-primary/10 text-primary border border-primary/20' : 'text-muted-foreground hover:text-foreground'}`}>
@@ -935,8 +937,8 @@ function TerminalSection() {
                     
                     <div className="relative z-10 space-y-3">
                        <div className="flex justify-between items-center pb-2 border-b border-border/30">
-                         <div className="text-xs font-mono text-muted-foreground">Latest Sharp Drops</div>
-                         <div className="text-[10px] font-mono text-primary flex items-center gap-1">● LIVE</div>
+                         <div className="text-xs font-mono text-muted-foreground">{tr.terminal.latestDrops}</div>
+                         <div className="text-[10px] font-mono text-primary flex items-center gap-1">● {tr.terminal.live}</div>
                        </div>
                        
                        <div className="space-y-2">
@@ -998,6 +1000,8 @@ const BOOKS: BookLogo[] = [
 ];
 
 function MarqueeBand() {
+  const { lang } = useLang();
+  const tr = t(lang);
   const doubled = [...BOOKS, ...BOOKS];
   return (
     <div className="border-y border-border/30 bg-background py-5 overflow-hidden relative">
@@ -1005,8 +1009,8 @@ function MarqueeBand() {
       <div className="absolute left-0 top-0 bottom-0 z-10 flex items-center">
         <div className="bg-gradient-to-r from-background via-background to-transparent w-52 h-full flex items-center pl-6 pr-8 shrink-0">
           <p className="text-sm font-mono text-muted-foreground leading-snug whitespace-nowrap">
-            Works on<br />
-            <span className="text-foreground font-bold">all major books →</span>
+            {tr.marquee.worksOn}<br />
+            <span className="text-foreground font-bold">{tr.marquee.allBooks}</span>
           </p>
         </div>
       </div>
@@ -1055,6 +1059,10 @@ function MarqueeBand() {
 }
 
 function FeaturesGrid() {
+  const { lang } = useLang();
+  const tr = t(lang);
+  const VISUAL_COMPONENTS = [StepIlluMarkets, StepIlluMinDrop, StepIlluMonitor, StepIlluAlert] as const;
+  const steps = tr.features.steps.map((s, i) => ({ ...s, visual: VISUAL_COMPONENTS[i] }));
   return (
     <section id="features" className="py-20 bg-secondary/30 border-y border-border/20">
       <div className="container mx-auto px-6">
@@ -1068,7 +1076,7 @@ function FeaturesGrid() {
           className="text-center mb-10 max-w-2xl mx-auto"
         >
           <h2 className="text-3xl md:text-5xl font-bold font-sans tracking-tight mb-3 leading-tight">
-            Your filters.{" "}
+            {tr.features.heading1}{" "}
             <span
               style={{
                 background: "linear-gradient(90deg, hsl(186 100% 50%), hsl(186 100% 75%), hsl(186 100% 50%))",
@@ -1077,14 +1085,14 @@ function FeaturesGrid() {
                 WebkitTextFillColor: "transparent",
                 animation: "shimmer 3s linear infinite",
               }}
-            >Your rules.</span>
+            >{tr.features.heading2}</span>
           </h2>
-          <p className="text-foreground/65 font-sans text-lg">Tell SharpTracker exactly what matters to you. It watches the markets around the clock and alerts you the moment something moves.</p>
+          <p className="text-foreground/65 font-sans text-lg">{tr.features.subtitle}</p>
         </motion.div>
 
         {/* 2×2 grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 max-w-5xl mx-auto">
-          {STEPS.map((step, i) => {
+          {steps.map((step, i) => {
             const Visual = step.visual;
             return (
               <motion.div
@@ -1146,13 +1154,15 @@ const PROFIT_TABLE: Record<string, Record<string, [number, number]>> = {
 };
 
 function ProfitCalculatorSection() {
+  const { lang } = useLang();
+  const tr = t(lang);
   const [bankroll, setBankroll] = useState(1000);
   const [usage, setUsage]       = useState("medium");
   const [timeframe, setTimeframe] = useState("3m");
   const [result, setResult]     = useState<{ data: { w: string; v: number }[]; profit: number; roi: number } | null>(null);
 
   function calculate() {
-    const tf = TIMEFRAME_OPTIONS.find(o => o.value === timeframe)!;
+    const tf = tr.calc.timeframeOptions.find(o => o.value === timeframe)!;
 
     // XOR-shift seeded RNG so each Calculate click gives a different path
     let rng = ((Date.now() * 1000003) ^ 0xdeadbeef) >>> 0;
@@ -1206,10 +1216,10 @@ function ProfitCalculatorSection() {
           transition={{ duration: 0.5 }}
           className="text-center mb-12"
         >
-          <span className="text-xs font-mono tracking-widest text-primary uppercase">Tools</span>
-          <h2 className="text-3xl md:text-5xl font-bold font-sans tracking-tight mt-3 mb-4">Profit Calculator.</h2>
+          <span className="text-xs font-mono tracking-widest text-primary uppercase">{tr.calc.badge}</span>
+          <h2 className="text-3xl md:text-5xl font-bold font-sans tracking-tight mt-3 mb-4">{tr.calc.heading}</h2>
           <p className="text-foreground/65 text-xl max-w-xl mx-auto">
-            See what SharpTracker could do for your bankroll based on how you plan to use it.
+            {tr.calc.subtitle}
           </p>
         </motion.div>
 
@@ -1225,7 +1235,7 @@ function ProfitCalculatorSection() {
             {/* ── LEFT: inputs ── */}
             <div className="p-8 space-y-6">
               <div className="space-y-2">
-                <label className="text-sm font-bold font-sans">Initial Bankroll</label>
+                <label className="text-sm font-bold font-sans">{tr.calc.bankrollLabel}</label>
                 <div className="relative">
                   <span className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground font-mono text-sm">€</span>
                   <input
@@ -1236,33 +1246,33 @@ function ProfitCalculatorSection() {
                     className={inputCls + " pl-8"}
                   />
                 </div>
-                <p className="text-xs text-muted-foreground">We recommend starting with at least €500</p>
+                <p className="text-xs text-muted-foreground">{tr.calc.bankrollHint}</p>
               </div>
 
               <div className="space-y-2">
-                <label className="text-sm font-bold font-sans">Weekly Usage</label>
+                <label className="text-sm font-bold font-sans">{tr.calc.usageLabel}</label>
                 <div className="relative">
                   <select
                     value={usage}
                     onChange={e => setUsage(e.target.value)}
                     className={inputCls + " appearance-none pr-10 cursor-pointer"}
                   >
-                    {USAGE_OPTIONS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
+                    {tr.calc.usageOptions.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
                   </select>
                   <span className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-muted-foreground text-xs">▾</span>
                 </div>
-                <p className="text-xs text-muted-foreground">How many hours a week you plan to use SharpTracker</p>
+                <p className="text-xs text-muted-foreground">{tr.calc.usageHint}</p>
               </div>
 
               <div className="space-y-2">
-                <label className="text-sm font-bold font-sans">Timeframe</label>
+                <label className="text-sm font-bold font-sans">{tr.calc.timeframeLabel}</label>
                 <div className="relative">
                   <select
                     value={timeframe}
                     onChange={e => setTimeframe(e.target.value)}
                     className={inputCls + " appearance-none pr-10 cursor-pointer"}
                   >
-                    {TIMEFRAME_OPTIONS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
+                    {tr.calc.timeframeOptions.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
                   </select>
                   <span className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-muted-foreground text-xs">▾</span>
                 </div>
@@ -1272,7 +1282,7 @@ function ProfitCalculatorSection() {
                 onClick={calculate}
                 className="w-full bg-primary text-background font-bold font-sans py-3.5 rounded-lg hover:bg-primary/85 active:scale-[0.98] transition-all text-sm tracking-wide"
               >
-                Calculate
+                {tr.calc.calculateBtn}
               </button>
             </div>
 
@@ -1343,6 +1353,8 @@ function ProfitCalculatorSection() {
 function CTASection() {
   const [, navigate] = useLocation();
   const { isSignedIn } = useUser();
+  const { lang } = useLang();
+  const tr = t(lang);
   return (
     <section className="py-32 relative overflow-hidden bg-card border-t border-border">
       <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,var(--tw-gradient-stops))] from-primary/10 via-background to-background"></div>
@@ -1354,9 +1366,9 @@ function CTASection() {
         transition={{ duration: 0.5 }}
         className="container mx-auto px-6 relative z-10 text-center max-w-3xl"
       >
-        <h2 className="text-4xl md:text-6xl font-bold font-sans mb-6">Stop playing with a handicap.</h2>
+        <h2 className="text-4xl md:text-6xl font-bold font-sans mb-6">{tr.cta.heading}</h2>
         <p className="text-xl text-muted-foreground mb-10">
-          Join the sharpest bettors leveraging real-time sharp market data to find better prices before the market closes.
+          {tr.cta.subtitle}
         </p>
         <div className="flex justify-center gap-4">
           {isSignedIn ? (
@@ -1365,7 +1377,7 @@ function CTASection() {
               className="bg-primary text-primary-foreground px-10 py-4 rounded-md font-mono font-bold tracking-wide text-lg hover:bg-primary/90 transition-colors shadow-[0_0_30px_hsl(var(--primary)/0.3)]"
               data-testid="btn-view-plans"
             >
-              View Plans
+              {tr.cta.viewPlans}
             </button>
           ) : (
             <button
@@ -1374,7 +1386,7 @@ function CTASection() {
               data-testid="btn-footer-signup"
             >
               <GoogleIcon />
-              Start 14-Day Free Trial
+              {tr.cta.startTrial}
             </button>
           )}
         </div>
@@ -1385,6 +1397,8 @@ function CTASection() {
 
 function Footer() {
   const { isSignedIn } = useUser();
+  const { lang } = useLang();
+  const tr = t(lang);
   return (
     <footer className="bg-background py-12 border-t border-border/50 text-center md:text-left">
       <div className="container mx-auto px-6">
@@ -1401,58 +1415,38 @@ function Footer() {
               <span className="font-sans font-bold text-xl tracking-tight text-foreground">SharpTracker</span>
             </div>
             <p className="text-muted-foreground text-base max-w-sm mx-auto md:mx-0">
-              Professional odds tracking and bookmaker comparison terminal.
+              {tr.footer.desc}
             </p>
           </div>
           <div>
-            <h4 className="font-sans font-bold mb-4 text-foreground">Product</h4>
+            <h4 className="font-sans font-bold mb-4 text-foreground">{tr.footer.product}</h4>
             <ul className="space-y-2 font-mono text-sm text-muted-foreground">
-              <li><Link href="/pricing" className="hover:text-primary">Pricing</Link></li>
-              <li><Link href="/why" className="hover:text-primary">Why SharpTracker?</Link></li>
+              <li><Link href="/pricing" className="hover:text-primary">{tr.nav.pricing}</Link></li>
+              <li><Link href="/why" className="hover:text-primary">{tr.nav.why}</Link></li>
               {isSignedIn
-                ? <li><a href="/app/" className="hover:text-primary">Dashboard</a></li>
-                : <li><a href="/app/" className="hover:text-primary">Sign Up</a></li>
+                ? <li><a href="/app/" className="hover:text-primary">{tr.footer.dashboard}</a></li>
+                : <li><a href="/app/" className="hover:text-primary">{tr.footer.signUp}</a></li>
               }
             </ul>
           </div>
           <div>
-            <h4 className="font-sans font-bold mb-4 text-foreground">Legal</h4>
+            <h4 className="font-sans font-bold mb-4 text-foreground">{tr.footer.legal}</h4>
             <ul className="space-y-2 font-mono text-sm text-muted-foreground">
-              <li><Link href="/terms" className="hover:text-primary">Terms of Service</Link></li>
-              <li><Link href="/privacy" className="hover:text-primary">Privacy Policy</Link></li>
+              <li><Link href="/terms" className="hover:text-primary">{tr.footer.terms}</Link></li>
+              <li><Link href="/privacy" className="hover:text-primary">{tr.footer.privacy}</Link></li>
               <li><a href="mailto:info@sharptracker.io" className="hover:text-primary">info@sharptracker.io</a></li>
             </ul>
           </div>
         </div>
         <div className="font-mono text-xs text-muted-foreground text-center space-y-3">
-          <p>&copy; {new Date().getFullYear()} SharpTracker. All rights reserved.</p>
+          <p>&copy; {new Date().getFullYear()} SharpTracker. {tr.footer.allRights}</p>
 
           <p className="max-w-3xl mx-auto leading-relaxed">
-            SharpTracker is a data and analytics service. This site is strictly for educational and informational purposes only and does not involve real-money betting or facilitate wagering of any kind.
-            References to "sharp bookmakers" refer to high-volume, limit-friendly operators whose pricing reflects professional market consensus. No specific operator is endorsed by name.
+            {tr.footer.disclaimer1}
           </p>
 
           <p className="max-w-3xl mx-auto leading-relaxed">
-            Gambling involves risk. Only bet what you can afford to lose. This service is intended for adults aged 18 and over.
-            If you or someone you know has a gambling problem, help is available — visit{" "}
-            <a
-              href="https://www.begambleaware.org"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-primary hover:underline"
-            >
-              BeGambleAware.org
-            </a>{" "}
-            or contact the{" "}
-            <a
-              href="https://www.gamblersanonymous.org"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-primary hover:underline"
-            >
-              Gamblers Anonymous
-            </a>{" "}
-            helpline in your country.
+            {tr.footer.disclaimer2}
           </p>
         </div>
         </motion.div>
@@ -1486,7 +1480,7 @@ function AlertConfigSection() {
             </div>
 
             <h2 className="text-4xl md:text-6xl font-bold font-sans tracking-tight leading-none">
-              Never miss<br />a drop.
+              {tr.alertSection.neverMiss}<br />{tr.alertSection.aDrop}
             </h2>
 
             <p className="text-muted-foreground text-xl leading-relaxed max-w-md mx-auto lg:mx-0">
@@ -1638,6 +1632,8 @@ const FEATURE_TILES = [
 
 function FeatureStripSection() {
   const [, navigate] = useLocation();
+  const { lang } = useLang();
+  const tr = t(lang);
   return (
     <section className="py-20 bg-background">
       <div className="container mx-auto px-6">
@@ -1648,12 +1644,12 @@ function FeatureStripSection() {
           transition={{ duration: 0.5 }}
           className="text-center mb-10"
         >
-          <h2 className="text-2xl md:text-3xl font-bold font-sans tracking-tight mb-2">Everything you need. Nothing you don't.</h2>
-          <p className="text-foreground/55 text-lg font-sans">Six tools built for serious bettors — each one focused, fast, and actionable.</p>
+          <h2 className="text-2xl md:text-3xl font-bold font-sans tracking-tight mb-2">{tr.featureStrip.heading}</h2>
+          <p className="text-foreground/55 text-lg font-sans">{tr.featureStrip.subtitle}</p>
         </motion.div>
 
         <div className="grid grid-cols-2 md:grid-cols-3 gap-3 max-w-3xl mx-auto">
-          {FEATURE_TILES.map(({ icon: Icon, label, href }, i) => (
+          {FEATURE_TILES.map(({ icon: Icon, href }, i) => (
             <motion.button
               key={href}
               initial={{ opacity: 0, y: 16 }}
@@ -1666,7 +1662,7 @@ function FeatureStripSection() {
               <div className="w-9 h-9 rounded-lg bg-primary/10 border border-primary/20 flex items-center justify-center shrink-0 group-hover:bg-primary/20 transition-colors">
                 <Icon className="w-4.5 h-4.5 text-primary" strokeWidth={1.75} />
               </div>
-              <span className="text-sm font-sans font-semibold text-foreground group-hover:text-primary transition-colors leading-tight">{label}</span>
+              <span className="text-sm font-sans font-semibold text-foreground group-hover:text-primary transition-colors leading-tight">{tr.featureStrip.tiles[i]}</span>
             </motion.button>
           ))}
         </div>
@@ -1676,6 +1672,8 @@ function FeatureStripSection() {
 }
 
 function BankrollFeatureCards() {
+  const { lang } = useLang();
+  const tr = t(lang);
   const appBase = `${window.location.origin}/app`;
   const cyan  = "hsl(186,100%,50%)";
   const green = "#4ade80";
@@ -1976,13 +1974,13 @@ function BankrollFeatureCards() {
           className="text-center mb-14 max-w-2xl mx-auto"
         >
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary/10 text-primary text-xs font-mono border border-primary/20 mb-5">
-            <Activity className="w-3.5 h-3.5" /> Edge Tracking Suite
+            <Activity className="w-3.5 h-3.5" /> {tr.bankroll.badge}
           </div>
           <h2 className="text-3xl md:text-5xl font-bold font-sans tracking-tight mb-4">
-            Follow your edge. Watch your bankroll grow.
+            {tr.bankroll.heading}
           </h2>
           <p className="text-muted-foreground text-xl">
-            Every number that matters — tracked for you. No spreadsheets needed.
+            {tr.bankroll.subtitle}
           </p>
         </motion.div>
 
@@ -2031,13 +2029,13 @@ function BankrollFeatureCards() {
                     transition={{ duration: 0.35, ease: "easeInOut" }}
                   >
                     <span className="text-[10px] font-mono font-bold text-primary tracking-widest uppercase block mb-3">
-                      {card.tag}
+                      {tr.bankroll.cards[active]?.tag ?? card.tag}
                     </span>
                     <h3 className="text-2xl md:text-3xl font-bold font-sans text-foreground mb-4 leading-tight">
-                      {card.title}
+                      {tr.bankroll.cards[active]?.title ?? card.title}
                     </h3>
                     <p className="text-base text-foreground/65 leading-relaxed mb-8">
-                      {card.desc}
+                      {tr.bankroll.cards[active]?.desc ?? card.desc}
                     </p>
                     <a
                       href={card.href}
@@ -2045,7 +2043,7 @@ function BankrollFeatureCards() {
                       rel="noopener noreferrer"
                       className="inline-flex items-center gap-2 text-sm font-mono text-primary hover:text-primary/80 transition-colors"
                     >
-                      See it live <ChevronRight className="w-4 h-4" />
+                      {tr.bankroll.seeItLive} <ChevronRight className="w-4 h-4" />
                     </a>
                   </motion.div>
                 </AnimatePresence>
@@ -2104,6 +2102,8 @@ function BankrollFeatureCards() {
 }
 
 function MultiSportSection() {
+  const { lang } = useLang();
+  const tr = t(lang);
   const sports = [
     { name: "NFL Football", icon: "🏈", count: "32 Games/Wk", markets: "Moneyline, Spread, Total" },
     { name: "NBA Basketball", icon: "🏀", count: "15 Games/Day", markets: "Moneyline, Spread, Total" },
@@ -2117,9 +2117,9 @@ function MultiSportSection() {
     <section id="sports" className="py-24 bg-background">
       <div className="container mx-auto px-6">
         <div className="text-center mb-16 max-w-3xl mx-auto">
-          <h2 className="text-3xl md:text-5xl font-bold font-sans tracking-tight mb-6">Total Market Coverage.</h2>
+          <h2 className="text-3xl md:text-5xl font-bold font-sans tracking-tight mb-6">{tr.multiSport.heading}</h2>
           <p className="text-muted-foreground font-mono text-lg">
-            Track line movement across every major sport simultaneously. Our backend processes over 50,000 odds updates per minute across all markets.
+            {tr.multiSport.subtitle}
           </p>
         </div>
 
@@ -2210,6 +2210,8 @@ const TESTIMONIALS = [
 ];
 
 function TestimonialsSection() {
+  const { lang } = useLang();
+  const tr = t(lang);
   return (
     <section className="py-24 bg-background border-t border-border/20">
       <div className="container mx-auto px-6 max-w-6xl">
@@ -2222,13 +2224,13 @@ function TestimonialsSection() {
           transition={{ duration: 0.5 }}
         >
           <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full border border-primary/30 bg-primary/5 mb-5">
-            <span className="text-[10px] font-mono text-primary uppercase tracking-widest">Real users. Real results.</span>
+            <span className="text-[10px] font-mono text-primary uppercase tracking-widest">{tr.testimonials.badge}</span>
           </div>
           <h2 className="text-3xl md:text-5xl font-bold font-sans tracking-tight mb-4">
-            Hear what others<br className="hidden sm:block" /> are saying.
+            {tr.testimonials.heading}
           </h2>
           <p className="text-foreground/55 font-sans text-lg max-w-xl mx-auto">
-            Sharp bettors from across Europe and beyond — all using SharpTracker to catch moves before the market adjusts.
+            {tr.testimonials.subtitle}
           </p>
         </motion.div>
 
@@ -2272,7 +2274,7 @@ function TestimonialsSection() {
               {/* Stats bar */}
               <div className="flex items-stretch border-t border-border/40">
                 <div className="flex-1 px-5 py-3.5">
-                  <p className="text-[9px] font-mono text-muted-foreground uppercase tracking-widest mb-1">Profit</p>
+                  <p className="text-[9px] font-mono text-muted-foreground uppercase tracking-widest mb-1">{tr.testimonials.profitLabel}</p>
                   <p className="text-sm font-bold font-mono text-green-400">{t.profit}</p>
                 </div>
                 <div className="w-px bg-border/40" />
@@ -2334,6 +2336,8 @@ const FAQ_ITEMS = [
 
 function FAQSection() {
   const [open, setOpen] = useState<number | null>(null);
+  const { lang } = useLang();
+  const tr = t(lang);
   return (
     <section id="faq" className="py-24 bg-card border-y border-border/20">
       <div className="container mx-auto px-6 max-w-3xl">
@@ -2345,14 +2349,14 @@ function FAQSection() {
           className="text-center mb-14"
         >
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary/10 text-primary text-xs font-mono border border-primary/20 mb-5">
-            FAQ
+            {tr.faq.badge}
           </div>
-          <h2 className="text-3xl md:text-4xl font-bold font-sans tracking-tight mb-3">Common questions, honest answers.</h2>
-          <p className="text-foreground/60 font-sans text-lg">Everything you need to know before getting started.</p>
+          <h2 className="text-3xl md:text-4xl font-bold font-sans tracking-tight mb-3">{tr.faq.heading}</h2>
+          <p className="text-foreground/60 font-sans text-lg">{tr.faq.subtitle}</p>
         </motion.div>
 
         <div className="space-y-2">
-          {FAQ_ITEMS.map((item, i) => (
+          {tr.faq.items.map((item, i) => (
             <motion.div
               key={i}
               initial={{ opacity: 0, y: 12 }}
@@ -2393,12 +2397,14 @@ function FAQSection() {
 }
 
 function BetTrackerSection() {
+  const { lang } = useLang();
+  const tr = t(lang);
   return (
     <section id="bet-tracker" className="py-24 bg-secondary/20 border-y border-border/20">
       <div className="container mx-auto px-6 text-center">
-        <h2 className="text-3xl md:text-4xl font-bold font-sans mb-6">Integrated Bet Tracker.</h2>
+        <h2 className="text-3xl md:text-4xl font-bold font-sans mb-6">{tr.betTracker.heading}</h2>
         <p className="text-muted-foreground font-mono text-lg max-w-2xl mx-auto mb-16">
-          Log your bets with one click from the feed. We automatically grade them at game end and map your performance over time.
+          {tr.betTracker.subtitle}
         </p>
 
         <div className="bg-card border border-border rounded-xl overflow-hidden max-w-5xl mx-auto shadow-2xl">
@@ -2406,12 +2412,12 @@ function BetTrackerSection() {
             <table className="w-full text-left font-mono text-sm whitespace-nowrap">
               <thead className="bg-muted text-muted-foreground">
                 <tr>
-                  <th className="px-6 py-4 font-normal">Date</th>
-                  <th className="px-6 py-4 font-normal">Matchup</th>
-                  <th className="px-6 py-4 font-normal">Selection</th>
-                  <th className="px-6 py-4 font-normal">Odds</th>
-                  <th className="px-6 py-4 font-normal text-right">CLV</th>
-                  <th className="px-6 py-4 font-normal text-right">Result</th>
+                  <th className="px-6 py-4 font-normal">{tr.betTracker.date}</th>
+                  <th className="px-6 py-4 font-normal">{tr.betTracker.matchup}</th>
+                  <th className="px-6 py-4 font-normal">{tr.betTracker.selection}</th>
+                  <th className="px-6 py-4 font-normal">{tr.betTracker.odds}</th>
+                  <th className="px-6 py-4 font-normal text-right">{tr.betTracker.clv}</th>
+                  <th className="px-6 py-4 font-normal text-right">{tr.betTracker.result}</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-border/50">
@@ -2442,6 +2448,8 @@ function BetTrackerSection() {
 }
 
 function SharpDataSection() {
+  const { lang } = useLang();
+  const tr = t(lang);
   return (
     <section className="py-24 bg-background">
       <div className="container mx-auto px-6">
@@ -2450,9 +2458,9 @@ function SharpDataSection() {
             <Database className="w-16 h-16 text-primary" />
           </div>
           <div>
-            <h2 className="text-2xl md:text-4xl font-bold font-sans mb-4 text-foreground">Powered by Sharp Bookmaker Data.</h2>
+            <h2 className="text-2xl md:text-4xl font-bold font-sans mb-4 text-foreground">{tr.sharpData.heading}</h2>
             <p className="text-muted-foreground text-xl leading-relaxed max-w-3xl">
-              We track only the sharpest bookmakers — the true market makers where professional money flows. While other services blend data from slow recreational books, SharpTracker isolates the signal from the noise. When the sharp money moves, you see it first.
+              {tr.sharpData.desc}
             </p>
           </div>
         </div>

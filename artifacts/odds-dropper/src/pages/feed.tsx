@@ -22,6 +22,8 @@ import { computeNovig } from "@/lib/novig";
 import { useAlertStore, AlertConfig, BOOKMAKER_OPTIONS, type NovigMethod } from "@/lib/alert-context";
 import { useWsFeed, type WsOddsEventUpdate } from "@/hooks/use-ws-feed";
 import { usePlan, PLAN_LIMITS } from "@/lib/plan-context";
+import { useLang } from "@/lib/lang-context";
+import { tApp } from "@/lib/i18n";
 
 const SPORT_LABELS: Record<string, string> = {
   soccer: "⚽ Football",
@@ -36,13 +38,7 @@ const SPORT_LABELS: Record<string, string> = {
 
 type SortOption = "time" | "newest" | "oldest" | "drop_desc" | "drop_asc";
 
-const SORT_LABELS: Record<SortOption, string> = {
-  time: "Time (soonest first)",
-  newest: "Newest alert",
-  oldest: "Oldest alert",
-  drop_desc: "Drop % highest first",
-  drop_asc: "Drop % lowest first",
-};
+// SORT_LABELS are now generated from translations inside FeedPage
 
 interface FeedRow {
   eventId: string;
@@ -467,6 +463,8 @@ const FeedTableRow = memo(function FeedTableRow({
   onGraphClick,
   onCompare,
 }: FeedTableRowProps) {
+  const { lang } = useLang();
+  const trRow = tApp(lang);
   const dropAbs = Math.abs(row.changePercent);
   const novig = useMemo(() => computeNovig(row.allCurrentOdds, row.lineIndex), [row.allCurrentOdds, row.lineIndex]);
 
@@ -547,7 +545,7 @@ const FeedTableRow = memo(function FeedTableRow({
             onClick={() => onGraphClick(row.eventId, row.selection)}
           >
             <LineChart className="w-3 h-3" />
-            Chart
+            {trRow.feed.chart}
           </Button>
           <Button
             size="sm"
@@ -556,7 +554,7 @@ const FeedTableRow = memo(function FeedTableRow({
             onClick={() => onLogBet({ ...row, novigOdds: novig[novigMethod] })}
           >
             <BookmarkPlus className="w-3 h-3" />
-            Log
+            {trRow.feed.log}
           </Button>
           {onCompare && (
             <Button
@@ -567,7 +565,7 @@ const FeedTableRow = memo(function FeedTableRow({
               title="Compare odds across bookmakers"
             >
               <BarChart2 className="w-3 h-3" />
-              Compare
+              {trRow.feed.compare}
             </Button>
           )}
         </div>
@@ -579,6 +577,8 @@ const FeedTableRow = memo(function FeedTableRow({
 export default function FeedPage() {
   const { configs, novigMethod, comparisonBookmakers } = useAlertStore();
   const tier = usePlan();
+  const { lang } = useLang();
+  const tr = tApp(lang);
   const isPlatinum = tier === "platinum";
 
   // Enforce plan tier limits at read-time:
@@ -793,9 +793,9 @@ export default function FeedPage() {
   return (
     <Layout>
       <div className="mb-5">
-        <h1 className="text-2xl font-bold tracking-tight mb-1 text-foreground">Live Market Feed</h1>
+        <h1 className="text-2xl font-bold tracking-tight mb-1 text-foreground">{tr.feed.title}</h1>
         <p className="text-muted-foreground text-sm">
-          Fresh Pinnacle drops detected in real-time.
+          {tr.feed.subtitle}.
           {activeConfigs.length > 0 && (
             <span className="ml-2 text-primary font-medium">{activeConfigs.length} active alert config{activeConfigs.length !== 1 ? "s" : ""}.</span>
           )}
@@ -831,11 +831,11 @@ export default function FeedPage() {
               <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
               <span className="relative inline-flex rounded-full h-2 w-2 bg-green-500"></span>
             </span>
-            Live
+            {tr.feed.live}
           </span>
 
           {paused && (
-            <span className="text-[10px] font-mono text-amber-400 uppercase tracking-wide">Paused</span>
+            <span className="text-[10px] font-mono text-amber-400 uppercase tracking-wide">{tr.feed.paused}</span>
           )}
 
           {/* Sort dropdown */}
@@ -843,15 +843,21 @@ export default function FeedPage() {
             <DropdownMenuTrigger asChild>
               <Button size="sm" variant="outline" className="h-7 text-xs gap-1.5">
                 <ArrowUpDown className="w-3 h-3" />
-                Sort by
+                {tr.feed.sortBy}
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-[210px]">
               <DropdownMenuLabel className="text-[10px] uppercase tracking-wider text-muted-foreground">
-                Sort order
+                {tr.feed.sortBy}
               </DropdownMenuLabel>
               <DropdownMenuSeparator />
-              {(Object.entries(SORT_LABELS) as [SortOption, string][]).map(([key, label]) => (
+              {(Object.entries({
+                time: tr.feed.sortOptions.time,
+                newest: tr.feed.sortOptions.newest,
+                oldest: tr.feed.sortOptions.oldest,
+                drop_desc: tr.feed.sortOptions.dropDesc,
+                drop_asc: tr.feed.sortOptions.dropAsc,
+              }) as [SortOption, string][]).map(([key, label]) => (
                 <DropdownMenuItem
                   key={key}
                   onClick={() => setSortBy(key)}
@@ -872,7 +878,7 @@ export default function FeedPage() {
             onClick={handlePause}
           >
             {paused ? <Play className="w-3 h-3" /> : <Pause className="w-3 h-3" />}
-            {paused ? "Resume" : "Pause"}
+            {paused ? tr.feed.live : tr.feed.paused}
           </Button>
         </div>
       </div>
@@ -881,14 +887,14 @@ export default function FeedPage() {
         <Table className="min-w-[960px]">
           <TableHeader className="bg-muted/50">
             <TableRow>
-              <TableHead className="w-[200px]">Match</TableHead>
-              <TableHead className="w-[90px] text-center">Starts in</TableHead>
-              <TableHead className="w-[90px] text-center">Alert</TableHead>
-              <TableHead className="w-[110px]">Sport</TableHead>
-              <TableHead className="w-[130px]">Bet type</TableHead>
-              <TableHead className="w-[160px] text-center">Odds movement</TableHead>
-              <TableHead className="w-[130px] text-right">Drop / Trend</TableHead>
-              <TableHead className="w-[160px] text-center">Action</TableHead>
+              <TableHead className="w-[200px]">{tr.feed.colMatch}</TableHead>
+              <TableHead className="w-[90px] text-center">{tr.feed.colStartsIn}</TableHead>
+              <TableHead className="w-[90px] text-center">{tr.feed.colAlert}</TableHead>
+              <TableHead className="w-[110px]">{tr.feed.colSport}</TableHead>
+              <TableHead className="w-[130px]">{tr.feed.colBetType}</TableHead>
+              <TableHead className="w-[160px] text-center">{tr.feed.colMovement}</TableHead>
+              <TableHead className="w-[130px] text-right">{tr.feed.colDrop}</TableHead>
+              <TableHead className="w-[160px] text-center">{tr.feed.colAction}</TableHead>
             </TableRow>
           </TableHeader>
 
@@ -906,13 +912,13 @@ export default function FeedPage() {
                 <TableCell colSpan={8} className="text-center py-14 text-muted-foreground">
                   <div className="flex flex-col items-center gap-2">
                     <TrendingDown className="w-7 h-7 text-muted-foreground/30 mb-1" />
-                    <span className="font-medium text-sm text-foreground">No drops detected yet</span>
+                    <span className="font-medium text-sm text-foreground">{tr.feed.noEvents}</span>
                     {summary && (summary.monitoringCount ?? summary.totalEvents) > 0 ? (
                       <span className="text-xs text-muted-foreground">
-                        Monitoring <span className="font-semibold text-primary">{(summary.monitoringCount ?? summary.totalEvents).toLocaleString()}</span> real Pinnacle markets — drops appear as lines move.
+                        {tr.feed.noEventsDesc}
                       </span>
                     ) : (
-                      <span className="text-xs">Waiting for Pinnacle data...</span>
+                      <span className="text-xs">{tr.feed.noEventsDesc}</span>
                     )}
                     <Link href="/alert-configurations">
                       <span className="text-sm mt-1 text-primary hover:underline cursor-pointer">

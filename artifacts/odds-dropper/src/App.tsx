@@ -6,6 +6,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { AlertStoreProvider } from "@/lib/alert-context";
 import { BetStoreProvider } from "@/lib/bet-store";
 import { SettingsProvider } from "@/lib/settings-context";
+import { LangProvider } from "@/lib/lang-context";
 import { useAutoSettle } from "@/hooks/use-auto-settle";
 import NotFound from "@/pages/not-found";
 import FeedPage from "@/pages/feed";
@@ -258,6 +259,7 @@ function AuthGate({ children }: { children: React.ReactNode }) {
 
 function AppContent() {
   return (
+    <LangProvider>
     <QueryClientProvider client={queryClient}>
       <SettingsProvider>
         <AlertStoreProvider>
@@ -277,6 +279,7 @@ function AppContent() {
         </AlertStoreProvider>
       </SettingsProvider>
     </QueryClientProvider>
+    </LangProvider>
   );
 }
 
