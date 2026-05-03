@@ -1,6 +1,8 @@
 import { motion } from "framer-motion";
 import { Link } from "wouter";
 import { Activity, ArrowLeft, ChevronRight } from "lucide-react";
+import { useLang } from "./LanguageContext";
+import { tPages } from "./i18n-pages";
 
 // ─────────────────────────────────────────────
 // Shared SVG Icon Components
@@ -879,19 +881,21 @@ function IlluRiskOfRuin() {
 // ─────────────────────────────────────────────
 
 function FeatureNav({ title }: { title: string }) {
+  const { lang } = useLang();
+  const tp = tPages(lang);
   return (
     <nav className="fixed top-0 w-full z-50 bg-background/90 backdrop-blur-md border-b border-border/40">
       <div className="container mx-auto px-6 h-16 flex items-center justify-between">
         <Link href="/" className="flex items-center gap-2 text-muted-foreground hover:text-primary transition-colors">
           <ArrowLeft className="w-4 h-4" />
-          <span className="font-mono text-sm">Back</span>
+          <span className="font-mono text-sm">{tp.back}</span>
         </Link>
         <Link href="/" className="flex items-center gap-2">
           <Activity className="w-5 h-5 text-primary" />
           <span className="font-sans font-bold text-lg tracking-tight">Sharp<span className="text-primary">Tracker</span></span>
         </Link>
         <button className="bg-primary/10 text-primary border border-primary/30 hover:bg-primary hover:text-primary-foreground px-4 py-1.5 rounded-md font-mono text-sm transition-all">
-          Get Access
+          {tp.getAccess}
         </button>
       </div>
     </nav>
@@ -1004,14 +1008,16 @@ function StatRow({ stats }: { stats: { value: string; label: string }[] }) {
 }
 
 function FeatureCTA({ next, nextLabel }: { next: string; nextLabel: string }) {
+  const { lang } = useLang();
+  const tp = tPages(lang);
   return (
     <section className="py-24 bg-card border-t border-border/20">
       <div className="container mx-auto px-6 text-center max-w-2xl">
-        <h2 className="text-3xl font-bold font-sans mb-4">Ready to get started?</h2>
-        <p className="text-foreground/60 mb-8">Join sharp bettors who track every edge with SharpTracker.</p>
+        <h2 className="text-3xl font-bold font-sans mb-4">{tp.featureCta.heading}</h2>
+        <p className="text-foreground/60 mb-8">{tp.featureCta.subtitle}</p>
         <div className="flex flex-col sm:flex-row gap-4 justify-center">
           <button className="bg-primary text-primary-foreground px-8 py-3 rounded-md font-sans font-semibold hover:bg-primary/90 transition-all shadow-[0_0_30px_rgba(0,255,255,0.2)]">
-            Get Free Access
+            {tp.featureCta.primaryBtn}
           </button>
           <Link
             href={`/features/${next}`}
@@ -1030,85 +1036,91 @@ function FeatureCTA({ next, nextLabel }: { next: string; nextLabel: string }) {
 // ─────────────────────────────────────────────
 
 export function OddsDropPage() {
+  const { lang } = useLang();
+  const tp = tPages(lang);
+  const pg = tp.oddsDrops;
   return (
     <div className="min-h-screen bg-background text-foreground font-sans">
-      <FeatureNav title="Odds Drop Alerts" />
+      <FeatureNav title={pg.label} />
       <FeatureHero
         icon={IconOddsDrop}
-        label="Feature — Odds Drop Alerts"
-        title="Sharp Money Moves First."
-        subtitle="When large money moves a line — from syndicates, sharp groups, or professional models — it signals that something has changed. An injury, a lineup update, a weather shift, or a mispricing that sophisticated bettors found first. SharpTracker catches that signal the moment it happens."
+        label={pg.label}
+        title={pg.title}
+        subtitle={pg.subtitle}
       />
       <StatRow stats={[
-        { value: "< 1s", label: "Detection Speed" },
-        { value: "50 000+", label: "Line Updates / Min" },
-        { value: "6", label: "Sports Covered" },
-        { value: "24/7", label: "Live Monitoring" },
+        { value: "< 1s", label: pg.stats[0] },
+        { value: "50 000+", label: pg.stats[1] },
+        { value: "6", label: pg.stats[2] },
+        { value: "24/7", label: pg.stats[3] },
       ]} />
       <ContentBlock
-        tag="The Strategy"
-        heading="What drives a line movement?"
-        body="Most significant line movements come from syndicates — organised groups that pool large amounts of capital and run sophisticated statistical models. When a syndicate places a large bet, the sportsbook shortens the odds to reduce its exposure. That movement can reflect many things: a key injury that hasn't been announced publicly, a lineup change, a weather update, or a genuine pricing error their models have identified. The movement itself is the signal — you don't need to know the reason. You just need to act before everyone else does."
+        tag={pg.blocks[0].tag}
+        heading={pg.blocks[0].heading}
+        body={pg.blocks[0].body}
         visual={<IlluSyndicateDrop />}
         imageRight
       />
       <ContentBlock
-        tag="How It Works"
-        heading="Line Movement is a Signal."
-        body="When a sharp bookmaker moves a line more than your set minimum drop, it almost always means serious money has come in. SharpTracker monitors live prices from sharp bookmakers every second, compares each new price to the previous one, and fires an alert the instant a qualifying drop is detected. You get the information in under a second."
+        tag={pg.blocks[1].tag}
+        heading={pg.blocks[1].heading}
+        body={pg.blocks[1].body}
         visual={<IlluLiveFeed />}
         dark
       />
       <ContentBlock
-        tag="Your Edge"
-        heading="Speed is Everything."
-        body="When a sharp bookmaker moves its price, slower recreational books take 30 seconds to several minutes to catch up. That window — between the sharp move and the rest of the market adjusting — is where your edge lives. SharpTracker delivers the alert in time for you to bet the old price at a slower book before it disappears. That time difference is often the entire edge."
+        tag={pg.blocks[2].tag}
+        heading={pg.blocks[2].heading}
+        body={pg.blocks[2].body}
         visual={<IlluTimingWindow />}
         imageRight
       />
-      <FeatureCTA next="bet-tracker" nextLabel="Bet Tracker" />
+      <FeatureCTA next="bet-tracker" nextLabel={pg.next} />
     </div>
   );
 }
 
 export function BetTrackerPage() {
+  const { lang } = useLang();
+  const tp = tPages(lang);
+  const pg = tp.betTracker;
   return (
     <div className="min-h-screen bg-background text-foreground font-sans">
-      <FeatureNav title="Bet Tracker" />
+      <FeatureNav title={pg.label} />
       <FeatureHero
         icon={IconBetTracker}
-        label="Feature — Bet Tracker"
-        title="Every Bet Logged. Every Unit Tracked."
-        subtitle="Log your bets with one click straight from the live feed. SharpTracker automatically grades every result when the game ends and maps your performance over time."
+        label={pg.label}
+        title={pg.title}
+        subtitle={pg.subtitle}
       />
       <StatRow stats={[
-        { value: "1 click", label: "To Log a Bet" },
-        { value: "Auto", label: "Bet Grading" },
-        { value: "ROI", label: "Tracked Per Sport" },
-        { value: "CLV", label: "Tracked Per Bet" },
+        { value: "1 click", label: pg.stats[0] },
+        { value: "Auto", label: pg.stats[1] },
+        { value: "ROI", label: pg.stats[2] },
+        { value: "CLV", label: pg.stats[3] },
       ]} />
       <ContentBlock
-        tag="The Problem"
-        heading="Most Bettors Don't Track."
-        body="Without records, you're guessing. You might think you're up 30 units, but in reality you're down 12. Memory is biased toward wins. The only way to know if you have a real edge is to track every single bet — its odds, your stake, the outcome, and how the line closed. SharpTracker does all of this for you automatically."
+        tag={pg.blocks[0].tag}
+        heading={pg.blocks[0].heading}
+        body={pg.blocks[0].body}
         visual={<IlluMemoryBias />}
         imageRight
       />
       <ContentBlock
-        tag="One-Click Logging"
-        heading="Log Directly From the Feed."
-        body="When you see an odds drop alert in the live feed that you want to act on, hit the log button. SharpTracker pre-fills the match, the market, and the current odds. You enter your stake and that's it. No copy-pasting, no spreadsheets. The bet is saved instantly, and we begin tracking the closing line immediately."
+        tag={pg.blocks[1].tag}
+        heading={pg.blocks[1].heading}
+        body={pg.blocks[1].body}
         visual={<IlluOneClickLog />}
         dark
       />
       <ContentBlock
-        tag="Auto-Grading"
-        heading="We Handle the Results."
-        body="After each game ends, SharpTracker automatically grades every pending bet — win, loss, or push. No manual entry, no spreadsheet formulas. Your running P&L updates in real time, and every bet shows whether your entry price was better or worse than where the market closed."
+        tag={pg.blocks[2].tag}
+        heading={pg.blocks[2].heading}
+        body={pg.blocks[2].body}
         visual={<IlluBetTable />}
         imageRight
       />
-      <FeatureCTA next="bookmaker-comparison" nextLabel="Bookmaker Comparison" />
+      <FeatureCTA next="bookmaker-comparison" nextLabel={pg.next} />
     </div>
   );
 }
@@ -1222,211 +1234,226 @@ function IlluBestPriceFinder() {
 }
 
 export function BookmakerComparisonPage() {
+  const { lang } = useLang();
+  const tp = tPages(lang);
+  const pg = tp.bookmakerComparison;
   return (
     <div className="min-h-screen bg-background text-foreground font-sans">
-      <FeatureNav title="Bookmaker Comparison" />
+      <FeatureNav title={pg.label} />
       <FeatureHero
         icon={IconBookmakerComparison}
-        label="Feature — Bookmaker Comparison"
-        title="Find the Best Price. Every Time."
-        subtitle="When sharp money moves a line, not every bookmaker reacts at the same speed. SharpTracker checks 32+ bookmakers in real time so you can see exactly where the best price is — and act before it closes."
+        label={pg.label}
+        title={pg.title}
+        subtitle={pg.subtitle}
       />
       <StatRow stats={[
-        { value: "32+", label: "Bookmakers Tracked" },
-        { value: "Live", label: "Odds Per Alert" },
-        { value: "EU · UK · US · AU", label: "Regional Coverage" },
-        { value: "1-Click", label: "Compare from Feed" },
+        { value: "32+", label: pg.stats[0] },
+        { value: "Live", label: pg.stats[1] },
+        { value: "EU · UK · US · AU", label: pg.stats[2] },
+        { value: "1-Click", label: pg.stats[3] },
       ]} />
       <ContentBlock
-        tag="Real-Time Availability"
-        heading="See who has it and who doesn't."
-        body="When you spot a sharp odds movement in the live feed, hit Compare. SharpTracker instantly checks every bookmaker that has the event — their current odds, whether they've already moved, and how far off they are from the sharp price. You see the full picture in one table, not five browser tabs."
+        tag={pg.blocks[0].tag}
+        heading={pg.blocks[0].heading}
+        body={pg.blocks[0].body}
         visual={<IlluBookmakerTable />}
         imageRight
       />
       <ContentBlock
-        tag="Sharp vs Soft"
-        heading="The gap is where the value lives."
-        body="Sharp bookmakers like Pinnacle price markets accurately and move fast. Soft bookmakers move slower and often leave better prices up for minutes after the sharp line has shifted. SharpTracker shows the delta between the sharp price and every soft bookmaker — so you can see at a glance which books are still offering value and by how much."
+        tag={pg.blocks[1].tag}
+        heading={pg.blocks[1].heading}
+        body={pg.blocks[1].body}
         visual={<IlluOddsSpread />}
         dark
       />
       <ContentBlock
-        tag="Your Shortlist"
-        heading="Only the books you actually use."
-        body="In Alert Configurations, you choose exactly which bookmakers to include in your comparison — with search across 32+ options organised by region. Your selection is saved globally, so every Compare popup shows the books you care about, nothing else. No noise, no irrelevant markets."
+        tag={pg.blocks[2].tag}
+        heading={pg.blocks[2].heading}
+        body={pg.blocks[2].body}
         visual={<IlluBestPriceFinder />}
         imageRight
       />
-      <FeatureCTA next="stake-calculator" nextLabel="Stake Calculator" />
+      <FeatureCTA next="stake-calculator" nextLabel={pg.next} />
     </div>
   );
 }
 
 export function StakeCalculatorPage() {
+  const { lang } = useLang();
+  const tp = tPages(lang);
+  const pg = tp.stakeCalculator;
   return (
     <div className="min-h-screen bg-background text-foreground font-sans">
-      <FeatureNav title="Stake Calculator" />
+      <FeatureNav title={pg.label} />
       <FeatureHero
         icon={IconStake}
-        label="Feature — Stake Calculator"
-        title="Bet the Right Size Every Time."
-        subtitle="Staking is where most bettors leak money. Bet too much on a bad line and one bad run wipes you out. The Kelly Criterion tells you exactly how much of your bankroll to risk on each bet."
+        label={pg.label}
+        title={pg.title}
+        subtitle={pg.subtitle}
       />
       <StatRow stats={[
-        { value: "Kelly", label: "Criterion Built In" },
-        { value: "Full", label: "& Fractional Kelly" },
-        { value: "0%", label: "Risk of Ruin (optimal)" },
-        { value: "EV-Based", label: "Stake Sizing" },
+        { value: "Kelly", label: pg.stats[0] },
+        { value: "Full", label: pg.stats[1] },
+        { value: "0%", label: pg.stats[2] },
+        { value: "EV-Based", label: pg.stats[3] },
       ]} />
       <ContentBlock
-        tag="The Maths"
-        heading="What is the Kelly Criterion?"
-        body="The Kelly Criterion is a mathematical formula that calculates the optimal fraction of your bankroll to bet, given your edge and the odds. It maximises long-run bankroll growth while avoiding ruin. The formula is: f* = (bp − q) / b, where b = decimal odds minus one, p = your estimated win probability, and q = 1 − p. SharpTracker computes this automatically for every alert."
+        tag={pg.blocks[0].tag}
+        heading={pg.blocks[0].heading}
+        body={pg.blocks[0].body}
         visual={<IlluKellyFormula />}
         imageRight
       />
       <ContentBlock
-        tag="Risk Management"
-        heading="Full Kelly vs Fractional Kelly."
-        body="Full Kelly bets the mathematically optimal amount, but it comes with high variance — you can lose 30–40% of your bankroll in bad runs even while betting with an edge. Most professional bettors use half-Kelly or quarter-Kelly to smooth volatility. SharpTracker lets you choose your Kelly fraction and shows your recommended stake size alongside each alert in real time."
+        tag={pg.blocks[1].tag}
+        heading={pg.blocks[1].heading}
+        body={pg.blocks[1].body}
         visual={<IlluKellyVariants />}
         dark
       />
       <ContentBlock
-        tag="Discipline"
-        heading="Consistency Beats Intuition."
-        body="The most dangerous thing a bettor can do is bet by feel — chasing losses with bigger stakes or betting more after a hot streak. The Kelly Criterion removes emotion from the equation. By sizing every bet according to the formula, you guarantee that your bankroll follows the optimal mathematical path. SharpTracker makes this frictionless by doing all calculations automatically."
+        tag={pg.blocks[2].tag}
+        heading={pg.blocks[2].heading}
+        body={pg.blocks[2].body}
         visual={<IlluDisciplineVsEmotion />}
         imageRight
       />
-      <FeatureCTA next="daily-calendar" nextLabel="Daily P&L Calendar" />
+      <FeatureCTA next="daily-calendar" nextLabel={pg.next} />
     </div>
   );
 }
 
 export function DailyCalendarPage() {
+  const { lang } = useLang();
+  const tp = tPages(lang);
+  const pg = tp.dailyCalendar;
   return (
     <div className="min-h-screen bg-background text-foreground font-sans">
-      <FeatureNav title="Daily P&L Calendar" />
+      <FeatureNav title={pg.label} />
       <FeatureHero
         icon={IconCalendar}
-        label="Feature — Daily P&L Calendar"
-        title="See Your Performance at a Glance."
-        subtitle="A visual profit-and-loss calendar that turns your betting history into a pattern you can read in seconds. Green days, red days, streaks, cycles — it's all there."
+        label={pg.label}
+        title={pg.title}
+        subtitle={pg.subtitle}
       />
       <StatRow stats={[
-        { value: "Daily", label: "P&L Breakdown" },
-        { value: "Streak", label: "Detection" },
-        { value: "Sport", label: "Breakdown View" },
-        { value: "Monthly", label: "& Weekly Totals" },
+        { value: "Daily", label: pg.stats[0] },
+        { value: "Streak", label: pg.stats[1] },
+        { value: "Sport", label: pg.stats[2] },
+        { value: "Monthly", label: pg.stats[3] },
       ]} />
       <ContentBlock
-        tag="The Visual Edge"
-        heading="Patterns Are Invisible in Spreadsheets."
-        body="When you look at a row of numbers in a spreadsheet, patterns hide in plain sight. The Daily P&L Calendar turns your results into a colour-coded grid. You see immediately which days of the week you perform best, which months are profitable, and how you handle weekends vs weekdays. These patterns help you adjust your betting behaviour and identify when to be more aggressive or conservative."
+        tag={pg.blocks[0].tag}
+        heading={pg.blocks[0].heading}
+        body={pg.blocks[0].body}
         visual={<IlluCalendarHeatmap />}
         imageRight
       />
       <ContentBlock
-        tag="Streak Analysis"
-        heading="Knowing When You're Running Hot or Cold."
-        body="Variance is brutal in sports betting. A 10-game losing streak can happen even when you're betting with a genuine edge. The P&L calendar makes streaks visible — you can see exactly when they started and ended, and compare them to your overall baseline. This context is essential for separating normal variance from a real problem with your process or line selection."
+        tag={pg.blocks[1].tag}
+        heading={pg.blocks[1].heading}
+        body={pg.blocks[1].body}
         visual={<IlluStreakCalendar />}
         dark
       />
       <ContentBlock
-        tag="Sport Breakdown"
-        heading="Not All Sports Are Equal."
-        body="You might be crushing NBA but bleeding units on soccer. The calendar breaks down your P&L by sport so you can see exactly where your edge is — and where it isn't. This lets you double down on markets where you perform well and reduce your exposure in sports where the results suggest you don't have an edge. Data-driven discipline beats intuition every time."
+        tag={pg.blocks[2].tag}
+        heading={pg.blocks[2].heading}
+        body={pg.blocks[2].body}
         visual={<IlluSportBreakdown />}
         imageRight
       />
-      <FeatureCTA next="multi-sport" nextLabel="Multi-Sport Coverage" />
+      <FeatureCTA next="multi-sport" nextLabel={pg.next} />
     </div>
   );
 }
 
 export function MultiSportPage() {
+  const { lang } = useLang();
+  const tp = tPages(lang);
+  const pg = tp.multiSport;
   return (
     <div className="min-h-screen bg-background text-foreground font-sans">
-      <FeatureNav title="Multi-Sport Coverage" />
+      <FeatureNav title={pg.label} />
       <FeatureHero
         icon={IconMultiSport}
-        label="Feature — Multi-Sport Coverage"
-        title="Every Sport. Every Market. One Terminal."
-        subtitle="From NFL totals to UEFA Champions League 1X2 — SharpTracker monitors sharp line movements across all major sports simultaneously. No sport left behind."
+        label={pg.label}
+        title={pg.title}
+        subtitle={pg.subtitle}
       />
       <StatRow stats={[
-        { value: "6+", label: "Sports Covered" },
-        { value: "100+", label: "Soccer Leagues" },
-        { value: "3", label: "Market Types" },
-        { value: "50K+", label: "Updates / Minute" },
+        { value: "6+", label: pg.stats[0] },
+        { value: "100+", label: pg.stats[1] },
+        { value: "3", label: pg.stats[2] },
+        { value: "50K+", label: pg.stats[3] },
       ]} />
       <ContentBlock
-        tag="Coverage"
-        heading="All Major Sports in One Feed."
-        body="SharpTracker tracks NFL, NBA, MLB, NHL, Soccer, and Tennis in real time. Each sport has its own market structure — moneyline, spread, and total for American sports; 1X2, Asian handicap, and over/under for soccer — and our system handles all of them natively. You can filter the live feed to show only the sports and market types you care about."
+        tag={pg.blocks[0].tag}
+        heading={pg.blocks[0].heading}
+        body={pg.blocks[0].body}
         visual={<IlluMultiSportFeed />}
         imageRight
       />
       <ContentBlock
-        tag="Soccer Depth"
-        heading="100+ Soccer Leagues Monitored."
-        body="Soccer has the deepest liquidity and the most efficient sharp markets in the world. We monitor over 100 leagues — from the Premier League to the Swedish Allsvenskan — and detect line movement across 1X2, Asian handicap, and goal total markets. Sharp bookmakers cover virtually every professional soccer match globally, and we track all of it."
+        tag={pg.blocks[1].tag}
+        heading={pg.blocks[1].heading}
+        body={pg.blocks[1].body}
         visual={<IlluSoccerLeagues />}
         dark
       />
       <ContentBlock
-        tag="Data Source"
-        heading="Built on Sharp Data."
-        body="SharpTracker is built on data from sharp bookmakers — the ones that accept big bets, never limit winners, and have the most accurate prices. Their prices reflect what the market truly thinks. When a sharp bookmaker moves a line, it means something. Every alert in SharpTracker is sourced from that live feed."
+        tag={pg.blocks[2].tag}
+        heading={pg.blocks[2].heading}
+        body={pg.blocks[2].body}
         visual={<IlluSharpVsRec />}
         imageRight
       />
-      <FeatureCTA next="bankroll" nextLabel="Bankroll Growth" />
+      <FeatureCTA next="bankroll" nextLabel={pg.next} />
     </div>
   );
 }
 
 export function BankrollPage() {
+  const { lang } = useLang();
+  const tp = tPages(lang);
+  const pg = tp.bankroll;
   return (
     <div className="min-h-screen bg-background text-foreground font-sans">
-      <FeatureNav title="Bankroll Growth" />
+      <FeatureNav title={pg.label} />
       <FeatureHero
         icon={IconBankroll}
-        label="Feature — Bankroll Growth"
-        title="Compound Your Edge Over Time."
-        subtitle="A small consistent edge compounds into life-changing returns over years of disciplined betting. SharpTracker gives you the tools to find, track, and protect that edge."
+        label={pg.label}
+        title={pg.title}
+        subtitle={pg.subtitle}
       />
       <StatRow stats={[
-        { value: "+299u", label: "SharpTracker Users (12 mo)" },
-        { value: "-150u", label: "Average Bettor (12 mo)" },
-        { value: "+EV", label: "Compounding Effect" },
-        { value: "∞", label: "Long-Run Edge" },
+        { value: "+299u", label: pg.stats[0] },
+        { value: "-150u", label: pg.stats[1] },
+        { value: "+EV", label: pg.stats[2] },
+        { value: "∞", label: pg.stats[3] },
       ]} />
       <ContentBlock
-        tag="The Maths"
-        heading="Small Edges Compound."
-        body="A 2% edge on every bet sounds trivial. But compound that over 500 bets a year with disciplined Kelly sizing, and a $10,000 bankroll grows significantly. The key is not finding massive edges — it's finding consistent, repeatable small edges and betting them correctly. Sharp bettors don't try to win 70% of their bets. They win 53% at the right odds, manage stakes precisely, and let time do the rest."
+        tag={pg.blocks[0].tag}
+        heading={pg.blocks[0].heading}
+        body={pg.blocks[0].body}
         visual={<IlluCompoundGrowth />}
         imageRight
       />
       <ContentBlock
-        tag="SharpTracker vs Average"
-        heading="The Data Speaks for Itself."
-        body="SharpTracker users who follow sharp line movements, track their CLV, and bet correctly sized stakes have outperformed the average bettor by over 400 units in our first year of data. The average bettor loses 5–10% of their handle annually. SharpTracker users who are disciplined with their process are consistently in positive territory — not because they got lucky, but because they have a process."
+        tag={pg.blocks[1].tag}
+        heading={pg.blocks[1].heading}
+        body={pg.blocks[1].body}
         visual={<IlluSharpVsAverage />}
         dark
       />
       <ContentBlock
-        tag="Bankroll Protection"
-        heading="Never Bet What You Can't Afford to Lose."
-        body="Even the best bettors in the world have 20-bet losing streaks. Bankroll management is not optional — it's survival. SharpTracker's stake calculator keeps your bets properly sized so that a bad run is uncomfortable but never fatal. We also surface your risk of ruin in real time so you always know where you stand relative to your bankroll and edge estimate."
+        tag={pg.blocks[2].tag}
+        heading={pg.blocks[2].heading}
+        body={pg.blocks[2].body}
         visual={<IlluRiskOfRuin />}
         imageRight
       />
-      <FeatureCTA next="odds-drops" nextLabel="Odds Drop Alerts" />
+      <FeatureCTA next="odds-drops" nextLabel={pg.next} />
     </div>
   );
 }
