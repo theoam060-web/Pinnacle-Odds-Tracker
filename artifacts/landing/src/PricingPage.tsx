@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { Link, useLocation } from "wouter";
-import { Activity, Check, Loader2, Star } from "lucide-react";
+import { Activity, Check, Loader2 } from "lucide-react";
 import { useAppAuth } from "@/lib/auth-context";
 import GoogleIcon from "./components/GoogleIcon";
 
@@ -180,25 +180,12 @@ export default function PricingPage() {
           transition={{ duration: 0.5 }}
           className="text-center max-w-2xl mx-auto mb-16"
         >
-          <div className="inline-flex items-center gap-2 bg-primary/10 border border-primary/25 text-primary text-xs font-mono px-4 py-1.5 rounded-full mb-6">
-            <Star className="w-3.5 h-3.5" />
-            Powered by real Pinnacle data
-          </div>
           <h1 className="text-4xl md:text-5xl font-bold font-sans tracking-tight mb-4">
             Simple, transparent pricing
           </h1>
           <p className="text-lg text-muted-foreground font-sans">
             Start your 14-day free trial — no credit card required.
           </p>
-
-          {/* Social proof */}
-          <div className="mt-6 flex flex-wrap items-center justify-center gap-3">
-            <span className="text-sm text-muted-foreground font-mono">Bookmakers covered:</span>
-            <BookmakerBadge name="Pinnacle" icon={<PinnacleIcon />} />
-            <BookmakerBadge name="Bet365" icon={<span className="text-[11px] font-bold text-[#00843D]">B365</span>} />
-            <BookmakerBadge name="Betfair" icon={<span className="text-[11px] font-bold text-[#FFD700]">BF</span>} />
-            <BookmakerBadge name="DraftKings" icon={<span className="text-[11px] font-bold text-[#53D337]">DK</span>} />
-          </div>
         </motion.div>
 
         {error && (
