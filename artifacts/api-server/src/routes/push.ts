@@ -2,6 +2,7 @@ import { Router } from "express";
 import webpush from "web-push";
 import { requireAuth, type AuthRequest } from "../middlewares/requireAuth.js";
 import { storage } from "../storage.js";
+import { isAccessAllowed } from "../stripeService.js";
 
 const router = Router();
 
@@ -15,13 +16,16 @@ if (VAPID_PRIVATE_KEY) {
 
 export async function sendPushToAll(payload: {
   title: string;
-  body: string;
+  body?: string;
   sport?: string;
   market?: string;
   bookmaker?: string;
   drop?: number;
+  previousOdds?: number;
+  currentOdds?: number;
   tag?: string;
   url?: string;
+  timestamp?: number;
 }) {
   if (!VAPID_PRIVATE_KEY) return;
   const data = JSON.stringify(payload);
@@ -37,6 +41,9 @@ export async function sendPushToAll(payload: {
     try {
       const enabled = await storage.getUserNotificationsEnabled(userId);
       if (!enabled) continue;
+      // Only send to users with an active/trialing subscription
+      const user = await storage.getUser(userId);
+      if (!user || !isAccessAllowed(user.subscriptionStatus)) continue;
     } catch {
       continue;
     }
@@ -53,6 +60,12 @@ router.post("/push/subscribe", requireAuth, async (req, res) => {
   const userId = (req as AuthRequest).userId;
   if (!userId) return res.status(401).json({ error: "Unauthorized" });
   if (!VAPID_PRIVATE_KEY) return res.status(503).json({ error: "Push not configured" });
+
+  // Require active subscription to register for push notifications
+  const user = await storage.getUser(userId);
+  if (!user || !isAccessAllowed(user.subscriptionStatus)) {
+    return res.status(403).json({ error: "An active subscription is required for push notifications" });
+  }
 
   const subscription: webpush.PushSubscription = req.body;
   if (!subscription?.endpoint) return res.status(400).json({ error: "Invalid subscription" });
@@ -86,6 +99,12 @@ router.post("/push/test", requireAuth, async (req, res) => {
   if (!VAPID_PRIVATE_KEY) return res.status(503).json({ error: "Push not configured" });
   const userId = (req as AuthRequest).userId;
   if (!userId) return res.status(401).json({ error: "Unauthorized" });
+
+  // Require active subscription
+  const userRecord = await storage.getUser(userId);
+  if (!userRecord || !isAccessAllowed(userRecord.subscriptionStatus)) {
+    return res.status(403).json({ error: "An active subscription is required for push notifications" });
+  }
 
   let subs: webpush.PushSubscription[];
   try {

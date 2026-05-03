@@ -1,7 +1,6 @@
 const CACHE_NAME = "sharptracker-v1";
-const VAPID_PUBLIC_KEY = "BNFtL8Llx7d_UNrd74MJ1ja7bzLlln6qFdJYdJ3qf2I6PtXob2s5NP9FW79okpFGWWtBzzRJ1jzK5dWkEXDWIRw";
 
-self.addEventListener("install", (event) => {
+self.addEventListener("install", () => {
   self.skipWaiting();
 });
 
@@ -19,34 +18,58 @@ self.addEventListener("push", (event) => {
     payload = { title: "SharpTracker Alert", body: event.data.text() };
   }
 
-  const { title, body, sport, market, bookmaker, drop, tag, url } = payload;
+  const {
+    title,
+    body,
+    sport,
+    market,
+    bookmaker,
+    drop,
+    previousOdds,
+    currentOdds,
+    tag,
+    url,
+    timestamp,
+  } = payload;
+
+  // Format the notification body
+  let notifBody = body;
+  if (!notifBody) {
+    const parts = [];
+    if (market) parts.push(market);
+    if (bookmaker) parts.push(bookmaker);
+    if (previousOdds && currentOdds) {
+      parts.push(`${Number(previousOdds).toFixed(2)} → ${Number(currentOdds).toFixed(2)}`);
+    }
+    if (drop) parts.push(`▼ ${Math.abs(Number(drop)).toFixed(1)}%`);
+    notifBody = parts.join("  ·  ");
+  }
 
   const options = {
-    body: body || `${market} · ${bookmaker} ▼ ${drop}%`,
-    icon: "/icon-192.png",
-    badge: "/badge-72.png",
+    body: notifBody,
+    icon: "/app/icon-192.png",
+    badge: "/app/icon-192.png",
     tag: tag || "sharptracker-alert",
     renotify: true,
     requireInteraction: false,
     silent: false,
-    vibrate: [100, 50, 100],
-    timestamp: Date.now(),
-    data: { url: url || "/" },
+    vibrate: [100, 50, 100, 50, 100],
+    timestamp: timestamp ? Number(timestamp) : Date.now(),
+    data: { url: url || "/app/" },
     actions: [
       { action: "view", title: "View Drop" },
       { action: "dismiss", title: "Dismiss" },
     ],
   };
 
-  event.waitUntil(self.registration.showNotification(title || "⚡ Sharp Drop", options));
+  event.waitUntil(self.registration.showNotification(title || "⚡ Sharp Drop Detected", options));
 });
 
 self.addEventListener("notificationclick", (event) => {
   event.notification.close();
-
   if (event.action === "dismiss") return;
 
-  const targetUrl = (event.notification.data && event.notification.data.url) || "/";
+  const targetUrl = event.notification.data?.url || "/app/";
 
   event.waitUntil(
     clients.matchAll({ type: "window", includeUncontrolled: true }).then((clientList) => {

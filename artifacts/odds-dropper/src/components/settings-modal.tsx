@@ -8,7 +8,8 @@ import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useSettings, Theme, BetSizeMethod, calcKellyStake, calcUnitStake } from "@/lib/settings-context";
 import { useBetStore, CURRENCIES } from "@/lib/bet-store";
-import { Info, Palette, Calculator, DollarSign, LogOut, Smartphone, Bell, BellOff, Download, CheckCircle2, Loader2 } from "lucide-react";
+import { Info, Palette, Calculator, DollarSign, LogOut, Smartphone, Bell, BellOff, Download, CheckCircle2, Loader2, Lock } from "lucide-react";
+import { usePlan } from "@/lib/plan-context";
 
 const VAPID_PUBLIC_KEY = "BNFtL8Llx7d_UNrd74MJ1ja7bzLlln6qFdJYdJ3qf2I6PtXob2s5NP9FW79okpFGWWtBzzRJ1jzK5dWkEXDWIRw";
 
@@ -33,6 +34,7 @@ const THEMES: { value: Theme; label: string; description: string }[] = [
 
 function AppTab() {
   const bypassAuth = import.meta.env.VITE_DEV_BYPASS_AUTH === "true";
+  const plan = usePlan();
 
   const [notificationsEnabled, setNotificationsEnabled] = useState(true);
   const [settingsLoading, setSettingsLoading] = useState(!bypassAuth);
@@ -228,88 +230,113 @@ function AppTab() {
       {/* Push Notifications */}
       <div>
         <Label className="text-xs font-semibold mb-3 block">Push Notifications</Label>
-        <div className="rounded-lg border border-border p-4 space-y-4">
-          {settingsLoading ? (
-            <div className="flex items-center gap-2 text-xs text-muted-foreground">
-              <Loader2 className="w-3.5 h-3.5 animate-spin" />
-              Loading…
-            </div>
-          ) : pushPermission === "unsupported" ? (
-            <p className="text-[10px] text-muted-foreground">
-              Push notifications are not supported in this browser. Try Chrome or Firefox.
-            </p>
-          ) : pushPermission === "denied" ? (
-            <div className="flex items-start gap-2">
-              <BellOff className="w-3.5 h-3.5 text-red-400 mt-0.5 shrink-0" />
+
+        {/* No subscription — show upgrade prompt */}
+        {!bypassAuth && plan === "none" ? (
+          <div className="rounded-lg border border-border bg-muted/20 p-4 space-y-3">
+            <div className="flex items-start gap-3">
+              <div className="mt-0.5 p-2 rounded-md bg-muted">
+                <Lock className="w-4 h-4 text-muted-foreground" />
+              </div>
               <div>
-                <p className="text-xs font-semibold text-red-400">Notifications blocked</p>
-                <p className="text-[10px] text-muted-foreground mt-0.5">
-                  Notifications are blocked for this site. Go to your browser settings and allow notifications.
+                <p className="text-xs font-semibold">Subscription required</p>
+                <p className="text-[10px] text-muted-foreground mt-0.5 leading-relaxed">
+                  Push notifications are available on all paid plans — Silver, Gold, and Platinum.
+                  Upgrade to receive real-time odds drop alerts on your device.
                 </p>
               </div>
             </div>
-          ) : (
-            <>
-              <div className="flex items-center justify-between">
+            <a
+              href="/pricing"
+              className="inline-flex items-center gap-1.5 text-[11px] font-semibold text-primary hover:underline"
+            >
+              View plans →
+            </a>
+          </div>
+        ) : (
+          <div className="rounded-lg border border-border p-4 space-y-4">
+            {settingsLoading ? (
+              <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                Loading…
+              </div>
+            ) : pushPermission === "unsupported" ? (
+              <p className="text-[10px] text-muted-foreground">
+                Push notifications are not supported in this browser. Try Chrome or Firefox.
+              </p>
+            ) : pushPermission === "denied" ? (
+              <div className="flex items-start gap-2">
+                <BellOff className="w-3.5 h-3.5 text-red-400 mt-0.5 shrink-0" />
                 <div>
-                  <Label className="text-xs font-semibold">Enable Notifications</Label>
+                  <p className="text-xs font-semibold text-red-400">Notifications blocked</p>
                   <p className="text-[10px] text-muted-foreground mt-0.5">
-                    Receive alerts for significant odds drops
+                    Notifications are blocked for this site. Go to your browser settings and allow notifications.
                   </p>
                 </div>
-                <Switch
-                  checked={notificationsEnabled}
-                  onCheckedChange={handleNotificationsToggle}
-                  disabled={saving}
-                />
               </div>
-
-              {notificationsEnabled && (
-                <div className="space-y-3 pl-0.5">
-                  {!isSubscribed ? (
-                    <div className="space-y-2">
-                      <p className="text-[10px] text-amber-400/90">
-                        Grant browser permission to receive push notifications.
-                      </p>
-                      <Button
-                        size="sm"
-                        className="h-8 text-xs gap-1.5"
-                        onClick={handleEnablePush}
-                        disabled={subscribeLoading}
-                      >
-                        {subscribeLoading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Bell className="w-3.5 h-3.5" />}
-                        {subscribeLoading ? "Requesting…" : "Allow Notifications"}
-                      </Button>
-                    </div>
-                  ) : (
-                    <div className="flex items-center gap-2 text-xs text-green-400">
-                      <CheckCircle2 className="w-3.5 h-3.5" />
-                      Notifications active on this device
-                    </div>
-                  )}
-
-                  {isSubscribed && (
-                    <div className="flex items-center gap-2">
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        className="h-7 text-[11px] gap-1.5"
-                        onClick={handleTestNotification}
-                        disabled={testSent}
-                      >
-                        {testSent ? (
-                          <><CheckCircle2 className="w-3 h-3 text-green-400" /> Sent!</>
-                        ) : (
-                          <><Bell className="w-3 h-3" /> Send test notification</>
-                        )}
-                      </Button>
-                    </div>
-                  )}
+            ) : (
+              <>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <Label className="text-xs font-semibold">Enable Notifications</Label>
+                    <p className="text-[10px] text-muted-foreground mt-0.5">
+                      Receive alerts for significant odds drops
+                    </p>
+                  </div>
+                  <Switch
+                    checked={notificationsEnabled}
+                    onCheckedChange={handleNotificationsToggle}
+                    disabled={saving}
+                  />
                 </div>
-              )}
-            </>
-          )}
-        </div>
+
+                {notificationsEnabled && (
+                  <div className="space-y-3 pl-0.5">
+                    {!isSubscribed ? (
+                      <div className="space-y-2">
+                        <p className="text-[10px] text-amber-400/90">
+                          Grant browser permission to receive push notifications.
+                        </p>
+                        <Button
+                          size="sm"
+                          className="h-8 text-xs gap-1.5"
+                          onClick={handleEnablePush}
+                          disabled={subscribeLoading}
+                        >
+                          {subscribeLoading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Bell className="w-3.5 h-3.5" />}
+                          {subscribeLoading ? "Requesting…" : "Allow Notifications"}
+                        </Button>
+                      </div>
+                    ) : (
+                      <div className="flex items-center gap-2 text-xs text-green-400">
+                        <CheckCircle2 className="w-3.5 h-3.5" />
+                        Notifications active on this device
+                      </div>
+                    )}
+
+                    {isSubscribed && (
+                      <div className="flex items-center gap-2">
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          className="h-7 text-[11px] gap-1.5"
+                          onClick={handleTestNotification}
+                          disabled={testSent}
+                        >
+                          {testSent ? (
+                            <><CheckCircle2 className="w-3 h-3 text-green-400" /> Sent!</>
+                          ) : (
+                            <><Bell className="w-3 h-3" /> Send test notification</>
+                          )}
+                        </Button>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </>
+            )}
+          </div>
+        )}
       </div>
 
       <p className="text-[10px] text-muted-foreground">

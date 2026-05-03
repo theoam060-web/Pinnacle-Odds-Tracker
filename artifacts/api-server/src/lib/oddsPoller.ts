@@ -588,13 +588,15 @@ async function pollOnce(minDropPercent: number, state: PollerState): Promise<voi
           sendTelegramDrop(drop).catch((err) => logger.warn({ err }, "Telegram send failed"));
           sendPushToAll({
             title: `⚡ ${drop.homeTeam} vs ${drop.awayTeam}`,
-            body: `${drop.selection} · Pinnacle ▼ ${Math.abs(drop.changePercent).toFixed(1)}%  (${drop.currentOdds.toFixed(2)})`,
             sport: drop.sport,
             market: drop.selection,
             bookmaker: "Pinnacle",
+            previousOdds: parseFloat(drop.openingOdds.toFixed(2)),
+            currentOdds: parseFloat(drop.currentOdds.toFixed(2)),
             drop: parseFloat(Math.abs(drop.changePercent).toFixed(2)),
             tag: `drop-${drop.eventId}`,
             url: "/app/",
+            timestamp: Date.now(),
           });
         }, i * STAGGER_MS);
       });
