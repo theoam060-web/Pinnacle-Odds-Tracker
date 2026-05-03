@@ -1469,7 +1469,7 @@ function Footer() {
   );
 }
 
-function AlertConfigSection() {
+function AlertConfigSection({ onInstall }: { onInstall: () => void }) {
   const { lang } = useLang();
   const tr = t(lang);
   return (
@@ -1526,12 +1526,19 @@ function AlertConfigSection() {
               ))}
             </div>
 
-            {/* Coming soon badge */}
+            {/* Coming soon + download */}
             <div className="flex flex-col sm:flex-row gap-3 justify-center lg:justify-start pt-2">
               <div className="inline-flex items-center gap-3 border border-amber-400/25 bg-amber-400/5 text-amber-300 font-mono text-sm px-6 py-3 rounded-xl">
                 <span className="w-2 h-2 rounded-full bg-amber-400 animate-pulse shrink-0" />
                 {tr.mobile.comingSoon}
               </div>
+              <button
+                onClick={onInstall}
+                className="inline-flex items-center gap-2.5 bg-primary text-primary-foreground font-mono font-semibold text-sm px-6 py-3 rounded-xl hover:bg-primary/90 transition-all shadow-[0_0_20px_hsl(var(--primary)/0.3)] hover:shadow-[0_0_28px_hsl(var(--primary)/0.45)]"
+              >
+                <Smartphone className="w-4 h-4" />
+                Download App
+              </button>
             </div>
           </motion.div>
 
@@ -2527,7 +2534,7 @@ function AppContent() {
         <FeatureStripSection />
         <BankrollFeatureCards />
         <ProfitCalculatorSection />
-        <AlertConfigSection />
+        <AlertConfigSection onInstall={() => setInstallGuideOpen(true)} />
         <TestimonialsSection />
         <FAQSection />
         <CTASection />
