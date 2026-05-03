@@ -21,6 +21,7 @@ import {
   Calculator, CalendarDays, Wallet, Smartphone
 } from "lucide-react";
 import { QRInstallModal } from "@/components/QRInstallModal";
+import InstallAppModal from "./InstallAppModal";
 import {
   IconOddsDrop, IconBetTracker, IconBookmakerComparison, IconStake,
   IconCalendar, IconMultiSport, IconBankroll,
@@ -2486,6 +2487,36 @@ function SharpDataSection() {
 
 function AppContent() {
   const { hasAccess, loading } = useSubscriptionAccess();
+  const [installGuideOpen, setInstallGuideOpen] = useState(false);
+  const [deferredPrompt, setDeferredPrompt] = useState<Event | null>(null);
+
+  useEffect(() => {
+    const handler = (e: Event) => {
+      e.preventDefault();
+      setDeferredPrompt(e);
+    };
+    window.addEventListener("beforeinstallprompt", handler);
+    return () => window.removeEventListener("beforeinstallprompt", handler);
+  }, []);
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get("install") === "1") {
+      const isMobile = /Mobi|Android|iPhone|iPad|iPod/i.test(navigator.userAgent) || navigator.maxTouchPoints > 1;
+      if (isMobile) {
+        window.history.replaceState({}, "", window.location.pathname + window.location.hash);
+        setInstallGuideOpen(true);
+      }
+    }
+  }, []);
+
+  const handleNativeInstall = useCallback(async () => {
+    if (!deferredPrompt) return;
+    (deferredPrompt as any).prompt();
+    await (deferredPrompt as any).userChoice;
+    setDeferredPrompt(null);
+  }, [deferredPrompt]);
+
   return (
     <SubscriptionAccessContext.Provider value={{ hasAccess, loading }}>
     <div className="min-h-[100dvh] bg-background text-foreground font-sans selection:bg-primary/30 selection:text-primary">
@@ -2503,6 +2534,12 @@ function AppContent() {
       </main>
       <Footer />
     </div>
+    <InstallAppModal
+      open={installGuideOpen}
+      onClose={() => setInstallGuideOpen(false)}
+      deferredPrompt={deferredPrompt as any}
+      onNativeInstall={handleNativeInstall}
+    />
     </SubscriptionAccessContext.Provider>
   );
 }

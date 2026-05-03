@@ -9,8 +9,8 @@ interface QRInstallModalProps {
 
 export function QRInstallModal({ open, onClose }: QRInstallModalProps) {
   const appUrl = typeof window !== "undefined"
-    ? window.location.origin + "/app/"
-    : "https://sharptracker.io/app/";
+    ? window.location.origin + "/?install=1"
+    : "https://sharptracker.io/?install=1";
   const logoSrc = import.meta.env.BASE_URL + "sharptracker-qr-icon.png";
 
   return (
