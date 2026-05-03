@@ -163,7 +163,7 @@ function SignUpPage() {
           routing="path"
           path={`${basePath}/sign-up`}
           signInUrl={`${basePath}/sign-in`}
-          fallbackRedirectUrl="/"
+          fallbackRedirectUrl={`${basePath}/`}
           appearance={{
             variables: {
               colorPrimary: "#22d3ee",
@@ -256,6 +256,13 @@ function SubscriptionGate({ children }: { children: React.ReactNode }) {
     fetchSubscription(sessionId);
   }, [isLoaded, isSignedIn, bypassAuth, fetchSubscription]);
 
+  useEffect(() => {
+    if (bypassAuth) return;
+    if (subState.status === "expired" || subState.status === "none") {
+      window.location.href = "/pricing";
+    }
+  }, [subState.status, bypassAuth]);
+
   if (bypassAuth) {
     return (
       <PlanContext.Provider value="platinum">
@@ -275,12 +282,6 @@ function SubscriptionGate({ children }: { children: React.ReactNode }) {
       </PlanContext.Provider>
     );
   }
-
-  useEffect(() => {
-    if (subState.status === "expired" || subState.status === "none") {
-      window.location.href = "/pricing";
-    }
-  }, [subState.status]);
 
   if (subState.status === "expired" || subState.status === "none") {
     return <LoadingScreen label="Redirecting…" />;
