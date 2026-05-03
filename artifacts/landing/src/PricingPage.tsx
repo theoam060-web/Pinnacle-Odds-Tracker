@@ -80,6 +80,7 @@ const SILVER_FEATURES: FeatureDef[] = [
   { text: "Bet size calculator" },
   { text: "3 sports" },
   { text: "3 markets per sport" },
+  { text: "Push notifications on app", highlight: true },
   { text: "Only members Telegram group" },
 ];
 
@@ -98,7 +99,6 @@ const PLATINUM_FEATURES: FeatureDef[] = [
   { text: "Everything in Gold", highlight: true },
   { text: "20 alert configurations", highlight: true },
   { text: "Bookmaker comparison" },
-  { text: "Push notifications on app", highlight: true },
   { text: "Current CLV & Current CV" },
 ];
 
@@ -218,7 +218,7 @@ export default function PricingPage() {
             <div className="mb-6">
               <div className="text-xs font-mono text-muted-foreground uppercase tracking-widest mb-2">Silver</div>
               <div className="flex items-end gap-1 mb-1">
-                <span className="text-4xl font-bold font-sans">$29</span>
+                <span className="text-4xl font-bold font-sans">€34.99</span>
                 <span className="text-muted-foreground font-mono text-sm mb-1">/mo</span>
               </div>
               <p className="text-sm text-muted-foreground">For casual bettors getting started</p>
@@ -248,7 +248,7 @@ export default function PricingPage() {
             <div className="mb-6">
               <div className="text-xs font-mono text-primary uppercase tracking-widest mb-2">Gold</div>
               <div className="flex items-end gap-1 mb-1">
-                <span className="text-4xl font-bold font-sans">$59</span>
+                <span className="text-4xl font-bold font-sans">€84.99</span>
                 <span className="text-muted-foreground font-mono text-sm mb-1">/mo</span>
               </div>
               <p className="text-sm text-muted-foreground">For serious bettors who want the edge</p>
@@ -275,7 +275,7 @@ export default function PricingPage() {
             <div className="mb-6">
               <div className="text-xs font-mono text-violet-400 uppercase tracking-widest mb-2">Platinum</div>
               <div className="flex items-end gap-1 mb-1">
-                <span className="text-4xl font-bold font-sans">$99</span>
+                <span className="text-4xl font-bold font-sans">€114.99</span>
                 <span className="text-muted-foreground font-mono text-sm mb-1">/mo</span>
               </div>
               <p className="text-sm text-muted-foreground">For professionals and power users</p>
