@@ -1526,12 +1526,8 @@ function AlertConfigSection({ onInstall }: { onInstall: () => void }) {
               ))}
             </div>
 
-            {/* Coming soon + download */}
+            {/* Download */}
             <div className="flex flex-col sm:flex-row gap-3 justify-center lg:justify-start pt-2">
-              <div className="inline-flex items-center gap-3 border border-amber-400/25 bg-amber-400/5 text-amber-300 font-mono text-sm px-6 py-3 rounded-xl">
-                <span className="w-2 h-2 rounded-full bg-amber-400 animate-pulse shrink-0" />
-                {tr.mobile.comingSoon}
-              </div>
               <button
                 onClick={onInstall}
                 className="inline-flex items-center gap-2.5 bg-primary text-primary-foreground font-mono font-semibold text-sm px-6 py-3 rounded-xl hover:bg-primary/90 transition-all shadow-[0_0_20px_hsl(var(--primary)/0.3)] hover:shadow-[0_0_28px_hsl(var(--primary)/0.45)]"
@@ -2124,7 +2120,7 @@ function BankrollFeatureCards() {
   );
 }
 
-function MultiSportSection({ onInstall }: { onInstall: () => void }) {
+function MultiSportSection() {
   const { lang } = useLang();
   const tr = t(lang);
   const sports = [
@@ -2154,18 +2150,11 @@ function MultiSportSection({ onInstall }: { onInstall: () => void }) {
               whileInView={{ opacity: 1, scale: 1 }}
               viewport={{ once: true }}
               transition={{ delay: i * 0.1 }}
-              className="bg-card border border-border p-6 rounded-xl hover:border-primary/30 transition-colors text-center group flex flex-col items-center"
+              className="bg-card border border-border p-6 rounded-xl hover:border-primary/30 transition-colors text-center group"
             >
               <div className="text-4xl mb-4 grayscale opacity-70 group-hover:grayscale-0 group-hover:opacity-100 transition-all transform group-hover:scale-110">{sport.icon}</div>
               <h3 className="font-bold font-sans text-lg mb-1">{sport.name}</h3>
-              <div className="text-xs font-mono text-muted-foreground mb-4">{sport.count}</div>
-              <button
-                onClick={onInstall}
-                className="mt-auto inline-flex items-center gap-1.5 text-xs font-mono font-semibold text-primary border border-primary/30 bg-primary/5 hover:bg-primary/10 hover:border-primary/50 px-3 py-1.5 rounded-lg transition-all"
-              >
-                <Smartphone className="w-3 h-3" />
-                Download App
-              </button>
+              <div className="text-xs font-mono text-muted-foreground">{sport.count}</div>
             </motion.div>
           ))}
         </div>
@@ -2541,7 +2530,7 @@ function AppContent() {
         <FeatureStripSection />
         <BankrollFeatureCards />
         <ProfitCalculatorSection />
-        <MultiSportSection onInstall={() => setInstallGuideOpen(true)} />
+        <AlertConfigSection onInstall={() => setInstallGuideOpen(true)} />
         <TestimonialsSection />
         <FAQSection />
         <CTASection />
