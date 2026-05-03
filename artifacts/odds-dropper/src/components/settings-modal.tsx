@@ -21,14 +21,6 @@ function urlBase64ToUint8Array(base64String: string): Uint8Array {
   return out;
 }
 
-async function getClerkToken(): Promise<string | null> {
-  try {
-    const { useAuth } = await import("@clerk/react");
-    void useAuth;
-  } catch { return null; }
-  return null;
-}
-
 interface Props {
   onClose: () => void;
 }
@@ -38,20 +30,6 @@ const THEMES: { value: Theme; label: string; description: string }[] = [
   { value: "midnight", label: "Midnight", description: "Deep navy blue tones" },
   { value: "light", label: "Light", description: "White / light grey background" },
 ];
-
-function useGetToken() {
-  const bypassAuth = import.meta.env.VITE_DEV_BYPASS_AUTH === "true";
-  const clerkKey = import.meta.env.VITE_CLERK_PUBLISHABLE_KEY;
-
-  return useCallback(async (): Promise<string | null> => {
-    if (bypassAuth || !clerkKey) return null;
-    try {
-      const { useAuth } = await import("@clerk/react");
-      void useAuth;
-      return null;
-    } catch { return null; }
-  }, [bypassAuth, clerkKey]);
-}
 
 function AppTab() {
   const bypassAuth = import.meta.env.VITE_DEV_BYPASS_AUTH === "true";
@@ -75,10 +53,7 @@ function AppTab() {
   const authFetch = useCallback(async (url: string, options: RequestInit = {}) => {
     let token: string | null = null;
     if (!bypassAuth) {
-      try {
-        const clerkModule = (window as any).__clerk__;
-        if (clerkModule?.session) token = await clerkModule.session.getToken();
-      } catch { /* no token */ }
+      try { token = localStorage.getItem("st_jwt"); } catch {}
     }
     return fetch(url, {
       ...options,
@@ -348,7 +323,6 @@ export function SettingsModal({ onClose }: Props) {
   const { settings, updateSettings } = useSettings();
   const { currency, setCurrency } = useBetStore();
   const bypassAuth = import.meta.env.VITE_DEV_BYPASS_AUTH === "true";
-  const clerkKey = import.meta.env.VITE_CLERK_PUBLISHABLE_KEY;
 
   const previewStake = settings.betSizingEnabled
     ? settings.betSizeMethod === "kelly"
@@ -356,12 +330,8 @@ export function SettingsModal({ onClose }: Props) {
       : calcUnitStake(settings.bankroll, settings.unitSizePercent)
     : null;
 
-  async function handleSignOut() {
-    if (bypassAuth || !clerkKey) return;
-    try {
-      const { useClerk } = await import("@clerk/react");
-      void useClerk;
-    } catch { /* noop */ }
+  function handleSignOut() {
+    try { localStorage.removeItem("st_jwt"); } catch {}
     window.location.href = "/";
   }
 
@@ -671,36 +641,17 @@ export function SettingsModal({ onClose }: Props) {
         </Tabs>
 
         <div className="mt-4 pt-4 border-t border-border flex items-center">
-          {!bypassAuth && clerkKey && (
-            <SignOutButton onSignOut={handleSignOut} />
+          {!bypassAuth && (
+            <button
+              className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors h-8 px-2 rounded-md hover:bg-accent"
+              onClick={handleSignOut}
+            >
+              <LogOut className="w-3.5 h-3.5" />
+              Sign out
+            </button>
           )}
         </div>
       </DialogContent>
     </Dialog>
   );
-}
-
-function SignOutButton({ onSignOut }: { onSignOut: () => void }) {
-  const [clerk, setClerk] = useState<any>(null);
-
-  useEffect(() => {
-    import("@clerk/react").then(m => setClerk(m)).catch(() => {});
-  }, []);
-
-  if (!clerk) return null;
-
-  const Btn = () => {
-    const { signOut } = clerk.useClerk();
-    return (
-      <button
-        className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors h-8 px-2 rounded-md hover:bg-accent"
-        onClick={() => signOut()}
-      >
-        <LogOut className="w-3.5 h-3.5" />
-        Sign out
-      </button>
-    );
-  };
-
-  return <Btn />;
 }

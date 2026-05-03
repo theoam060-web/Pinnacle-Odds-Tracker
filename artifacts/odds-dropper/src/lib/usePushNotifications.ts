@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
-import { useAuth } from "@clerk/react";
+import { useAppAuth } from "./auth-context";
 
 const VAPID_PUBLIC_KEY = "BNFtL8Llx7d_UNrd74MJ1ja7bzLlln6qFdJYdJ3qf2I6PtXob2s5NP9FW79okpFGWWtBzzRJ1jzK5dWkEXDWIRw";
 
@@ -22,13 +22,13 @@ interface UsePushNotificationsResult {
 }
 
 export function usePushNotifications(): UsePushNotificationsResult {
-  const { isSignedIn, getToken } = useAuth();
+  const { isSignedIn, getToken } = useAppAuth();
   const [permission, setPermission] = useState<PushPermission>("default");
   const [isSubscribed, setIsSubscribed] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [swRegistration, setSwRegistration] = useState<ServiceWorkerRegistration | null>(null);
 
-  const API_BASE = "";
+  const base = import.meta.env.BASE_URL ?? "/app/";
 
   useEffect(() => {
     if (!("serviceWorker" in navigator) || !("PushManager" in window)) {
@@ -38,14 +38,14 @@ export function usePushNotifications(): UsePushNotificationsResult {
     setPermission(Notification.permission as PushPermission);
 
     navigator.serviceWorker
-      .register("/sw.js", { scope: "/" })
+      .register(`${base}sw.js`, { scope: base })
       .then(async (reg) => {
         setSwRegistration(reg);
         const existingSub = await reg.pushManager.getSubscription();
         setIsSubscribed(!!existingSub);
       })
       .catch((err) => console.error("[SW] Registration failed:", err));
-  }, []);
+  }, [base]);
 
   const subscribe = useCallback(async () => {
     if (!swRegistration || !isSignedIn) return;
@@ -60,12 +60,12 @@ export function usePushNotifications(): UsePushNotificationsResult {
         applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY),
       });
 
-      const token = await getToken();
-      await fetch(`${API_BASE}/api/push/subscribe`, {
+      const token = getToken();
+      await fetch("/api/push/subscribe", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
         },
         body: JSON.stringify(subscription.toJSON()),
       });
@@ -75,7 +75,7 @@ export function usePushNotifications(): UsePushNotificationsResult {
     } finally {
       setIsLoading(false);
     }
-  }, [swRegistration, isSignedIn, getToken, API_BASE]);
+  }, [swRegistration, isSignedIn, getToken]);
 
   const unsubscribe = useCallback(async () => {
     if (!swRegistration || !isSignedIn) return;
@@ -85,12 +85,12 @@ export function usePushNotifications(): UsePushNotificationsResult {
       if (existingSub) {
         const endpoint = existingSub.endpoint;
         await existingSub.unsubscribe();
-        const token = await getToken();
-        await fetch(`${API_BASE}/api/push/subscribe`, {
+        const token = getToken();
+        await fetch("/api/push/subscribe", {
           method: "DELETE",
           headers: {
             "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
+            ...(token ? { Authorization: `Bearer ${token}` } : {}),
           },
           body: JSON.stringify({ endpoint }),
         });
@@ -101,25 +101,25 @@ export function usePushNotifications(): UsePushNotificationsResult {
     } finally {
       setIsLoading(false);
     }
-  }, [swRegistration, isSignedIn, getToken, API_BASE]);
+  }, [swRegistration, isSignedIn, getToken]);
 
   const sendTestNotification = useCallback(async () => {
     if (!isSignedIn) return;
     try {
-      const token = await getToken();
-      const res = await fetch(`${API_BASE}/api/push/test`, {
+      const token = getToken();
+      const res = await fetch("/api/push/test", {
         method: "POST",
-        headers: { Authorization: `Bearer ${token}` },
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
       });
       if (!res.ok) {
         const err = await res.json().catch(() => ({}));
-        throw new Error(err.error || "Test notification failed");
+        throw new Error((err as any).error || "Test notification failed");
       }
     } catch (err) {
       console.error("[Push] Test failed:", err);
       throw err;
     }
-  }, [isSignedIn, getToken, API_BASE]);
+  }, [isSignedIn, getToken]);
 
   return { permission, isSubscribed, isLoading, subscribe, unsubscribe, sendTestNotification };
 }

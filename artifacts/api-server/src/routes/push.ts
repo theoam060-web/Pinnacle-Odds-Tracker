@@ -1,6 +1,6 @@
 import { Router } from "express";
 import webpush from "web-push";
-import { requireAuth } from "@clerk/express";
+import { requireAuth, type AuthRequest } from "../middlewares/requireAuth.js";
 import { storage } from "../storage.js";
 
 const router = Router();
@@ -34,7 +34,6 @@ export async function sendPushToAll(payload: {
   }
 
   for (const { userId, sub } of allSubs) {
-    // Respect per-user notification preference
     try {
       const enabled = await storage.getUserNotificationsEnabled(userId);
       if (!enabled) continue;
@@ -50,8 +49,8 @@ export async function sendPushToAll(payload: {
   }
 }
 
-router.post("/push/subscribe", requireAuth(), async (req, res) => {
-  const userId = req.auth?.userId;
+router.post("/push/subscribe", requireAuth, async (req, res) => {
+  const userId = (req as AuthRequest).userId;
   if (!userId) return res.status(401).json({ error: "Unauthorized" });
   if (!VAPID_PRIVATE_KEY) return res.status(503).json({ error: "Push not configured" });
 
@@ -61,13 +60,13 @@ router.post("/push/subscribe", requireAuth(), async (req, res) => {
   try {
     await storage.savePushSubscription(userId, subscription);
     res.json({ ok: true });
-  } catch (err) {
+  } catch {
     res.status(500).json({ error: "Failed to save subscription" });
   }
 });
 
-router.delete("/push/subscribe", requireAuth(), async (req, res) => {
-  const userId = req.auth?.userId;
+router.delete("/push/subscribe", requireAuth, async (req, res) => {
+  const userId = (req as AuthRequest).userId;
   if (!userId) return res.status(401).json({ error: "Unauthorized" });
 
   const { endpoint } = req.body;
@@ -83,9 +82,9 @@ router.delete("/push/subscribe", requireAuth(), async (req, res) => {
   }
 });
 
-router.post("/push/test", requireAuth(), async (req, res) => {
+router.post("/push/test", requireAuth, async (req, res) => {
   if (!VAPID_PRIVATE_KEY) return res.status(503).json({ error: "Push not configured" });
-  const userId = req.auth?.userId;
+  const userId = (req as AuthRequest).userId;
   if (!userId) return res.status(401).json({ error: "Unauthorized" });
 
   let subs: webpush.PushSubscription[];

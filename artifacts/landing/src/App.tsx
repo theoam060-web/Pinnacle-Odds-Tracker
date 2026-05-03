@@ -5,12 +5,12 @@ import {
 import { Switch, Route, Router as WouterRouter, Link, useLocation } from "wouter";
 import { LanguageProvider, useLang } from "./LanguageContext";
 import { LANGUAGES, t } from "./i18n";
-import { QueryClient, QueryClientProvider, useQueryClient } from "@tanstack/react-query";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { motion, useScroll, useTransform, AnimatePresence } from "framer-motion";
 import React, { useEffect, useState, useRef, useContext, useCallback } from "react";
-import { ClerkProvider, Show, useClerk, useUser, useAuth } from "@clerk/react";
+import { AuthProvider, useAppAuth } from "@/lib/auth-context";
 import { 
   Activity, Bell,
   LineChart as LineChartIcon, Radar,
@@ -37,15 +37,7 @@ import GoogleIcon from "./components/GoogleIcon";
 
 const queryClient = new QueryClient();
 
-const clerkPubKey = import.meta.env.VITE_CLERK_PUBLISHABLE_KEY;
-const clerkProxyUrl = import.meta.env.VITE_CLERK_PROXY_URL;
 const basePath = import.meta.env.BASE_URL.replace(/\/$/, "");
-
-function stripBase(path: string): string {
-  return basePath && path.startsWith(basePath)
-    ? path.slice(basePath.length) || "/"
-    : path;
-}
 
 // --- Mock Data ---
 
@@ -390,8 +382,7 @@ function SubscriptionButton({ closePanel, className, children }: { closePanel: (
 }
 
 function NavUserMenu({ closePanel }: { closePanel: () => void }) {
-  const { user, isLoaded } = useUser();
-  const { signOut } = useClerk();
+  const { user, isLoaded, signOut } = useAppAuth();
   const [open, setOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
 
@@ -405,8 +396,8 @@ function NavUserMenu({ closePanel }: { closePanel: () => void }) {
 
   if (!isLoaded || !user) return null;
 
-  const initials = (user.firstName?.[0] ?? user.emailAddresses?.[0]?.emailAddress?.[0] ?? "U").toUpperCase();
-  const displayName = user.firstName ?? user.emailAddresses?.[0]?.emailAddress ?? "Account";
+  const initials = (user.email?.[0] ?? "U").toUpperCase();
+  const displayName = user.email ?? "Account";
 
   return (
     <div ref={menuRef} className="relative">
@@ -425,7 +416,7 @@ function NavUserMenu({ closePanel }: { closePanel: () => void }) {
       {open && (
         <div className="absolute right-0 top-full mt-2 w-44 rounded-xl border border-border/50 bg-background/95 backdrop-blur-xl shadow-[0_8px_32px_rgba(0,0,0,0.6)] py-1 z-50">
           <div className="px-4 py-2 border-b border-border/40">
-            <p className="text-xs font-mono text-muted-foreground truncate">{user.emailAddresses?.[0]?.emailAddress}</p>
+            <p className="text-xs font-mono text-muted-foreground truncate">{user.email}</p>
           </div>
           <button
             onClick={() => { window.location.href = "/app/"; }}
@@ -526,7 +517,7 @@ const SubscriptionAccessContext = React.createContext<{ hasAccess: boolean; load
 function useHasAccess() { return useContext(SubscriptionAccessContext); }
 
 function useSubscriptionAccess() {
-  const { getToken, isSignedIn } = useAuth();
+  const { getToken, isSignedIn } = useAppAuth();
   const [hasAccess, setHasAccess] = useState(false);
   const [loading, setLoading] = useState(true);
 
@@ -534,22 +525,20 @@ function useSubscriptionAccess() {
     if (!isSignedIn) { setHasAccess(false); setLoading(false); return; }
     let stale = false;
     setLoading(true);
-    getToken().then(token => {
-      fetch("/api/stripe/subscription", {
-        headers: token ? { Authorization: `Bearer ${token}` } : {},
-        credentials: "include",
+    const token = getToken();
+    fetch("/api/stripe/subscription", {
+      headers: token ? { Authorization: `Bearer ${token}` } : {},
+      credentials: "include",
+    })
+      .then(r => r.json())
+      .then(data => {
+        if (stale) return;
+        const sub = data.subscription;
+        const active = sub?.status === "active" || sub?.status === "trialing";
+        setHasAccess(active);
+        setLoading(false);
       })
-        .then(r => r.json())
-        .then(data => {
-          if (stale) return;
-          const sub = data.subscription;
-          // Users who cancelled but are still in the paid period remain active
-          const active = sub?.status === "active" || sub?.status === "trialing";
-          setHasAccess(active);
-          setLoading(false);
-        })
-        .catch(() => { if (!stale) { setHasAccess(false); setLoading(false); } });
-    });
+      .catch(() => { if (!stale) { setHasAccess(false); setLoading(false); } });
     return () => { stale = true; };
   }, [getToken, isSignedIn]);
 
@@ -566,6 +555,7 @@ function Navbar() {
   const { lang } = useLang();
   const tr = t(lang);
   const { hasAccess } = useHasAccess();
+  const { isSignedIn: navIsSignedIn } = useAppAuth();
 
   useEffect(() => {
     const handleScroll = () => setScrolled(window.scrollY > 50);
@@ -645,19 +635,20 @@ function Navbar() {
             <span className="hidden lg:inline">Install App</span>
           </button>
           <LangDropdown />
-          <Show when="signed-out">
+          {navIsSignedIn ? (
+            <>
+              <LiveFeedButton />
+              <NavUserMenu closePanel={closePanel} />
+            </>
+          ) : (
             <div className="flex flex-col items-center gap-0.5">
               <span className="text-[11px] font-bold text-green-400 leading-none tracking-wide">{tr.nav.trialBadge}</span>
-              <button onClick={() => { closePanel(); window.location.href = "/app/"; }} className="flex items-center gap-2 bg-primary/10 text-primary border border-primary/30 hover:bg-primary hover:text-primary-foreground px-5 py-2 rounded-md font-mono text-sm transition-all shadow-[0_0_15px_rgba(0,255,255,0.1)] hover:shadow-[0_0_20px_rgba(0,255,255,0.3)]" data-testid="btn-get-access">
+              <button onClick={() => { closePanel(); window.location.href = "/api/auth/google"; }} className="flex items-center gap-2 bg-primary/10 text-primary border border-primary/30 hover:bg-primary hover:text-primary-foreground px-5 py-2 rounded-md font-mono text-sm transition-all shadow-[0_0_15px_rgba(0,255,255,0.1)] hover:shadow-[0_0_20px_rgba(0,255,255,0.3)]" data-testid="btn-get-access">
                 <GoogleIcon size={16} />
                 {tr.nav.signup}
               </button>
             </div>
-          </Show>
-          <Show when="signed-in">
-            <LiveFeedButton />
-            <NavUserMenu closePanel={closePanel} />
-          </Show>
+          )}
         </div>
       </div>
 
@@ -723,7 +714,7 @@ function Hero() {
   const { lang } = useLang();
   const tr = t(lang);
   const heroStats = useHeroStats();
-  const { isSignedIn } = useUser();
+  const { isSignedIn } = useAppAuth();
   const { hasAccess, loading } = useHasAccess();
 
   useEffect(() => {
@@ -1364,7 +1355,7 @@ function ProfitCalculatorSection() {
 
 function CTASection() {
   const [, navigate] = useLocation();
-  const { isSignedIn } = useUser();
+  const { isSignedIn } = useAppAuth();
   const { lang } = useLang();
   const tr = t(lang);
   return (
@@ -1408,7 +1399,7 @@ function CTASection() {
 }
 
 function Footer() {
-  const { isSignedIn } = useUser();
+  const { isSignedIn } = useAppAuth();
   const { lang } = useLang();
   const tr = t(lang);
   return (
@@ -2517,25 +2508,6 @@ function RedirectToApp() {
   return null;
 }
 
-function ClerkQueryClientCacheInvalidator() {
-  const { addListener } = useClerk();
-  const qc = useQueryClient();
-  const prevUserIdRef = useRef<string | null | undefined>(undefined);
-
-  useEffect(() => {
-    const unsubscribe = addListener(({ user }) => {
-      const userId = user?.id ?? null;
-      if (prevUserIdRef.current !== undefined && prevUserIdRef.current !== userId) {
-        qc.clear();
-      }
-      prevUserIdRef.current = userId;
-    });
-    return unsubscribe;
-  }, [addListener, qc]);
-
-  return null;
-}
-
 function Router() {
   return (
     <Switch>
@@ -2561,53 +2533,20 @@ function Router() {
   );
 }
 
-function ClerkProviderWithRoutes() {
-  const [, setLocation] = useLocation();
-
-  const clerkRouterPush = (to: string) => {
-    // Paths outside this artifact (e.g. /app/) must use full page navigation
-    if (to.startsWith("/app") || to.startsWith("http")) {
-      window.location.href = to;
-    } else {
-      setLocation(stripBase(to));
-    }
-  };
-
-  const clerkRouterReplace = (to: string) => {
-    if (to.startsWith("/app") || to.startsWith("http")) {
-      window.location.replace(to);
-    } else {
-      setLocation(stripBase(to), { replace: true });
-    }
-  };
-
-  return (
-    <ClerkProvider
-      publishableKey={clerkPubKey}
-      proxyUrl={clerkProxyUrl}
-      afterSignInUrl="/app/"
-      afterSignUpUrl="/app/"
-      routerPush={clerkRouterPush}
-      routerReplace={clerkRouterReplace}
-    >
-      <LanguageProvider>
-        <QueryClientProvider client={queryClient}>
-          <ClerkQueryClientCacheInvalidator />
-          <TooltipProvider>
-            <ScrollToTop />
-            <Router />
-            <Toaster />
-          </TooltipProvider>
-        </QueryClientProvider>
-      </LanguageProvider>
-    </ClerkProvider>
-  );
-}
-
 function App() {
   return (
     <WouterRouter base={basePath}>
-      <ClerkProviderWithRoutes />
+      <AuthProvider>
+        <LanguageProvider>
+          <QueryClientProvider client={queryClient}>
+            <TooltipProvider>
+              <ScrollToTop />
+              <Router />
+              <Toaster />
+            </TooltipProvider>
+          </QueryClientProvider>
+        </LanguageProvider>
+      </AuthProvider>
     </WouterRouter>
   );
 }

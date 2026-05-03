@@ -2,12 +2,12 @@ import React, { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { Link, useLocation } from "wouter";
 import { Activity, Check, Loader2, Star } from "lucide-react";
-import { useUser, useAuth } from "@clerk/react";
+import { useAppAuth } from "@/lib/auth-context";
 import GoogleIcon from "./components/GoogleIcon";
 
 function PricingNav() {
   const [, navigate] = useLocation();
-  const { isSignedIn } = useUser();
+  const { isSignedIn } = useAppAuth();
   return (
     <nav className="fixed top-0 w-full z-50 bg-background/80 backdrop-blur-md border-b border-border/50 shadow-sm">
       <div className="container mx-auto px-6 h-16 flex items-center justify-between">
@@ -19,7 +19,7 @@ function PricingNav() {
         </button>
         {!isSignedIn ? (
           <button
-            onClick={() => navigate("/sign-in")}
+            onClick={() => { window.location.href = "/api/auth/google"; }}
             className="flex items-center gap-2 bg-primary/10 text-primary border border-primary/30 hover:bg-primary hover:text-primary-foreground px-5 py-2 rounded-md font-mono text-sm transition-all"
           >
             <GoogleIcon size={16} />
@@ -103,8 +103,7 @@ const PLATINUM_FEATURES: FeatureDef[] = [
 ];
 
 function useTrialStatus() {
-  const { isSignedIn, isLoaded } = useUser();
-  const { getToken } = useAuth();
+  const { isSignedIn, isLoaded, getToken } = useAppAuth();
   const [trialUsed, setTrialUsed] = useState(false);
   const [loading, setLoading] = useState(true);
 
@@ -112,20 +111,19 @@ function useTrialStatus() {
     if (!isLoaded) return;
     if (!isSignedIn) { setLoading(false); return; }
     let stale = false;
-    getToken().then(token =>
-      fetch("/api/stripe/subscription", {
-        headers: token ? { Authorization: `Bearer ${token}` } : {},
-        credentials: "include",
+    const token = getToken();
+    fetch("/api/stripe/subscription", {
+      headers: token ? { Authorization: `Bearer ${token}` } : {},
+      credentials: "include",
+    })
+      .then(r => r.json())
+      .then(data => {
+        if (!stale) {
+          setTrialUsed(data.trialUsed === true);
+          setLoading(false);
+        }
       })
-        .then(r => r.json())
-        .then(data => {
-          if (!stale) {
-            setTrialUsed(data.trialUsed === true);
-            setLoading(false);
-          }
-        })
-        .catch(() => { if (!stale) setLoading(false); })
-    );
+      .catch(() => { if (!stale) setLoading(false); });
     return () => { stale = true; };
   }, [isSignedIn, isLoaded, getToken]);
 
@@ -135,19 +133,17 @@ function useTrialStatus() {
 function useCheckout() {
   const [loadingPlan, setLoadingPlan] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const { isSignedIn } = useUser();
-  const { getToken } = useAuth();
-  const [, navigate] = useLocation();
+  const { isSignedIn, getToken } = useAppAuth();
 
   const startCheckout = async (plan: string) => {
     if (!isSignedIn) {
-      navigate("/sign-in");
+      window.location.href = "/api/auth/google";
       return;
     }
     setError(null);
     setLoadingPlan(plan);
     try {
-      const token = await getToken();
+      const token = getToken();
       const res = await fetch("/api/stripe/checkout", {
         method: "POST",
         headers: {
@@ -172,7 +168,7 @@ function useCheckout() {
 
 export default function PricingPage() {
   const { startCheckout, loadingPlan, error } = useCheckout();
-  const { isSignedIn } = useUser();
+  const { isSignedIn } = useAppAuth();
   const { trialUsed } = useTrialStatus();
 
   const btnLabel = (isSignedIn && trialUsed) ? "Subscribe" : "Try 14 Days Free";
@@ -182,177 +178,133 @@ export default function PricingPage() {
       <PricingNav />
 
       <div className="pt-28 pb-24 px-6">
-        <div className="container mx-auto max-w-5xl">
-
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5 }}
-            className="text-center mb-16"
-          >
-            {!(isSignedIn && trialUsed) && (
-              <div className="inline-flex items-center gap-1.5 bg-amber-400/10 border border-amber-400/20 text-amber-400 text-[10px] font-mono font-bold uppercase tracking-widest px-3 py-1 rounded-full mb-4">
-                14-day free trial included
-              </div>
-            )}
-            <h1 className="text-4xl md:text-5xl font-sans font-bold text-foreground mb-0 leading-tight">
-              Pricing
-            </h1>
-            <p className="text-foreground/50 text-sm font-mono mt-3">
-              {(isSignedIn && trialUsed)
-                ? "Cancel anytime"
-                : "Card required · No charge during trial · Cancel anytime"}
-            </p>
-          </motion.div>
-
-          {error && (
-            <div className="mb-8 text-center text-sm font-mono text-red-400 bg-red-500/10 border border-red-500/20 rounded-lg py-3 px-4">
-              {error}
-            </div>
-          )}
-
-          <div className="grid md:grid-cols-3 gap-6 items-start">
-
-            {/* Silver */}
-            <motion.div
-              initial={{ opacity: 0, y: 24 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.45, delay: 0.1 }}
-              className="rounded-2xl border border-border/50 bg-card/60 p-7 flex flex-col"
-            >
-              <div className="mb-5">
-                <span className="text-xl font-bold tracking-wide" style={{ color: "#9ca3af" }}>Silver</span>
-                <div className="mt-2 flex items-end gap-1">
-                  <span className="text-4xl font-bold text-foreground font-sans">€34</span>
-                  <span className="text-xl font-bold text-foreground/60 font-sans mb-0.5">.99</span>
-                </div>
-                <p className="text-foreground/40 text-xs mt-0.5 font-mono">per month</p>
-                {!(isSignedIn && trialUsed) && (
-                  <p className="text-amber-400/80 text-xs mt-1.5 font-mono font-semibold">14 days free — then €34.99/mo</p>
-                )}
-              </div>
-
-              <div className="mb-5">
-                <p className="text-[10px] font-mono text-muted-foreground uppercase tracking-widest mb-2">Bookmaker</p>
-                <div className="flex flex-wrap gap-2">
-                  <BookmakerBadge name="Pinnacle" icon={<PinnacleIcon />} />
-                </div>
-              </div>
-
-              <ul className="space-y-3 flex-1 mb-8">
-                {SILVER_FEATURES.map(f => <FeatureLine key={f.text} {...f} />)}
-              </ul>
-
-              <button
-                onClick={() => startCheckout("silver")}
-                disabled={loadingPlan !== null}
-                className="w-full py-3 rounded-lg border border-border/60 text-foreground/80 font-mono text-sm text-center transition-colors hover:bg-white/5 hover:border-border disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
-              >
-                {loadingPlan === "silver" ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
-                {btnLabel}
-              </button>
-            </motion.div>
-
-            {/* Gold */}
-            <motion.div
-              initial={{ opacity: 0, y: 24 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.45, delay: 0.2 }}
-              className="rounded-2xl border border-primary/50 bg-primary/5 p-7 flex flex-col relative shadow-[0_0_60px_rgba(0,255,255,0.1)]"
-            >
-              <div className="absolute -top-3.5 left-1/2 -translate-x-1/2 whitespace-nowrap">
-                <span className="flex items-center gap-1.5 bg-primary text-background text-[10px] font-mono font-bold uppercase tracking-widest px-3 py-1 rounded-full">
-                  <Star className="w-3 h-3" /> Most Popular
-                </span>
-              </div>
-
-              <div className="mb-5">
-                <span className="text-xl font-bold tracking-wide" style={{ color: "#f59e0b" }}>Gold</span>
-                <div className="mt-2 flex items-end gap-1">
-                  <span className="text-4xl font-bold text-foreground font-sans">€84</span>
-                  <span className="text-xl font-bold text-foreground/60 font-sans mb-0.5">.99</span>
-                </div>
-                <p className="text-foreground/40 text-xs mt-0.5 font-mono">per month</p>
-                {!(isSignedIn && trialUsed) && (
-                  <p className="text-amber-400/80 text-xs mt-1.5 font-mono font-semibold">14 days free — then €84.99/mo</p>
-                )}
-              </div>
-
-              <div className="mb-5">
-                <p className="text-[10px] font-mono text-muted-foreground uppercase tracking-widest mb-2">Bookmaker</p>
-                <div className="flex flex-wrap gap-2">
-                  <BookmakerBadge name="Pinnacle" icon={<PinnacleIcon />} />
-                </div>
-              </div>
-
-              <ul className="space-y-3 flex-1 mb-8">
-                {GOLD_FEATURES.map(f => <FeatureLine key={f.text} {...f} />)}
-              </ul>
-
-              <button
-                onClick={() => startCheckout("gold")}
-                disabled={loadingPlan !== null}
-                className="w-full py-3 rounded-lg bg-primary text-background font-mono text-sm font-semibold text-center transition-colors hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
-              >
-                {loadingPlan === "gold" ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
-                {btnLabel}
-              </button>
-            </motion.div>
-
-            {/* Platinum */}
-            <motion.div
-              initial={{ opacity: 0, y: 24 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.45, delay: 0.3 }}
-              className="rounded-2xl border border-violet-500/40 bg-violet-500/5 p-7 flex flex-col shadow-[0_0_50px_rgba(139,92,246,0.08)]"
-            >
-              <div className="mb-5">
-                <span className="text-xl font-bold tracking-wide text-violet-400">Platinum</span>
-                <div className="mt-2 flex items-end gap-1">
-                  <span className="text-4xl font-bold text-foreground font-sans">€114</span>
-                  <span className="text-xl font-bold text-foreground/60 font-sans mb-0.5">.99</span>
-                </div>
-                <p className="text-foreground/40 text-xs mt-0.5 font-mono">per month</p>
-                {!(isSignedIn && trialUsed) && (
-                  <p className="text-amber-400/80 text-xs mt-1.5 font-mono font-semibold">14 days free — then €114.99/mo</p>
-                )}
-              </div>
-
-              <div className="mb-5">
-                <p className="text-[10px] font-mono text-muted-foreground uppercase tracking-widest mb-2">Bookmaker</p>
-                <div className="flex flex-wrap gap-2">
-                  <BookmakerBadge name="Pinnacle" icon={<PinnacleIcon />} />
-                </div>
-              </div>
-
-              <ul className="space-y-3 flex-1 mb-8">
-                {PLATINUM_FEATURES.map(f => <PlatinumFeatureLine key={f.text} {...f} />)}
-              </ul>
-
-              <button
-                onClick={() => startCheckout("platinum")}
-                disabled={loadingPlan !== null}
-                className="w-full py-3 rounded-lg border border-violet-500/40 text-violet-300 font-mono text-sm text-center transition-colors hover:bg-violet-500/10 hover:border-violet-500/60 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
-              >
-                {loadingPlan === "platinum" ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
-                {isSignedIn ? btnLabel : "Get Started"}
-              </button>
-            </motion.div>
-
+        <motion.div
+          initial={{ opacity: 0, y: 24 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5 }}
+          className="text-center max-w-2xl mx-auto mb-16"
+        >
+          <div className="inline-flex items-center gap-2 bg-primary/10 border border-primary/25 text-primary text-xs font-mono px-4 py-1.5 rounded-full mb-6">
+            <Star className="w-3.5 h-3.5" />
+            Powered by real Pinnacle data
           </div>
+          <h1 className="text-4xl md:text-5xl font-bold font-sans tracking-tight mb-4">
+            Simple, transparent pricing
+          </h1>
+          <p className="text-lg text-muted-foreground font-sans">
+            Start your 14-day free trial — no credit card required.
+          </p>
 
+          {/* Social proof */}
+          <div className="mt-6 flex flex-wrap items-center justify-center gap-3">
+            <span className="text-sm text-muted-foreground font-mono">Bookmakers covered:</span>
+            <BookmakerBadge name="Pinnacle" icon={<PinnacleIcon />} />
+            <BookmakerBadge name="Bet365" icon={<span className="text-[11px] font-bold text-[#00843D]">B365</span>} />
+            <BookmakerBadge name="Betfair" icon={<span className="text-[11px] font-bold text-[#FFD700]">BF</span>} />
+            <BookmakerBadge name="DraftKings" icon={<span className="text-[11px] font-bold text-[#53D337]">DK</span>} />
+          </div>
+        </motion.div>
+
+        {error && (
+          <div className="max-w-md mx-auto mb-8 bg-red-950/50 border border-red-500/30 rounded-lg px-4 py-3 text-sm text-red-400 text-center font-mono">
+            {error}
+          </div>
+        )}
+
+        <div className="max-w-5xl mx-auto grid md:grid-cols-3 gap-6">
+          {/* Silver */}
           <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 0.5 }}
-            className="text-center mt-14"
+            initial={{ opacity: 0, y: 32 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.45, delay: 0.05 }}
+            className="rounded-2xl border border-border/60 bg-card/60 p-8 flex flex-col"
           >
-            <Link href="/" className="text-xs font-mono text-muted-foreground hover:text-primary transition-colors">
-              ← Back to home
-            </Link>
+            <div className="mb-6">
+              <div className="text-xs font-mono text-muted-foreground uppercase tracking-widest mb-2">Silver</div>
+              <div className="flex items-end gap-1 mb-1">
+                <span className="text-4xl font-bold font-sans">$29</span>
+                <span className="text-muted-foreground font-mono text-sm mb-1">/mo</span>
+              </div>
+              <p className="text-sm text-muted-foreground">For casual bettors getting started</p>
+            </div>
+            <ul className="space-y-3 mb-8 flex-1">
+              {SILVER_FEATURES.map((f, i) => <FeatureLine key={i} {...f} />)}
+            </ul>
+            <button
+              onClick={() => startCheckout("silver")}
+              disabled={!!loadingPlan}
+              className="w-full py-3 rounded-lg border border-primary/40 text-primary font-mono font-semibold text-sm transition-all hover:bg-primary/10 hover:border-primary/60 disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+            >
+              {loadingPlan === "silver" ? <><Loader2 className="w-4 h-4 animate-spin" /> Processing…</> : btnLabel}
+            </button>
           </motion.div>
 
+          {/* Gold */}
+          <motion.div
+            initial={{ opacity: 0, y: 32 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.45, delay: 0.1 }}
+            className="rounded-2xl border-2 border-primary/60 bg-card/80 p-8 flex flex-col relative shadow-[0_0_40px_hsl(var(--primary)/0.15)]"
+          >
+            <div className="absolute -top-3.5 left-1/2 -translate-x-1/2 bg-primary text-primary-foreground text-[11px] font-mono font-bold px-4 py-1 rounded-full uppercase tracking-widest whitespace-nowrap">
+              Most Popular
+            </div>
+            <div className="mb-6">
+              <div className="text-xs font-mono text-primary uppercase tracking-widest mb-2">Gold</div>
+              <div className="flex items-end gap-1 mb-1">
+                <span className="text-4xl font-bold font-sans">$59</span>
+                <span className="text-muted-foreground font-mono text-sm mb-1">/mo</span>
+              </div>
+              <p className="text-sm text-muted-foreground">For serious bettors who want the edge</p>
+            </div>
+            <ul className="space-y-3 mb-8 flex-1">
+              {GOLD_FEATURES.map((f, i) => <FeatureLine key={i} {...f} />)}
+            </ul>
+            <button
+              onClick={() => startCheckout("gold")}
+              disabled={!!loadingPlan}
+              className="w-full py-3 rounded-lg bg-primary text-primary-foreground font-mono font-semibold text-sm transition-all hover:bg-primary/90 shadow-[0_0_20px_hsl(var(--primary)/0.3)] disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+            >
+              {loadingPlan === "gold" ? <><Loader2 className="w-4 h-4 animate-spin" /> Processing…</> : btnLabel}
+            </button>
+          </motion.div>
+
+          {/* Platinum */}
+          <motion.div
+            initial={{ opacity: 0, y: 32 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.45, delay: 0.15 }}
+            className="rounded-2xl border border-violet-500/40 bg-[linear-gradient(135deg,rgba(139,92,246,0.07)_0%,rgba(0,0,0,0)_100%)] p-8 flex flex-col relative"
+          >
+            <div className="mb-6">
+              <div className="text-xs font-mono text-violet-400 uppercase tracking-widest mb-2">Platinum</div>
+              <div className="flex items-end gap-1 mb-1">
+                <span className="text-4xl font-bold font-sans">$99</span>
+                <span className="text-muted-foreground font-mono text-sm mb-1">/mo</span>
+              </div>
+              <p className="text-sm text-muted-foreground">For professionals and power users</p>
+            </div>
+            <ul className="space-y-3 mb-8 flex-1">
+              {PLATINUM_FEATURES.map((f, i) => <PlatinumFeatureLine key={i} {...f} />)}
+            </ul>
+            <button
+              onClick={() => startCheckout("platinum")}
+              disabled={!!loadingPlan}
+              className="w-full py-3 rounded-lg border border-violet-500/40 text-violet-400 font-mono font-semibold text-sm transition-all hover:bg-violet-500/10 hover:border-violet-500/60 disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+            >
+              {loadingPlan === "platinum" ? <><Loader2 className="w-4 h-4 animate-spin" /> Processing…</> : btnLabel}
+            </button>
+          </motion.div>
         </div>
+
+        <motion.p
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 0.5, delay: 0.3 }}
+          className="text-center text-sm text-muted-foreground font-mono mt-10"
+        >
+          All plans include a 14-day free trial · Cancel any time · Billed monthly
+        </motion.p>
       </div>
     </div>
   );

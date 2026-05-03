@@ -1,4 +1,4 @@
-import { ClerkProvider, useUser, useAuth, SignIn, SignUp } from "@clerk/react";
+import { AuthProvider, useAppAuth } from "@/lib/auth-context";
 import { Switch, Route, Router as WouterRouter } from "wouter";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
@@ -18,11 +18,8 @@ import TopMoversPage from "@/pages/top-movers";
 import MyBetsPage from "@/pages/my-bets";
 import AccountPage from "@/pages/account";
 import React, { useState, useEffect, useCallback } from "react";
-import { Activity, LogIn, UserPlus } from "lucide-react";
+import { Activity } from "lucide-react";
 import { PlanContext, type PlanTier } from "@/lib/plan-context";
-
-const clerkPubKey = import.meta.env.VITE_CLERK_PUBLISHABLE_KEY as string;
-const clerkProxyUrl = import.meta.env.VITE_CLERK_PROXY_URL as string | undefined;
 
 function AppServices() {
   useAutoSettle();
@@ -62,41 +59,18 @@ function LoadingScreen({ label = "Loading…" }: { label?: string }) {
   );
 }
 
-const clerkAppearance = {
-  variables: {
-    colorPrimary: "#00e5ff",
-    colorBackground: "#111218",
-    colorText: "#ffffff",
-    colorTextSecondary: "rgba(255,255,255,0.65)",
-    colorInputBackground: "#1a1b22",
-    colorInputText: "#ffffff",
-    borderRadius: "0.75rem",
-    fontFamily: "JetBrains Mono, monospace",
-  },
-  elements: {
-    card: "shadow-none border border-white/10",
-    rootBox: "w-full",
-    headerTitle: { color: "#ffffff", opacity: 1 },
-    headerSubtitle: { color: "rgba(255,255,255,0.65)", opacity: 1 },
-    formFieldLabel: { color: "rgba(255,255,255,0.75)" },
-    formButtonPrimary: "bg-cyan-400 text-black hover:bg-cyan-300 font-mono",
-    dividerText: { color: "rgba(255,255,255,0.4)" },
-    dividerLine: { background: "rgba(255,255,255,0.1)" },
-    footerActionText: { color: "rgba(255,255,255,0.5)" },
-    footerActionLink: { color: "#00e5ff" },
-    identityPreviewText: { color: "#ffffff" },
-    formResendCodeLink: { color: "#00e5ff" },
-    socialButtonsBlockButton: "border border-white/25 bg-white/8 hover:bg-white/15 transition-colors",
-    socialButtonsBlockButtonText: { color: "#ffffff", fontWeight: "500" },
-    socialButtonsBlockButtonArrow: { color: "#ffffff" },
-    socialButtonsProviderIcon: { opacity: 1 },
-  },
-} as const;
+function GoogleIcon() {
+  return (
+    <svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true">
+      <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
+      <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
+      <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
+      <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
+    </svg>
+  );
+}
 
 function AuthScreen() {
-  const [mode, setMode] = useState<"sign-in" | "sign-up">("sign-in");
-  const base = import.meta.env.BASE_URL?.replace(/\/$/, "") ?? "";
-
   return (
     <div className="min-h-screen bg-[#0a0b0f] flex flex-col">
       <div className="flex items-center justify-center gap-2 py-6 border-b border-white/5">
@@ -107,47 +81,28 @@ function AuthScreen() {
       </div>
 
       <div className="flex-1 flex flex-col items-center justify-center px-4 py-8">
-        <div className="w-full max-w-[400px]">
-          <div className="flex rounded-xl overflow-hidden border border-white/20 mb-6">
-            <button
-              onClick={() => setMode("sign-in")}
-              className={`flex-1 flex items-center justify-center gap-2 py-3 text-sm font-mono transition-colors border-r border-white/20 ${
-                mode === "sign-in"
-                  ? "bg-cyan-400/15 text-cyan-400"
-                  : "bg-white/5 text-white/80 hover:text-white hover:bg-white/10"
-              }`}
-            >
-              <LogIn className="w-3.5 h-3.5" />
-              Sign in
-            </button>
-            <button
-              onClick={() => setMode("sign-up")}
-              className={`flex-1 flex items-center justify-center gap-2 py-3 text-sm font-mono transition-colors ${
-                mode === "sign-up"
-                  ? "bg-cyan-400/15 text-cyan-400"
-                  : "bg-white/5 text-white/80 hover:text-white hover:bg-white/10"
-              }`}
-            >
-              <UserPlus className="w-3.5 h-3.5" />
-              Create account
-            </button>
-          </div>
+        <div className="w-full max-w-[380px]">
+          <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-8 flex flex-col items-center gap-6 shadow-[0_0_60px_rgba(0,0,0,0.6)]">
+            <div className="text-center">
+              <div className="w-12 h-12 rounded-2xl bg-cyan-400/10 border border-cyan-400/20 flex items-center justify-center mx-auto mb-4">
+                <Activity className="w-6 h-6 text-cyan-400" />
+              </div>
+              <h1 className="text-xl font-bold text-white font-sans mb-1">Sign in to SharpTracker</h1>
+              <p className="text-sm text-white/50 font-mono">Track sharp odds drops in real time</p>
+            </div>
 
-          {mode === "sign-in" ? (
-            <SignIn
-              routing="hash"
-              afterSignInUrl={`${base}/`}
-              signUpUrl={undefined}
-              appearance={clerkAppearance}
-            />
-          ) : (
-            <SignUp
-              routing="hash"
-              afterSignUpUrl={`${base}/`}
-              signInUrl={undefined}
-              appearance={clerkAppearance}
-            />
-          )}
+            <button
+              onClick={() => { window.location.href = "/api/auth/google"; }}
+              className="w-full flex items-center justify-center gap-3 bg-white text-gray-800 font-sans font-semibold text-sm px-5 py-3 rounded-xl hover:bg-gray-100 transition-colors shadow-sm"
+            >
+              <GoogleIcon />
+              Continue with Google
+            </button>
+
+            <p className="text-[11px] text-white/25 text-center font-mono leading-relaxed">
+              By signing in you agree to our Terms of Service and Privacy Policy.
+            </p>
+          </div>
         </div>
       </div>
     </div>
@@ -157,26 +112,24 @@ function AuthScreen() {
 type SubState =
   | { status: "loading" }
   | { status: "active"; tier: PlanTier; isTrialing: boolean }
-  | { status: "expired" }   // had a subscription before, now fully expired
-  | { status: "none" };     // never subscribed
+  | { status: "expired" }
+  | { status: "none" };
 
 function SubscriptionGate({ children }: { children: React.ReactNode }) {
   const bypassAuth = import.meta.env.VITE_DEV_BYPASS_AUTH === "true";
-  const { isSignedIn, isLoaded } = useUser();
-  const { getToken } = useAuth();
+  const { isSignedIn, isLoaded, getToken } = useAppAuth();
   const [subState, setSubState] = useState<SubState>({ status: "loading" });
 
   const fetchSubscription = useCallback(async (sessionId?: string) => {
     setSubState({ status: "loading" });
     try {
-      // If coming back from Stripe checkout, fulfill the session first
       if (sessionId) {
         await fetch(`/api/stripe/checkout/session?session_id=${encodeURIComponent(sessionId)}`, {
           credentials: "include",
         });
       }
 
-      const token = await getToken();
+      const token = getToken();
       const res = await fetch("/api/stripe/subscription", {
         headers: token ? { Authorization: `Bearer ${token}` } : {},
         credentials: "include",
@@ -184,15 +137,12 @@ function SubscriptionGate({ children }: { children: React.ReactNode }) {
       const data = await res.json();
       const tier = data.planTier as PlanTier | null;
       const subStatus = data.subscription?.status as string | undefined;
-      // Allow access for both 'active' and 'trialing' subscriptions
       const hasAccess = (subStatus === "active" || subStatus === "trialing") && tier && tier !== "none";
       if (hasAccess) {
         setSubState({ status: "active", tier: tier!, isTrialing: subStatus === "trialing" });
       } else if (subStatus === "canceled" || data.subscription != null) {
-        // Had a subscription before but it's now expired — let into dashboard with no-plan tier
         setSubState({ status: "expired" });
       } else {
-        // No subscription — let into dashboard with no-plan tier
         setSubState({ status: "none" });
       }
     } catch {
@@ -204,11 +154,9 @@ function SubscriptionGate({ children }: { children: React.ReactNode }) {
     if (bypassAuth) return;
     if (!isLoaded || !isSignedIn) return;
 
-    // Check for Stripe session_id in URL (returning from checkout)
     const params = new URLSearchParams(window.location.search);
     const sessionId = params.get("session_id") ?? undefined;
     if (sessionId) {
-      // Clean up URL without triggering a re-render via back-stack
       const cleanUrl = window.location.pathname + window.location.hash;
       window.history.replaceState({}, "", cleanUrl);
     }
@@ -237,18 +185,16 @@ function SubscriptionGate({ children }: { children: React.ReactNode }) {
   }
 
   if (subState.status === "expired" || subState.status === "none") {
-    // No active subscription — redirect to pricing on the landing page
     window.location.href = "/pricing";
     return null;
   }
 
-  // Still loading — show spinner
   return <LoadingScreen label="Checking subscription…" />;
 }
 
 function AuthGate({ children }: { children: React.ReactNode }) {
   const bypassAuth = import.meta.env.VITE_DEV_BYPASS_AUTH === "true";
-  const { isLoaded, isSignedIn } = useUser();
+  const { isLoaded, isSignedIn } = useAppAuth();
 
   if (bypassAuth) return <>{children}</>;
   if (!isLoaded) return <LoadingScreen />;
@@ -284,44 +230,10 @@ function AppContent() {
 }
 
 function App() {
-  if (!clerkPubKey) {
-    return <AppContent />;
-  }
   return (
-    <ClerkProvider
-      publishableKey={clerkPubKey}
-      proxyUrl={clerkProxyUrl}
-      localization={{
-        signIn: {
-          start: {
-            title: "Sign in to SharpTracker",
-            subtitle: "Welcome back! Please sign in to continue",
-          },
-          emailCode: {
-            title: "Check your email",
-            subtitle: "to continue to SharpTracker",
-            formTitle: "Verification code",
-            formSubtitle: "Enter the verification code sent to your email address",
-            resendButton: "Didn't receive a code? Resend",
-          },
-        },
-        signUp: {
-          start: {
-            title: "Create your SharpTracker account",
-            subtitle: "Sign up to get started with SharpTracker",
-          },
-          emailCode: {
-            title: "Verify your email",
-            subtitle: "to continue to SharpTracker",
-            formTitle: "Verification code",
-            formSubtitle: "Enter the verification code sent to your email address",
-            resendButton: "Didn't receive a code? Resend",
-          },
-        },
-      }}
-    >
+    <AuthProvider>
       <AppContent />
-    </ClerkProvider>
+    </AuthProvider>
   );
 }
 

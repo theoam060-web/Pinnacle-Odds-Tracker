@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
-import { useAuth } from "@clerk/react";
+import { useAppAuth } from "./auth-context";
 
 const VAPID_PUBLIC_KEY = "BNFtL8Llx7d_UNrd74MJ1ja7bzLlln6qFdJYdJ3qf2I6PtXob2s5NP9FW79okpFGWWtBzzRJ1jzK5dWkEXDWIRw";
 
@@ -27,7 +27,7 @@ export interface UsePushNotifications {
 }
 
 export function usePushNotifications(): UsePushNotifications {
-  const { getToken } = useAuth();
+  const { getToken } = useAppAuth();
   const isSupported = typeof window !== "undefined" && "serviceWorker" in navigator && "PushManager" in window && "Notification" in window;
   const isPWA = typeof window !== "undefined" && (window.matchMedia("(display-mode: standalone)").matches || (window.navigator as any).standalone === true);
 
@@ -37,7 +37,6 @@ export function usePushNotifications(): UsePushNotifications {
   const [isSubscribed, setIsSubscribed] = useState(false);
   const [registration, setRegistration] = useState<ServiceWorkerRegistration | null>(null);
 
-  // Register service worker and check subscription state on mount
   useEffect(() => {
     if (!isSupported) return;
 
@@ -66,7 +65,7 @@ export function usePushNotifications(): UsePushNotifications {
         applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY),
       });
 
-      const token = await getToken();
+      const token = getToken();
       await fetch("/api/push/subscribe", {
         method: "POST",
         headers: {
@@ -93,7 +92,7 @@ export function usePushNotifications(): UsePushNotifications {
     const endpoint = sub.endpoint;
     await sub.unsubscribe();
 
-    const token = await getToken();
+    const token = getToken();
     await fetch("/api/push/subscribe", {
       method: "DELETE",
       headers: {
@@ -108,7 +107,7 @@ export function usePushNotifications(): UsePushNotifications {
   }, [isSupported, registration, getToken]);
 
   const sendTestNotification = useCallback(async (): Promise<void> => {
-    const token = await getToken();
+    const token = getToken();
     await fetch("/api/push/test", {
       method: "POST",
       headers: token ? { Authorization: `Bearer ${token}` } : {},

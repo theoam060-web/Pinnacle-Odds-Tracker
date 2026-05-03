@@ -1,8 +1,8 @@
-import { useUser, useAuth, useClerk } from "@clerk/react";
 import { useState, useEffect } from "react";
 import { Link } from "wouter";
 import { Layout } from "@/components/layout";
 import { usePlan } from "@/lib/plan-context";
+import { useAppAuth } from "@/lib/auth-context";
 import {
   User,
   CreditCard,
@@ -64,9 +64,7 @@ function formatDate(ts?: number) {
 }
 
 export default function AccountPage() {
-  const { user } = useUser();
-  const { getToken } = useAuth();
-  const { signOut } = useClerk();
+  const { user, signOut, getToken } = useAppAuth();
   const tier = usePlan();
 
   const [sub, setSub] = useState<SubData | null>(null);
@@ -77,7 +75,7 @@ export default function AccountPage() {
   useEffect(() => {
     (async () => {
       try {
-        const token = await getToken();
+        const token = getToken();
         const res = await fetch("/api/stripe/subscription", {
           headers: token ? { Authorization: `Bearer ${token}` } : {},
           credentials: "include",
@@ -96,7 +94,7 @@ export default function AccountPage() {
     setPortalError(null);
     setPortalLoading(true);
     try {
-      const token = await getToken();
+      const token = getToken();
       const res = await fetch("/api/stripe/portal", {
         method: "POST",
         headers: token ? { Authorization: `Bearer ${token}` } : {},
@@ -121,6 +119,9 @@ export default function AccountPage() {
   const isTrialing = subStatus === "trialing";
   const isActive = subStatus === "active";
   const willCancel = sub?.subscription?.cancel_at_period_end;
+
+  const initials = (user?.email?.[0] ?? "U").toUpperCase();
+  const displayEmail = user?.email ?? "—";
 
   return (
     <Layout>
@@ -149,24 +150,12 @@ export default function AccountPage() {
             <span className="text-[10px] uppercase tracking-widest text-muted-foreground font-semibold">Profile</span>
           </div>
           <div className="px-4 py-4 flex items-center gap-4">
-            {user?.imageUrl ? (
-              <img
-                src={user.imageUrl}
-                alt="Avatar"
-                className="w-12 h-12 rounded-full border border-border/40 shrink-0"
-              />
-            ) : (
-              <div className="w-12 h-12 rounded-full bg-primary/10 border border-primary/20 flex items-center justify-center shrink-0">
-                <User className="w-5 h-5 text-primary/60" />
-              </div>
-            )}
+            <div className="w-12 h-12 rounded-full bg-primary/10 border border-primary/20 flex items-center justify-center shrink-0">
+              <span className="text-lg font-bold text-primary">{initials}</span>
+            </div>
             <div className="flex-1 min-w-0">
-              <div className="font-semibold text-sm truncate">
-                {user?.fullName ?? user?.firstName ?? "—"}
-              </div>
-              <div className="text-xs text-muted-foreground truncate mt-0.5">
-                {user?.primaryEmailAddress?.emailAddress ?? "—"}
-              </div>
+              <div className="font-semibold text-sm truncate">{displayEmail}</div>
+              <div className="text-xs text-muted-foreground truncate mt-0.5">Google Account</div>
             </div>
           </div>
           <div className="px-4 pb-4">
@@ -196,14 +185,12 @@ export default function AccountPage() {
               </div>
             ) : (
               <>
-                {/* Plan badge */}
                 <div className={`inline-flex items-center gap-2 rounded-lg border px-3 py-2 ${planMeta.border} ${planMeta.bg}`}>
                   <PlanIcon className={`w-4 h-4 ${planMeta.color}`} />
                   <span className={`font-bold text-sm ${planMeta.color}`}>{planMeta.label}</span>
                   <span className="text-xs text-muted-foreground font-mono">Plan</span>
                 </div>
 
-                {/* Status row */}
                 <div className="flex items-center gap-2 text-xs font-mono">
                   {isTrialing ? (
                     <>
@@ -237,10 +224,8 @@ export default function AccountPage() {
                   )}
                 </div>
 
-                {/* Divider */}
                 <div className="h-px bg-border/30" />
 
-                {/* Action buttons */}
                 <div className="space-y-2">
                   <button
                     onClick={openPortal}

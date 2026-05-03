@@ -1,5 +1,7 @@
-import { verifyToken } from "@clerk/express";
+import jwt from "jsonwebtoken";
 import type { Request, Response, NextFunction } from "express";
+
+const JWT_SECRET = process.env.SESSION_SECRET || "fallback-secret-change-me";
 
 export interface AuthRequest extends Request {
   userId: string;
@@ -20,9 +22,7 @@ export async function requireAuth(
   const token = authHeader.slice(7);
 
   try {
-    const payload = await verifyToken(token, {
-      secretKey: process.env.CLERK_SECRET_KEY,
-    });
+    const payload = jwt.verify(token, JWT_SECRET) as { sub: string; email?: string };
 
     if (!payload?.sub) {
       res.status(401).json({ error: "Unauthorized" });
@@ -30,9 +30,7 @@ export async function requireAuth(
     }
 
     (req as AuthRequest).userId = payload.sub;
-    // Extract email from JWT claims (present if Clerk is configured to include it)
-    const email = (payload as any).email as string | undefined;
-    if (email) (req as AuthRequest).userEmail = email;
+    if (payload.email) (req as AuthRequest).userEmail = payload.email;
     next();
   } catch {
     res.status(401).json({ error: "Unauthorized" });
