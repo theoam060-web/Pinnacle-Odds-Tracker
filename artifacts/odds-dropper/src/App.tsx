@@ -75,9 +75,25 @@ function LoadingScreen({ label = "Loading…" }: { label?: string }) {
   );
 }
 
+const clerkGlobalStyles = `
+  .cl-socialButtonsBlockButton {
+    background: rgba(255,255,255,0.10) !important;
+    border-color: rgba(255,255,255,0.20) !important;
+  }
+  .cl-socialButtonsBlockButton:hover {
+    background: rgba(255,255,255,0.16) !important;
+  }
+  .cl-socialButtonsBlockButtonText {
+    color: #ffffff !important;
+    font-weight: 600 !important;
+    font-size: 0.875rem !important;
+  }
+`;
+
 function SignInPage() {
   return (
     <div className="min-h-screen bg-[#0a0b0f] flex flex-col">
+      <style>{clerkGlobalStyles}</style>
       <div className="flex items-center justify-center gap-2 py-6 border-b border-white/5">
         <Activity className="w-5 h-5 text-cyan-400" />
         <span className="font-bold text-lg text-white tracking-tight">
@@ -110,7 +126,7 @@ function SignInPage() {
               footer: "!shadow-none !border-0 !bg-[#0f1117] !rounded-none",
               headerTitle: "text-white font-bold",
               headerSubtitle: "text-white/50",
-              socialButtonsBlockButtonText: "text-white/80",
+              socialButtonsBlockButtonText: "text-white font-semibold",
               formFieldLabel: "text-white/70",
               footerActionLink: "text-cyan-400 hover:text-cyan-300",
               footerActionText: "text-white/40",
@@ -118,7 +134,7 @@ function SignInPage() {
               identityPreviewEditButton: "text-cyan-400",
               formFieldSuccessText: "text-green-400",
               alertText: "text-white/80",
-              socialButtonsBlockButton: "border-white/10 bg-white/5 hover:bg-white/10",
+              socialButtonsBlockButton: "border-white/20 bg-white/10 hover:bg-white/15",
               formButtonPrimary: "bg-cyan-500 hover:bg-cyan-400 text-black font-semibold",
               formFieldInput: "bg-white/5 border-white/10 text-white placeholder:text-white/30",
               dividerLine: "bg-white/10",
@@ -165,14 +181,14 @@ function SignUpPage() {
               footer: "!shadow-none !border-0 !bg-[#0f1117] !rounded-none",
               headerTitle: "text-white font-bold",
               headerSubtitle: "text-white/50",
-              socialButtonsBlockButtonText: "text-white/80",
+              socialButtonsBlockButtonText: "text-white font-semibold",
               formFieldLabel: "text-white/70",
               footerActionLink: "text-cyan-400 hover:text-cyan-300",
               footerActionText: "text-white/40",
               dividerText: "text-white/30",
               formFieldSuccessText: "text-green-400",
               alertText: "text-white/80",
-              socialButtonsBlockButton: "border-white/10 bg-white/5 hover:bg-white/10",
+              socialButtonsBlockButton: "border-white/20 bg-white/10 hover:bg-white/15",
               formButtonPrimary: "bg-cyan-500 hover:bg-cyan-400 text-black font-semibold",
               formFieldInput: "bg-white/5 border-white/10 text-white placeholder:text-white/30",
               dividerLine: "bg-white/10",
