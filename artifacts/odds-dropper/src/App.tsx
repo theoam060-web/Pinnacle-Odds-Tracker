@@ -97,12 +97,12 @@ function SignInPage() {
   return (
     <div className="min-h-screen bg-[#0a0b0f] flex flex-col">
       <style>{clerkGlobalStyles}</style>
-      <div className="flex items-center justify-center gap-2 py-6 border-b border-white/5">
+      <a href="/" className="flex items-center justify-center gap-2 py-6 border-b border-white/5 hover:opacity-80 transition-opacity">
         <Activity className="w-5 h-5 text-cyan-400" />
         <span className="font-bold text-lg text-white tracking-tight">
           Sharp<span className="text-cyan-400">Tracker</span>
         </span>
-      </div>
+      </a>
       <div className="flex-1 flex items-center justify-center px-4 py-8">
         <SignIn
           routing="path"
@@ -152,12 +152,12 @@ function SignInPage() {
 function SignUpPage() {
   return (
     <div className="min-h-screen bg-[#0a0b0f] flex flex-col">
-      <div className="flex items-center justify-center gap-2 py-6 border-b border-white/5">
+      <a href="/" className="flex items-center justify-center gap-2 py-6 border-b border-white/5 hover:opacity-80 transition-opacity">
         <Activity className="w-5 h-5 text-cyan-400" />
         <span className="font-bold text-lg text-white tracking-tight">
           Sharp<span className="text-cyan-400">Tracker</span>
         </span>
-      </div>
+      </a>
       <div className="flex-1 flex items-center justify-center px-4 py-8">
         <SignUp
           routing="path"
