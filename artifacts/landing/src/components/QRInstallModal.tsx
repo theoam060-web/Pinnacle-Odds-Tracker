@@ -11,7 +11,7 @@ export function QRInstallModal({ open, onClose }: QRInstallModalProps) {
   const appUrl = typeof window !== "undefined"
     ? window.location.origin + "/app/"
     : "https://sharptracker.io/app/";
-  const logoSrc = import.meta.env.BASE_URL + "icon-192.png";
+  const logoSrc = import.meta.env.BASE_URL + "sharptracker-qr-icon.png";
 
   return (
     <AnimatePresence>

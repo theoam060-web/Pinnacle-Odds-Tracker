@@ -223,7 +223,7 @@ export default function InstallAppModal({ open, onClose, deferredPrompt, onNativ
                   fgColor="#0a0b0f"
                   level="H"
                   imageSettings={{
-                    src: `${BASE}icon-192.png`,
+                    src: `${BASE}sharptracker-qr-icon.png`,
                     x: undefined,
                     y: undefined,
                     height: 32,
