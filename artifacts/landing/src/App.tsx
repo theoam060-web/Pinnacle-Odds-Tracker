@@ -2124,7 +2124,7 @@ function BankrollFeatureCards() {
   );
 }
 
-function MultiSportSection() {
+function MultiSportSection({ onInstall }: { onInstall: () => void }) {
   const { lang } = useLang();
   const tr = t(lang);
   const sports = [
@@ -2148,17 +2148,24 @@ function MultiSportSection() {
 
         <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
           {sports.map((sport, i) => (
-            <motion.div 
+            <motion.div
               key={sport.name}
               initial={{ opacity: 0, scale: 0.95 }}
               whileInView={{ opacity: 1, scale: 1 }}
               viewport={{ once: true }}
               transition={{ delay: i * 0.1 }}
-              className="bg-card border border-border p-6 rounded-xl hover:border-primary/30 transition-colors text-center group"
+              className="bg-card border border-border p-6 rounded-xl hover:border-primary/30 transition-colors text-center group flex flex-col items-center"
             >
               <div className="text-4xl mb-4 grayscale opacity-70 group-hover:grayscale-0 group-hover:opacity-100 transition-all transform group-hover:scale-110">{sport.icon}</div>
               <h3 className="font-bold font-sans text-lg mb-1">{sport.name}</h3>
-              <div className="text-xs font-mono text-muted-foreground">{sport.count}</div>
+              <div className="text-xs font-mono text-muted-foreground mb-4">{sport.count}</div>
+              <button
+                onClick={onInstall}
+                className="mt-auto inline-flex items-center gap-1.5 text-xs font-mono font-semibold text-primary border border-primary/30 bg-primary/5 hover:bg-primary/10 hover:border-primary/50 px-3 py-1.5 rounded-lg transition-all"
+              >
+                <Smartphone className="w-3 h-3" />
+                Download App
+              </button>
             </motion.div>
           ))}
         </div>
@@ -2534,7 +2541,7 @@ function AppContent() {
         <FeatureStripSection />
         <BankrollFeatureCards />
         <ProfitCalculatorSection />
-        <AlertConfigSection onInstall={() => setInstallGuideOpen(true)} />
+        <MultiSportSection onInstall={() => setInstallGuideOpen(true)} />
         <TestimonialsSection />
         <FAQSection />
         <CTASection />
