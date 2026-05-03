@@ -16,8 +16,9 @@ import {
   LineChart as LineChartIcon, Radar,
   TrendingUp, ChevronRight, ChevronLeft, CheckCircle2,
   Database, TrendingDown, ClipboardList, BarChart2,
-  Calculator, CalendarDays, Wallet
+  Calculator, CalendarDays, Wallet, Smartphone
 } from "lucide-react";
+import { QRInstallModal } from "@/components/QRInstallModal";
 import {
   IconOddsDrop, IconBetTracker, IconBookmakerComparison, IconStake,
   IconCalendar, IconMultiSport, IconBankroll,
@@ -558,6 +559,7 @@ function useSubscriptionAccess() {
 function Navbar() {
   const [scrolled, setScrolled] = useState(false);
   const [featuresOpen, setFeaturesOpen] = useState(false);
+  const [installOpen, setInstallOpen] = useState(false);
   const triggerRef = useRef<HTMLButtonElement>(null);
   const panelRef = useRef<HTMLDivElement>(null);
   const [, navigate] = useLocation();
@@ -634,6 +636,14 @@ function Navbar() {
         </div>
 
         <div className="flex items-center gap-3">
+          <button
+            onClick={() => { closePanel(); setInstallOpen(true); }}
+            className="hidden sm:flex items-center gap-1.5 text-xs font-mono text-muted-foreground hover:text-primary border border-border/50 hover:border-primary/40 px-3 py-1.5 rounded-md transition-all"
+            title="Install App"
+          >
+            <Smartphone className="w-3.5 h-3.5" />
+            <span className="hidden lg:inline">Install App</span>
+          </button>
           <LangDropdown />
           <Show when="signed-out">
             <div className="flex flex-col items-center gap-0.5">
@@ -689,6 +699,8 @@ function Navbar() {
           </motion.div>
         )}
       </AnimatePresence>
+
+      <QRInstallModal open={installOpen} onClose={() => setInstallOpen(false)} />
     </nav>
   );
 }

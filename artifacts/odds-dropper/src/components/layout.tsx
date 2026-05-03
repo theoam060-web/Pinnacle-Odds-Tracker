@@ -10,6 +10,7 @@ import { playChime } from "@/lib/chime";
 import { usePlan } from "@/lib/plan-context";
 import { useLang } from "@/lib/lang-context";
 import { tApp } from "@/lib/i18n";
+import { MobileInstallGuide } from "@/components/MobileInstallGuide";
 
 type NavItem = { href: string; labelKey: keyof ReturnType<typeof tApp>["nav"]; icon: React.ElementType; goldPlus?: boolean };
 
@@ -233,6 +234,7 @@ export function Layout({ children, notificationFilters }: LayoutProps) {
       </main>
 
       {settingsOpen && <SettingsModal onClose={() => setSettingsOpen(false)} />}
+      <MobileInstallGuide />
     </div>
   );
 }
