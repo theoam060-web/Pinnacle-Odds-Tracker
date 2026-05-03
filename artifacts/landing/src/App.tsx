@@ -9,7 +9,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { motion, useScroll, useTransform, AnimatePresence } from "framer-motion";
-import React, { useEffect, useState, useRef, useContext, useCallback } from "react";
+import React, { useEffect, useState, useRef, useContext, useCallback, Suspense } from "react";
 import { ClerkProvider, useAuth, useUser } from "@clerk/react";
 import { publishableKeyFromHost } from "@clerk/react/internal";
 import { AuthProvider, useAppAuth } from "@/lib/auth-context";
@@ -24,20 +24,30 @@ import { QRInstallModal } from "@/components/QRInstallModal";
 import {
   IconOddsDrop, IconBetTracker, IconBookmakerComparison, IconStake,
   IconCalendar, IconMultiSport, IconBankroll,
-  OddsDropPage, BetTrackerPage, BookmakerComparisonPage, StakeCalculatorPage,
-  DailyCalendarPage, MultiSportPage, BankrollPage,
 } from "./FeaturePages";
-import WhyPage from "./WhyPage";
-import PricingPage from "./PricingPage";
-import SuccessPage from "./SuccessPage";
-import CancelPage from "./CancelPage";
-import TermsPage from "./TermsPage";
-import PrivacyPage from "./PrivacyPage";
+
+const OddsDropPage            = React.lazy(() => import("./FeaturePages").then(m => ({ default: m.OddsDropPage })));
+const BetTrackerPage          = React.lazy(() => import("./FeaturePages").then(m => ({ default: m.BetTrackerPage })));
+const BookmakerComparisonPage = React.lazy(() => import("./FeaturePages").then(m => ({ default: m.BookmakerComparisonPage })));
+const StakeCalculatorPage     = React.lazy(() => import("./FeaturePages").then(m => ({ default: m.StakeCalculatorPage })));
+const DailyCalendarPage       = React.lazy(() => import("./FeaturePages").then(m => ({ default: m.DailyCalendarPage })));
+const MultiSportPage          = React.lazy(() => import("./FeaturePages").then(m => ({ default: m.MultiSportPage })));
+const BankrollPage            = React.lazy(() => import("./FeaturePages").then(m => ({ default: m.BankrollPage })));
+const WhyPage                 = React.lazy(() => import("./WhyPage"));
+const PricingPage             = React.lazy(() => import("./PricingPage"));
+const SuccessPage             = React.lazy(() => import("./SuccessPage"));
+const CancelPage              = React.lazy(() => import("./CancelPage"));
+const TermsPage               = React.lazy(() => import("./TermsPage"));
+const PrivacyPage             = React.lazy(() => import("./PrivacyPage"));
 
 import NotFound from "@/pages/not-found";
 import GoogleIcon from "./components/GoogleIcon";
 
-const queryClient = new QueryClient();
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: { refetchOnWindowFocus: false, staleTime: 30_000 },
+  },
+});
 
 const basePath = import.meta.env.BASE_URL.replace(/\/$/, "");
 
@@ -1537,6 +1547,8 @@ function AlertConfigSection() {
               <img
                 src={`${import.meta.env.BASE_URL}screenshots/app-mobile.png`}
                 alt="SharpTracker mobile app"
+                loading="lazy"
+                decoding="async"
                 className="w-full h-auto rounded-[2rem] shadow-[0_0_100px_-10px_hsl(var(--primary)/0.5)] border border-primary/15"
                 style={{ transform: "perspective(1200px) rotateY(-6deg) rotateX(1deg)", imageRendering: "crisp-edges" }}
               />
@@ -2508,28 +2520,38 @@ function RedirectToApp() {
   return null;
 }
 
+function PageFallback() {
+  return (
+    <div className="flex items-center justify-center min-h-screen bg-background">
+      <div className="w-8 h-8 border-2 border-cyan-400 border-t-transparent rounded-full animate-spin" />
+    </div>
+  );
+}
+
 function Router() {
   return (
-    <Switch>
-      <Route path="/" component={AppContent} />
-      <Route path="/sign-in/*?" component={RedirectToApp} />
-      <Route path="/sign-up/*?" component={RedirectToApp} />
-      <Route path="/signup" component={RedirectToApp} />
-      <Route path="/why" component={WhyPage} />
-      <Route path="/features/odds-drops" component={OddsDropPage} />
-      <Route path="/features/bet-tracker" component={BetTrackerPage} />
-      <Route path="/features/bookmaker-comparison" component={BookmakerComparisonPage} />
-      <Route path="/features/stake-calculator" component={StakeCalculatorPage} />
-      <Route path="/features/daily-calendar" component={DailyCalendarPage} />
-      <Route path="/features/multi-sport" component={MultiSportPage} />
-      <Route path="/features/bankroll" component={BankrollPage} />
-      <Route path="/pricing" component={PricingPage} />
-      <Route path="/success" component={SuccessPage} />
-      <Route path="/cancel" component={CancelPage} />
-      <Route path="/terms" component={TermsPage} />
-      <Route path="/privacy" component={PrivacyPage} />
-      <Route component={NotFound} />
-    </Switch>
+    <Suspense fallback={<PageFallback />}>
+      <Switch>
+        <Route path="/" component={AppContent} />
+        <Route path="/sign-in/*?" component={RedirectToApp} />
+        <Route path="/sign-up/*?" component={RedirectToApp} />
+        <Route path="/signup" component={RedirectToApp} />
+        <Route path="/why" component={WhyPage} />
+        <Route path="/features/odds-drops" component={OddsDropPage} />
+        <Route path="/features/bet-tracker" component={BetTrackerPage} />
+        <Route path="/features/bookmaker-comparison" component={BookmakerComparisonPage} />
+        <Route path="/features/stake-calculator" component={StakeCalculatorPage} />
+        <Route path="/features/daily-calendar" component={DailyCalendarPage} />
+        <Route path="/features/multi-sport" component={MultiSportPage} />
+        <Route path="/features/bankroll" component={BankrollPage} />
+        <Route path="/pricing" component={PricingPage} />
+        <Route path="/success" component={SuccessPage} />
+        <Route path="/cancel" component={CancelPage} />
+        <Route path="/terms" component={TermsPage} />
+        <Route path="/privacy" component={PrivacyPage} />
+        <Route component={NotFound} />
+      </Switch>
+    </Suspense>
   );
 }
 

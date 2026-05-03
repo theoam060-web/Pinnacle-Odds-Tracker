@@ -1,6 +1,6 @@
 import { Router, type IRouter } from "express";
 import { db, oddsEventsTable, oddsMovementsTable } from "@workspace/db";
-import { eq, and, lte, gte, asc, desc } from "drizzle-orm";
+import { eq, and, asc, desc, gt, isNotNull } from "drizzle-orm";
 import {
   GetOddsDropsQueryParams,
   GetOddsDropsResponse,
@@ -15,8 +15,27 @@ import { registerSSEClient, unregisterSSEClient } from "../lib/sseManager";
 
 const router: IRouter = Router();
 
-// Server-configured minimum drop threshold; client may override via minDrop query param
 const ENV_MIN_DROP_PERCENT = parseFloat(process.env["MIN_DROP_PERCENT"] ?? "2");
+
+// ---------------------------------------------------------------------------
+// Simple in-memory TTL cache
+// ---------------------------------------------------------------------------
+interface CacheEntry { data: unknown; expiresAt: number }
+const _cache = new Map<string, CacheEntry>();
+
+function cacheGet<T>(key: string): T | null {
+  const entry = _cache.get(key);
+  if (!entry || Date.now() > entry.expiresAt) { _cache.delete(key); return null; }
+  return entry.data as T;
+}
+
+function cacheSet(key: string, data: unknown, ttlMs: number): void {
+  _cache.set(key, { data, expiresAt: Date.now() + ttlMs });
+}
+
+// ---------------------------------------------------------------------------
+// Routes
+// ---------------------------------------------------------------------------
 
 router.get("/odds/drops", async (req, res): Promise<void> => {
   const query = GetOddsDropsQueryParams.safeParse(req.query);
@@ -28,34 +47,40 @@ router.get("/odds/drops", async (req, res): Promise<void> => {
   const { sport, league, minDrop, direction } = query.data;
   const effectiveMinDrop = minDrop ?? ENV_MIN_DROP_PERCENT;
 
-  let rows = await db.select().from(oddsEventsTable).orderBy(desc(oddsEventsTable.lastUpdated));
+  // Cache key includes all filter params so each unique combination is cached
+  const cacheKey = `drops:${sport ?? ""}:${league ?? ""}:${effectiveMinDrop}:${direction ?? ""}`;
+  const cached = cacheGet<unknown[]>(cacheKey);
+  if (cached) { res.json(cached); return; }
 
   const now = new Date();
-  // Only show drops detected in the last 2 hours (fresh drops only)
   const twoHoursAgo = new Date(now.getTime() - 2 * 60 * 60 * 1000);
-  rows = rows.filter(r => r.newDropAt != null && new Date(r.newDropAt) > twoHoursAgo);
 
-  // Pre-match only: exclude games that have already started
-  rows = rows.filter(r => !r.commenceTime || new Date(r.commenceTime) > now);
+  // Push time-based filtering to the database — avoids loading entire table
+  let rows = await db
+    .select()
+    .from(oddsEventsTable)
+    .where(
+      and(
+        isNotNull(oddsEventsTable.newDropAt),
+        gt(oddsEventsTable.newDropAt, twoHoursAgo),
+        gt(oddsEventsTable.commenceTime, now),
+      ),
+    )
+    .orderBy(desc(oddsEventsTable.lastUpdated));
 
-  // Exclude events with unresolved team names
   rows = rows.filter(r => r.homeTeam !== "Unknown" && r.awayTeam !== "Unknown");
 
-  if (sport) {
-    rows = rows.filter(r => r.sport === sport);
-  }
-  if (league) {
-    rows = rows.filter(r => r.league === league);
-  }
-  rows = rows.filter(r => Math.abs(r.biggestDrop) >= effectiveMinDrop || Math.abs(r.biggestRise) >= effectiveMinDrop);
-  if (direction === "drop") {
-    rows = rows.filter(r => r.biggestDrop < -0.01);
-  } else if (direction === "rise") {
-    rows = rows.filter(r => r.biggestRise > 0.01);
-  }
+  if (sport) rows = rows.filter(r => r.sport === sport);
+  if (league) rows = rows.filter(r => r.league === league);
+  rows = rows.filter(
+    r => Math.abs(r.biggestDrop) >= effectiveMinDrop || Math.abs(r.biggestRise) >= effectiveMinDrop,
+  );
+  if (direction === "drop") rows = rows.filter(r => r.biggestDrop < -0.01);
+  else if (direction === "rise") rows = rows.filter(r => r.biggestRise > 0.01);
 
-  const events = rows.map(formatEventForApi);
-  res.json(GetOddsDropsResponse.parse(events));
+  const events = GetOddsDropsResponse.parse(rows.map(formatEventForApi));
+  cacheSet(cacheKey, events, 10_000); // 10 s cache — real-time feel, but no hammering
+  res.json(events);
 });
 
 router.get("/odds/drops/:id", async (req, res): Promise<void> => {
@@ -97,6 +122,9 @@ router.get("/odds/drops/:id", async (req, res): Promise<void> => {
 });
 
 router.get("/odds/summary", async (_req, res): Promise<void> => {
+  const cached = cacheGet<unknown>("summary");
+  if (cached) { res.json(cached); return; }
+
   const rows = await db.select().from(oddsEventsTable);
   const drops = rows.filter(r => r.biggestDrop < -0.01);
   const rises = rows.filter(r => r.biggestRise > 0.01);
@@ -121,11 +149,19 @@ router.get("/odds/summary", async (_req, res): Promise<void> => {
     lastUpdated: new Date().toISOString(),
   };
 
-  res.json(GetOddsSummaryResponse.parse(summary));
+  const parsed = GetOddsSummaryResponse.parse(summary);
+  cacheSet("summary", parsed, 30_000); // 30 s — sidebar refreshes every 60 s
+  res.json(parsed);
 });
 
 router.get("/odds/top-movers", async (_req, res): Promise<void> => {
-  const rows = await db.select().from(oddsEventsTable).orderBy(desc(oddsEventsTable.lastUpdated));
+  const cached = cacheGet<unknown>("top-movers");
+  if (cached) { res.json(cached); return; }
+
+  const rows = await db
+    .select()
+    .from(oddsEventsTable)
+    .orderBy(desc(oddsEventsTable.lastUpdated));
 
   const filtered = rows.filter(
     r => Math.abs(r.biggestDrop) >= ENV_MIN_DROP_PERCENT || Math.abs(r.biggestRise) >= ENV_MIN_DROP_PERCENT,
@@ -137,8 +173,9 @@ router.get("/odds/top-movers", async (_req, res): Promise<void> => {
     return bMax - aMax;
   });
 
-  const topMovers = sorted.slice(0, 10).map(formatEventForApi);
-  res.json(GetTopMoversResponse.parse(topMovers));
+  const topMovers = GetTopMoversResponse.parse(sorted.slice(0, 10).map(formatEventForApi));
+  cacheSet("top-movers", topMovers, 30_000);
+  res.json(topMovers);
 });
 
 router.get("/odds/stream", (req, res): void => {

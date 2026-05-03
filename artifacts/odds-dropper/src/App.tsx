@@ -9,16 +9,17 @@ import { BetStoreProvider } from "@/lib/bet-store";
 import { SettingsProvider } from "@/lib/settings-context";
 import { LangProvider } from "@/lib/lang-context";
 import { useAutoSettle } from "@/hooks/use-auto-settle";
+import React, { useState, useEffect, useCallback, Suspense } from "react";
 import NotFound from "@/pages/not-found";
 import FeedPage from "@/pages/feed";
-import EventDetailPage from "@/pages/event-detail";
-import BetTrackerPage from "@/pages/bet-tracker";
-import BetStatsPage from "@/pages/bet-stats";
-import AlertConfigurationsPage from "@/pages/alert-configurations";
-import TopMoversPage from "@/pages/top-movers";
-import MyBetsPage from "@/pages/my-bets";
-import AccountPage from "@/pages/account";
-import React, { useState, useEffect, useCallback } from "react";
+
+const EventDetailPage        = React.lazy(() => import("@/pages/event-detail"));
+const BetTrackerPage         = React.lazy(() => import("@/pages/bet-tracker"));
+const BetStatsPage           = React.lazy(() => import("@/pages/bet-stats"));
+const AlertConfigurationsPage = React.lazy(() => import("@/pages/alert-configurations"));
+const TopMoversPage          = React.lazy(() => import("@/pages/top-movers"));
+const MyBetsPage             = React.lazy(() => import("@/pages/my-bets"));
+const AccountPage            = React.lazy(() => import("@/pages/account"));
 import { Activity } from "lucide-react";
 import { PlanContext, type PlanTier } from "@/lib/plan-context";
 
@@ -44,23 +45,25 @@ function AppServices() {
 
 const queryClient = new QueryClient({
   defaultOptions: {
-    queries: { refetchOnWindowFocus: false, staleTime: 5000 },
+    queries: { refetchOnWindowFocus: false, staleTime: 30_000 },
   },
 });
 
 function AppRouter() {
   return (
-    <Switch>
-      <Route path="/" component={FeedPage} />
-      <Route path="/event/:id" component={EventDetailPage} />
-      <Route path="/bet-tracker" component={BetTrackerPage} />
-      <Route path="/bet-stats" component={BetStatsPage} />
-      <Route path="/alert-configurations" component={AlertConfigurationsPage} />
-      <Route path="/top-movers" component={TopMoversPage} />
-      <Route path="/my-bets" component={MyBetsPage} />
-      <Route path="/account" component={AccountPage} />
-      <Route component={NotFound} />
-    </Switch>
+    <Suspense fallback={<LoadingScreen label="Loading…" />}>
+      <Switch>
+        <Route path="/" component={FeedPage} />
+        <Route path="/event/:id" component={EventDetailPage} />
+        <Route path="/bet-tracker" component={BetTrackerPage} />
+        <Route path="/bet-stats" component={BetStatsPage} />
+        <Route path="/alert-configurations" component={AlertConfigurationsPage} />
+        <Route path="/top-movers" component={TopMoversPage} />
+        <Route path="/my-bets" component={MyBetsPage} />
+        <Route path="/account" component={AccountPage} />
+        <Route component={NotFound} />
+      </Switch>
+    </Suspense>
   );
 }
 

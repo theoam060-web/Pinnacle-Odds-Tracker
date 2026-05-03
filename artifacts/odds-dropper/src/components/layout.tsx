@@ -70,7 +70,7 @@ export function Layout({ children, notificationFilters }: LayoutProps) {
   const activeConfigCount = configs.filter(c => c.enabled).length;
 
   const { data: summary } = useGetOddsSummary({
-    query: { queryKey: getGetOddsSummaryQueryKey(), refetchInterval: 15000 }
+    query: { queryKey: getGetOddsSummaryQueryKey(), refetchInterval: 60000 }
   });
 
   const { bets, currency } = useBetStore();
