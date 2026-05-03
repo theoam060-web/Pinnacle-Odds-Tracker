@@ -792,9 +792,9 @@ export default function FeedPage() {
 
   return (
     <Layout>
-      <div className="mb-5">
-        <h1 className="text-2xl font-bold tracking-tight mb-1 text-foreground">{tr.feed.title}</h1>
-        <p className="text-muted-foreground text-sm">
+      <div className="mb-4 md:mb-5">
+        <h1 className="text-xl sm:text-2xl font-bold tracking-tight mb-1 text-foreground leading-tight">{tr.feed.title}</h1>
+        <p className="text-muted-foreground text-xs sm:text-sm leading-snug">
           {tr.feed.subtitle}.
           {activeConfigs.length > 0 && (
             <span className="ml-2 text-primary font-medium">{activeConfigs.length} active alert config{activeConfigs.length !== 1 ? "s" : ""}.</span>
@@ -803,13 +803,13 @@ export default function FeedPage() {
       </div>
 
       {/* Control bar */}
-      <div className="flex items-center gap-3 mb-4 bg-card border rounded-lg px-4 py-2.5 flex-wrap">
+      <div className="flex flex-wrap items-center gap-2 mb-3 md:mb-4 bg-card border rounded-lg px-3 py-2 md:px-4 md:py-2.5">
         <TrendingDown className="w-4 h-4 text-green-400 shrink-0" />
-        <span className="text-sm text-muted-foreground">
+        <span className="text-xs sm:text-sm text-muted-foreground">
           <span className="font-semibold text-foreground">{displayRows.length}</span> drops matching your alert configs
         </span>
         {summary && (summary.monitoringCount ?? summary.totalEvents) > 0 && (
-          <span className="text-xs text-muted-foreground/60 border-l border-border pl-3">
+          <span className="text-[10px] sm:text-xs text-muted-foreground/60 border-l border-border pl-2 sm:pl-3">
             Monitoring <span className="font-semibold text-muted-foreground">{(summary.monitoringCount ?? summary.totalEvents).toLocaleString()}</span> live markets
           </span>
         )}
@@ -824,7 +824,7 @@ export default function FeedPage() {
           </button>
         )}
 
-        <div className="ml-auto flex items-center gap-2">
+        <div className="ml-auto flex items-center gap-2 flex-wrap">
           {/* Live stream indicator */}
           <span className="flex items-center gap-1 text-[10px] font-mono text-green-400 uppercase tracking-wide">
             <span className="relative flex h-2 w-2">
@@ -841,7 +841,7 @@ export default function FeedPage() {
           {/* Sort dropdown */}
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button size="sm" variant="outline" className="h-7 text-xs gap-1.5">
+              <Button size="sm" variant="outline" className="h-7 text-xs gap-1.5 px-2.5">
                 <ArrowUpDown className="w-3 h-3" />
                 {tr.feed.sortBy}
               </Button>
@@ -874,7 +874,7 @@ export default function FeedPage() {
           <Button
             size="sm"
             variant={paused ? "default" : "outline"}
-            className={`h-7 text-xs gap-1.5 ${paused ? "bg-amber-600 hover:bg-amber-500 border-amber-600" : ""}`}
+            className={`h-7 text-xs gap-1.5 px-2.5 ${paused ? "bg-amber-600 hover:bg-amber-500 border-amber-600" : ""}`}
             onClick={handlePause}
           >
             {paused ? <Play className="w-3 h-3" /> : <Pause className="w-3 h-3" />}
@@ -884,17 +884,17 @@ export default function FeedPage() {
       </div>
 
       <div className="border rounded-md bg-card overflow-x-auto">
-        <Table className="min-w-[960px]">
+        <Table className="min-w-[860px] md:min-w-[960px]">
           <TableHeader className="bg-muted/50">
             <TableRow>
-              <TableHead className="w-[200px]">{tr.feed.colMatch}</TableHead>
-              <TableHead className="w-[90px] text-center">{tr.feed.colStartsIn}</TableHead>
-              <TableHead className="w-[90px] text-center">{tr.feed.colAlert}</TableHead>
-              <TableHead className="w-[110px]">{tr.feed.colSport}</TableHead>
-              <TableHead className="w-[130px]">{tr.feed.colBetType}</TableHead>
-              <TableHead className="w-[160px] text-center">{tr.feed.colMovement}</TableHead>
-              <TableHead className="w-[130px] text-right">{tr.feed.colDrop}</TableHead>
-              <TableHead className="w-[160px] text-center">{tr.feed.colAction}</TableHead>
+              <TableHead className="w-[170px] text-xs md:text-sm">{tr.feed.colMatch}</TableHead>
+              <TableHead className="w-[78px] text-center text-xs md:text-sm">{tr.feed.colStartsIn}</TableHead>
+              <TableHead className="w-[78px] text-center text-xs md:text-sm">{tr.feed.colAlert}</TableHead>
+              <TableHead className="w-[96px] text-xs md:text-sm">{tr.feed.colSport}</TableHead>
+              <TableHead className="w-[118px] text-xs md:text-sm">{tr.feed.colBetType}</TableHead>
+              <TableHead className="w-[132px] text-center text-xs md:text-sm">{tr.feed.colMovement}</TableHead>
+              <TableHead className="w-[120px] text-right text-xs md:text-sm">{tr.feed.colDrop}</TableHead>
+              <TableHead className="w-[140px] text-center text-xs md:text-sm">{tr.feed.colAction}</TableHead>
             </TableRow>
           </TableHeader>
 

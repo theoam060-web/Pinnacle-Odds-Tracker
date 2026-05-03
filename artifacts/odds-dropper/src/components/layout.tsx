@@ -1,6 +1,6 @@
 import { useState, useCallback, useEffect } from "react";
 import { Link, useLocation } from "wouter";
-import { Activity, TrendingDown, BookMarked, BellRing, Volume2, VolumeX, Cog, BarChart2, Zap, X, Lock, User } from "lucide-react";
+import { Activity, TrendingDown, BookMarked, BellRing, Volume2, VolumeX, Cog, BarChart2, Zap, X, Lock, User, Menu } from "lucide-react";
 import { useAlertStore } from "@/lib/alert-context";
 import { useGetOddsSummary, getGetOddsSummaryQueryKey } from "@workspace/api-client-react";
 import { SettingsModal } from "@/components/settings-modal";
@@ -67,6 +67,7 @@ export function Layout({ children, notificationFilters }: LayoutProps) {
   const { lang } = useLang();
   const tr = tApp(lang);
   const [settingsOpen, setSettingsOpen] = useState(false);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const activeConfigCount = configs.filter(c => c.enabled).length;
 
   const { data: summary } = useGetOddsSummary({
@@ -83,153 +84,198 @@ export function Layout({ children, notificationFilters }: LayoutProps) {
     - settledLosses.reduce((s, b) => s + b.stake, 0);
   const expectedProfit = unsettled.reduce((s, b) => s + calcEVCurrency(b.bettingOdds, b.novigOdds, b.stake), 0);
 
+  useEffect(() => {
+    setMobileMenuOpen(false);
+  }, [location]);
+
+  const NavContent = (
+    <>
+      <a href="/" className="flex items-center gap-2.5 px-5 py-5 border-b border-border/30 hover:opacity-80 transition-opacity group">
+        <div className="w-7 h-7 rounded-lg bg-primary/15 border border-primary/30 flex items-center justify-center shrink-0 group-hover:bg-primary/20 transition-colors">
+          <Activity className="h-4 w-4 text-primary" />
+        </div>
+        <span className="font-bold tracking-tight text-[15px] leading-tight">
+          Sharp<span className="text-primary">Tracker</span>
+        </span>
+      </a>
+
+      <nav className="flex flex-col gap-0.5 px-2 pt-2 pb-2">
+        {NAV_ITEMS.map(({ href, labelKey, icon: Icon, goldPlus }) => {
+          const active = location === href;
+          const locked = goldPlus && tier === "silver";
+          const inner = (
+            <div
+              className={`relative flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-all cursor-pointer
+                ${active
+                  ? "bg-primary/12 text-primary font-semibold"
+                  : locked
+                    ? "text-muted-foreground/50 hover:text-muted-foreground hover:bg-white/3"
+                    : "text-muted-foreground hover:text-foreground hover:bg-white/5"
+                }`}
+            >
+              {active && (
+                <div className="absolute left-0 top-1/2 -translate-y-1/2 w-[3px] h-5 rounded-r-full bg-primary shadow-[0_0_8px_rgba(0,229,255,0.6)]" />
+              )}
+              <Icon className={`w-4 h-4 shrink-0 ${active ? "text-primary" : ""}`} />
+              <span className="flex-1">{tr.nav[labelKey]}</span>
+              {locked && <Lock className="w-3 h-3 shrink-0 text-muted-foreground/40" />}
+            </div>
+          );
+          return (
+            <Link key={href} href={href}>
+              {inner}
+            </Link>
+          );
+        })}
+      </nav>
+
+      <div className="px-3 mb-3 mt-1">
+        <div className="h-px bg-gradient-to-r from-transparent via-border/60 to-transparent" />
+      </div>
+
+      <div className="mx-3 mb-3 rounded-xl border border-border/30 overflow-hidden"
+        style={{ background: "linear-gradient(135deg, rgba(0,229,255,0.04) 0%, rgba(0,0,0,0) 100%)" }}>
+        <div className="flex items-center gap-2 px-3 pt-2.5 pb-2 border-b border-border/20">
+          <Zap className="w-3 h-3 text-primary/70" />
+          <div className="text-[10px] uppercase tracking-widest text-muted-foreground font-semibold">{tr.sidebar.quickStats}</div>
+        </div>
+        <div className="px-3 py-2.5 space-y-2">
+          <div className="flex justify-between items-center text-xs">
+            <span className="text-muted-foreground">{tr.sidebar.events}</span>
+            <span className="font-mono font-bold text-foreground tabular-nums">
+              {summary ? summary.totalEvents : "—"}
+            </span>
+          </div>
+          <div className="flex justify-between items-center text-xs">
+            <span className="text-muted-foreground">{tr.sidebar.activeConfigs}</span>
+            <span className="font-mono font-bold text-primary tabular-nums">{activeConfigCount}</span>
+          </div>
+        </div>
+      </div>
+
+      <div className="mx-3 mb-3">
+        <button
+          onClick={() => setSoundEnabled(!soundEnabled)}
+          title={soundEnabled ? "Mute notifications" : "Unmute notifications"}
+          aria-label={soundEnabled ? "Mute notifications" : "Unmute notifications"}
+          className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm transition-all
+            ${soundEnabled
+              ? "bg-primary/10 text-primary border border-primary/20 hover:bg-primary/15"
+              : "bg-white/3 text-muted-foreground border border-border/20 hover:bg-white/6 hover:text-foreground"
+            }`}
+        >
+          {soundEnabled
+            ? <Volume2 className="w-3.5 h-3.5 shrink-0" />
+            : <VolumeX className="w-3.5 h-3.5 shrink-0" />}
+          <span className="text-xs font-mono">{soundEnabled ? tr.sidebar.soundOn : tr.sidebar.soundOff}</span>
+        </button>
+      </div>
+
+      <div className="mx-3 mb-3 rounded-xl border border-border/30 overflow-hidden"
+        style={{ background: "linear-gradient(135deg, rgba(99,102,241,0.04) 0%, rgba(0,0,0,0) 100%)" }}>
+        <div className="flex items-center justify-between px-3 pt-2.5 pb-2 border-b border-border/20">
+          <div className="text-[10px] uppercase tracking-widest text-muted-foreground font-semibold">{tr.sidebar.bets}</div>
+          <Link href="/bet-tracker">
+            <span className="text-[10px] text-primary hover:text-primary/80 cursor-pointer transition-colors">{tr.sidebar.viewAll}</span>
+          </Link>
+        </div>
+        <div className="px-3 py-2.5 space-y-2">
+          <div className="flex justify-between items-center text-xs">
+            <span className="text-muted-foreground">{tr.sidebar.unsettled}</span>
+            <span className="font-mono font-bold text-foreground tabular-nums">{unsettled.length}</span>
+          </div>
+          <div className="flex justify-between items-center text-xs">
+            <span className="text-muted-foreground">{tr.sidebar.staked}</span>
+            <span className="font-mono font-bold text-foreground tabular-nums">
+              {sym}{totalStaked.toFixed(2)}
+            </span>
+          </div>
+          <div className="flex justify-between items-center text-xs pt-0.5">
+            <span className="text-muted-foreground">{tr.sidebar.pl}</span>
+            <span className={`font-mono font-bold text-sm tabular-nums ${currentPL >= 0 ? "text-green-400" : "text-red-400"}`}
+              style={{ textShadow: currentPL >= 0 ? "0 0 10px rgba(74,222,128,0.4)" : "0 0 10px rgba(248,113,113,0.4)" }}>
+              {currentPL < 0 ? "-" : ""}{sym}{Math.abs(currentPL).toFixed(2)}
+            </span>
+          </div>
+          <div className="flex justify-between items-center text-xs">
+            <span className="text-muted-foreground">{tr.sidebar.expProfit}</span>
+            <span className={`font-mono font-bold tabular-nums ${expectedProfit >= 0 ? "text-sky-400" : "text-red-400"}`}>
+              {expectedProfit >= 0 ? "+" : ""}{sym}{Math.abs(expectedProfit).toFixed(2)}
+            </span>
+          </div>
+        </div>
+      </div>
+
+      <InstallPWABadge />
+
+      <div className="mt-auto border-t border-border/30">
+        <button
+          onClick={() => setSettingsOpen(true)}
+          className="w-full flex items-center gap-2.5 px-5 py-3.5 text-muted-foreground/50 hover:text-foreground hover:bg-white/5 transition-all text-xs"
+        >
+          <Cog className="w-3.5 h-3.5 shrink-0" />
+          {tr.nav.settings}
+        </button>
+      </div>
+    </>
+  );
+
   return (
     <div className="min-h-screen bg-background text-foreground flex">
       <OddsStreamListener soundEnabled={soundEnabled} filters={notificationFilters} />
 
-      <aside className="w-56 shrink-0 flex flex-col border-r border-border/40 sticky top-0 h-screen overflow-y-auto"
+      <aside className="hidden md:flex md:w-56 shrink-0 flex-col border-r border-border/40 sticky top-0 h-screen overflow-y-auto"
         style={{ background: "linear-gradient(180deg, #0d0e14 0%, #0a0b0f 100%)" }}>
+        {NavContent}
+      </aside>
 
-        {/* Brand */}
-        <a href="/" className="flex items-center gap-2.5 px-5 py-5 border-b border-border/30 hover:opacity-80 transition-opacity group">
-          <div className="w-7 h-7 rounded-lg bg-primary/15 border border-primary/30 flex items-center justify-center shrink-0 group-hover:bg-primary/20 transition-colors">
-            <Activity className="h-4 w-4 text-primary" />
-          </div>
-          <span className="font-bold tracking-tight text-[15px] leading-tight">
+      <div className="md:hidden fixed top-0 inset-x-0 z-40 flex items-center justify-between px-4 py-3 border-b border-border/40 bg-background/95 backdrop-blur-md">
+        <a href="/" className="flex items-center gap-2">
+          <Activity className="h-4 w-4 text-primary" />
+          <span className="font-bold text-sm tracking-tight">
             Sharp<span className="text-primary">Tracker</span>
           </span>
         </a>
+        <button
+          type="button"
+          onClick={() => setMobileMenuOpen(true)}
+          className="inline-flex items-center justify-center w-10 h-10 rounded-lg border border-border/50 bg-white/5 text-foreground"
+          aria-label="Open menu"
+        >
+          <Menu className="w-5 h-5" />
+        </button>
+      </div>
 
-        {/* Nav */}
-        <nav className="flex flex-col gap-0.5 px-2 pt-2 pb-2">
-          {NAV_ITEMS.map(({ href, labelKey, icon: Icon, goldPlus }) => {
-            const active = location === href;
-            const locked = goldPlus && tier === "silver";
-            const inner = (
-              <div
-                className={`relative flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-all cursor-pointer
-                  ${active
-                    ? "bg-primary/12 text-primary font-semibold"
-                    : locked
-                      ? "text-muted-foreground/50 hover:text-muted-foreground hover:bg-white/3"
-                      : "text-muted-foreground hover:text-foreground hover:bg-white/5"
-                  }`}
+      {mobileMenuOpen && (
+        <div className="md:hidden fixed inset-0 z-50">
+          <button
+            aria-label="Close menu"
+            className="absolute inset-0 bg-black/60"
+            onClick={() => setMobileMenuOpen(false)}
+          />
+          <aside className="absolute left-0 top-0 h-full w-[86vw] max-w-xs flex flex-col border-r border-border/40 overflow-y-auto bg-[#0d0e14] shadow-2xl animate-in slide-in-from-left duration-200">
+            <div className="flex items-center justify-between px-5 py-4 border-b border-border/30">
+              <a href="/" className="flex items-center gap-2.5">
+                <Activity className="h-4 w-4 text-primary" />
+                <span className="font-bold tracking-tight text-[15px] leading-tight">
+                  Sharp<span className="text-primary">Tracker</span>
+                </span>
+              </a>
+              <button
+                type="button"
+                onClick={() => setMobileMenuOpen(false)}
+                className="inline-flex items-center justify-center w-9 h-9 rounded-lg border border-border/50 bg-white/5 text-foreground"
+                aria-label="Close menu"
               >
-                {active && (
-                  <div className="absolute left-0 top-1/2 -translate-y-1/2 w-[3px] h-5 rounded-r-full bg-primary shadow-[0_0_8px_rgba(0,229,255,0.6)]" />
-                )}
-                <Icon className={`w-4 h-4 shrink-0 ${active ? "text-primary" : ""}`} />
-                <span className="flex-1">{tr.nav[labelKey]}</span>
-                {locked && <Lock className="w-3 h-3 shrink-0 text-muted-foreground/40" />}
-              </div>
-            );
-            return (
-              <Link key={href} href={href}>
-                {inner}
-              </Link>
-            );
-          })}
-        </nav>
-
-        <div className="px-3 mb-3 mt-1">
-          <div className="h-px bg-gradient-to-r from-transparent via-border/60 to-transparent" />
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+            <div className="pt-2 pb-4">{NavContent}</div>
+          </aside>
         </div>
+      )}
 
-        {/* Quick stats */}
-        <div className="mx-3 mb-3 rounded-xl border border-border/30 overflow-hidden"
-          style={{ background: "linear-gradient(135deg, rgba(0,229,255,0.04) 0%, rgba(0,0,0,0) 100%)" }}>
-          <div className="flex items-center gap-2 px-3 pt-2.5 pb-2 border-b border-border/20">
-            <Zap className="w-3 h-3 text-primary/70" />
-            <div className="text-[10px] uppercase tracking-widest text-muted-foreground font-semibold">{tr.sidebar.quickStats}</div>
-          </div>
-          <div className="px-3 py-2.5 space-y-2">
-            <div className="flex justify-between items-center text-xs">
-              <span className="text-muted-foreground">{tr.sidebar.events}</span>
-              <span className="font-mono font-bold text-foreground tabular-nums">
-                {summary ? summary.totalEvents : "—"}
-              </span>
-            </div>
-            <div className="flex justify-between items-center text-xs">
-              <span className="text-muted-foreground">{tr.sidebar.activeConfigs}</span>
-              <span className="font-mono font-bold text-primary tabular-nums">{activeConfigCount}</span>
-            </div>
-          </div>
-        </div>
-
-        {/* Sound toggle */}
-        <div className="mx-3 mb-3">
-          <button
-            onClick={() => setSoundEnabled(!soundEnabled)}
-            title={soundEnabled ? "Mute notifications" : "Unmute notifications"}
-            aria-label={soundEnabled ? "Mute notifications" : "Unmute notifications"}
-            className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm transition-all
-              ${soundEnabled
-                ? "bg-primary/10 text-primary border border-primary/20 hover:bg-primary/15"
-                : "bg-white/3 text-muted-foreground border border-border/20 hover:bg-white/6 hover:text-foreground"
-              }`}
-          >
-            {soundEnabled
-              ? <Volume2 className="w-3.5 h-3.5 shrink-0" />
-              : <VolumeX className="w-3.5 h-3.5 shrink-0" />}
-            <span className="text-xs font-mono">{soundEnabled ? tr.sidebar.soundOn : tr.sidebar.soundOff}</span>
-          </button>
-        </div>
-
-        {/* Bets section */}
-        <div className="mx-3 mb-3 rounded-xl border border-border/30 overflow-hidden"
-          style={{ background: "linear-gradient(135deg, rgba(99,102,241,0.04) 0%, rgba(0,0,0,0) 100%)" }}>
-          <div className="flex items-center justify-between px-3 pt-2.5 pb-2 border-b border-border/20">
-            <div className="text-[10px] uppercase tracking-widest text-muted-foreground font-semibold">{tr.sidebar.bets}</div>
-            <Link href="/bet-tracker">
-              <span className="text-[10px] text-primary hover:text-primary/80 cursor-pointer transition-colors">{tr.sidebar.viewAll}</span>
-            </Link>
-          </div>
-
-          <div className="px-3 py-2.5 space-y-2">
-            <div className="flex justify-between items-center text-xs">
-              <span className="text-muted-foreground">{tr.sidebar.unsettled}</span>
-              <span className="font-mono font-bold text-foreground tabular-nums">{unsettled.length}</span>
-            </div>
-            <div className="flex justify-between items-center text-xs">
-              <span className="text-muted-foreground">{tr.sidebar.staked}</span>
-              <span className="font-mono font-bold text-foreground tabular-nums">
-                {sym}{totalStaked.toFixed(2)}
-              </span>
-            </div>
-
-            {/* P/L — highlighted */}
-            <div className="flex justify-between items-center text-xs pt-0.5">
-              <span className="text-muted-foreground">{tr.sidebar.pl}</span>
-              <span className={`font-mono font-bold text-sm tabular-nums ${currentPL >= 0 ? "text-green-400" : "text-red-400"}`}
-                style={{ textShadow: currentPL >= 0 ? "0 0 10px rgba(74,222,128,0.4)" : "0 0 10px rgba(248,113,113,0.4)" }}>
-                {currentPL < 0 ? "-" : ""}{sym}{Math.abs(currentPL).toFixed(2)}
-              </span>
-            </div>
-
-            <div className="flex justify-between items-center text-xs">
-              <span className="text-muted-foreground">{tr.sidebar.expProfit}</span>
-              <span className={`font-mono font-bold tabular-nums ${expectedProfit >= 0 ? "text-sky-400" : "text-red-400"}`}>
-                {expectedProfit >= 0 ? "+" : ""}{sym}{Math.abs(expectedProfit).toFixed(2)}
-              </span>
-            </div>
-          </div>
-        </div>
-
-        <InstallPWABadge />
-
-        {/* Footer settings */}
-        <div className="mt-auto border-t border-border/30">
-          <button
-            onClick={() => setSettingsOpen(true)}
-            className="w-full flex items-center gap-2.5 px-5 py-3.5 text-muted-foreground/50 hover:text-foreground hover:bg-white/5 transition-all text-xs"
-          >
-            <Cog className="w-3.5 h-3.5 shrink-0" />
-            {tr.nav.settings}
-          </button>
-        </div>
-      </aside>
-
-      <main className="flex-1 min-w-0 p-4 md:p-6 overflow-y-auto">
+      <main className="flex-1 min-w-0 p-3 pt-16 md:pt-6 md:p-6 overflow-y-auto">
         {children}
       </main>
 
