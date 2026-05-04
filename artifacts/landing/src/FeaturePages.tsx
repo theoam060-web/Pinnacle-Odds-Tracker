@@ -1016,9 +1016,12 @@ function FeatureCTA({ next, nextLabel }: { next: string; nextLabel: string }) {
         <h2 className="text-3xl font-bold font-sans mb-4">{tp.featureCta.heading}</h2>
         <p className="text-foreground/60 mb-8">{tp.featureCta.subtitle}</p>
         <div className="flex flex-col sm:flex-row gap-4 justify-center">
-          <button className="bg-primary text-primary-foreground px-8 py-3 rounded-md font-sans font-semibold hover:bg-primary/90 transition-all shadow-[0_0_30px_rgba(0,255,255,0.2)]">
+          <Link
+            href="/pricing"
+            className="bg-primary text-primary-foreground px-8 py-3 rounded-md font-sans font-semibold hover:bg-primary/90 transition-all shadow-[0_0_30px_rgba(0,255,255,0.2)]"
+          >
             {tp.featureCta.primaryBtn}
-          </button>
+          </Link>
           <Link
             href={`/features/${next}`}
             className="border border-border/50 text-foreground/80 px-8 py-3 rounded-md text-sm hover:border-primary/50 hover:text-primary transition-all flex items-center gap-2 justify-center"
