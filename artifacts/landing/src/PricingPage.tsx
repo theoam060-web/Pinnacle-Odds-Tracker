@@ -99,7 +99,7 @@ const PLATINUM_FEATURES: FeatureDef[] = [
   { text: "Everything in Gold", highlight: true },
   { text: "20 alert configurations", highlight: true },
   { text: "Bookmaker comparison" },
-  { text: "Current CLV & Current CV" },
+  { text: "Current CLV" },
 ];
 
 function useTrialStatus() {
@@ -168,6 +168,7 @@ export default function PricingPage() {
   const { trialUsed } = useTrialStatus();
 
   const btnLabel = (isSignedIn && trialUsed) ? "Subscribe" : "Try 14 Days Free";
+  const existingUserLabel = (isSignedIn && trialUsed) ? "Subscribe" : btnLabel;
 
   return (
     <div className="min-h-[100dvh] bg-background text-foreground font-sans">
@@ -218,7 +219,7 @@ export default function PricingPage() {
               disabled={!!loadingPlan}
               className="w-full py-3 rounded-lg border border-primary/40 text-primary font-mono font-semibold text-sm transition-all hover:bg-primary/10 hover:border-primary/60 disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center gap-2"
             >
-              {loadingPlan === "silver" ? <><Loader2 className="w-4 h-4 animate-spin" /> Processing…</> : btnLabel}
+              {loadingPlan === "silver" ? <><Loader2 className="w-4 h-4 animate-spin" /> Processing…</> : existingUserLabel}
             </button>
           </motion.div>
 
@@ -248,7 +249,7 @@ export default function PricingPage() {
               disabled={!!loadingPlan}
               className="w-full py-3 rounded-lg bg-primary text-primary-foreground font-mono font-semibold text-sm transition-all hover:bg-primary/90 shadow-[0_0_20px_hsl(var(--primary)/0.3)] disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center gap-2"
             >
-              {loadingPlan === "gold" ? <><Loader2 className="w-4 h-4 animate-spin" /> Processing…</> : btnLabel}
+              {loadingPlan === "gold" ? <><Loader2 className="w-4 h-4 animate-spin" /> Processing…</> : existingUserLabel}
             </button>
           </motion.div>
 
@@ -275,7 +276,7 @@ export default function PricingPage() {
               disabled={!!loadingPlan}
               className="w-full py-3 rounded-lg border border-violet-500/40 text-violet-400 font-mono font-semibold text-sm transition-all hover:bg-violet-500/10 hover:border-violet-500/60 disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center gap-2"
             >
-              {loadingPlan === "platinum" ? <><Loader2 className="w-4 h-4 animate-spin" /> Processing…</> : btnLabel}
+              {loadingPlan === "platinum" ? <><Loader2 className="w-4 h-4 animate-spin" /> Processing…</> : existingUserLabel}
             </button>
           </motion.div>
         </div>
