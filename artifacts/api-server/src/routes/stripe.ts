@@ -154,18 +154,31 @@ router.get('/stripe/subscription', requireAuth, async (req: any, res) => {
     }
 
     const status = user.subscriptionStatus ?? 'unknown';
-    const hasAccess = isAccessAllowed(status);
+
+    // Fetch live Stripe data FIRST so we can compute access with accurate dates
+    let stripeSub: any = null;
+    try {
+      stripeSub = await stripeService.retrieveSubscription(user.stripeSubscriptionId);
+    } catch {
+      // Non-critical — fall back to DB-only data
+    }
+
+    const hasAccess = isAccessAllowed(status, {
+      cancelAtPeriodEnd: stripeSub?.cancel_at_period_end,
+      currentPeriodEnd: stripeSub?.current_period_end,
+      trialEnd: stripeSub?.trial_end,
+    });
 
     // Get plan tier — DB field → stripe.subscription_items table → live Stripe API
     let planTier: string | null = null;
     if (hasAccess) {
       planTier = user.subscriptionPlan ?? (await storage.getSubscriptionPlanTier(user.stripeSubscriptionId));
 
-      // Final fallback: query live Stripe API and cache result in DB
+      // Final fallback: use already-fetched live sub or query Stripe directly
       if (!planTier) {
         try {
-          const liveSub = await stripeService.retrieveSubscription(user.stripeSubscriptionId);
-          planTier = getPlanTierFromSub(liveSub);
+          const subForTier = stripeSub ?? await stripeService.retrieveSubscription(user.stripeSubscriptionId);
+          planTier = getPlanTierFromSub(subForTier);
           if (planTier) {
             await storage.updateUserStripeInfo(req.userId, { subscriptionPlan: planTier });
             logger.info({ userId: req.userId, planTier }, 'Recovered and cached plan tier from live Stripe API');
@@ -174,14 +187,6 @@ router.get('/stripe/subscription', requireAuth, async (req: any, res) => {
           logger.warn({ err }, 'Failed to recover plan tier from live Stripe API');
         }
       }
-    }
-
-    // Fetch live subscription details from Stripe for accurate dates
-    let stripeSub: any = null;
-    try {
-      stripeSub = await stripeService.retrieveSubscription(user.stripeSubscriptionId);
-    } catch {
-      // Non-critical — fall back to DB-only data
     }
 
     res.json({

@@ -235,14 +235,28 @@ function SubscriptionGate({ children }: { children: React.ReactNode }) {
 
       const tier = data.planTier as PlanTier | null;
       const subStatus = data.subscription?.status as string | undefined;
-      const isActive = subStatus === "active" || subStatus === "trialing";
-      // Grant access based on status alone — tier may be null if metadata missing,
-      // fall back to "silver" so paying users are never locked out.
+      const cancelAtPeriodEnd = data.subscription?.cancel_at_period_end as boolean | null | undefined;
+      const currentPeriodEnd = data.subscription?.current_period_end as number | null | undefined;
+      const trialEnd = data.subscription?.trial_end as number | null | undefined;
+
+      const nowSec = Math.floor(Date.now() / 1000);
+      const withinPaidPeriod =
+        (cancelAtPeriodEnd && currentPeriodEnd && currentPeriodEnd > nowSec) ||
+        ((subStatus === "canceled" || subStatus === "cancelled") && currentPeriodEnd && currentPeriodEnd > nowSec) ||
+        ((subStatus === "canceled" || subStatus === "cancelled") && trialEnd && trialEnd > nowSec);
+
+      const isActive =
+        subStatus === "active" ||
+        subStatus === "trialing" ||
+        !!withinPaidPeriod;
+
+      // Tier may be null if metadata missing — fall back to "silver" so
+      // paying users are never locked out.
       const resolvedTier: PlanTier = (tier && tier !== "none") ? tier : "silver";
 
       if (isActive) {
         setSubState({ status: "active", tier: resolvedTier, isTrialing: subStatus === "trialing" });
-      } else if (subStatus === "canceled" || data.subscription != null) {
+      } else if (data.subscription != null) {
         setSubState({ status: "expired" });
       } else {
         setSubState({ status: "none" });

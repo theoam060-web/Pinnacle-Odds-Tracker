@@ -184,6 +184,26 @@ export function getPlanTierFromSub(sub: any): 'silver' | 'gold' | 'platinum' | n
   }
 }
 
-export function isAccessAllowed(status: string | null | undefined): boolean {
-  return status === 'active' || status === 'trialing';
+export function isAccessAllowed(
+  status: string | null | undefined,
+  opts?: {
+    cancelAtPeriodEnd?: boolean | null;
+    currentPeriodEnd?: number | null;
+    trialEnd?: number | null;
+  },
+): boolean {
+  if (status === 'active' || status === 'trialing') return true;
+
+  const nowSec = Math.floor(Date.now() / 1000);
+
+  // User cancelled but is still within their paid or trial period
+  if (opts?.cancelAtPeriodEnd && opts.currentPeriodEnd && opts.currentPeriodEnd > nowSec) return true;
+
+  // DB has 'cancelled' but live Stripe says the period hasn't expired yet
+  if (status === 'cancelled' || status === 'canceled') {
+    if (opts?.currentPeriodEnd && opts.currentPeriodEnd > nowSec) return true;
+    if (opts?.trialEnd && opts.trialEnd > nowSec) return true;
+  }
+
+  return false;
 }
