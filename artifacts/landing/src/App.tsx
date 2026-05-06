@@ -969,6 +969,16 @@ function TerminalSection() {
                            </div>
                          ))}
                        </div>
+                       <div className="absolute left-4 bottom-4 z-20">
+                         <a
+                           href="https://t.me/+i23SOkc0K9k2YWFk"
+                           target="_blank"
+                           rel="noopener noreferrer"
+                           className="inline-flex items-center gap-2 rounded-md border border-primary/30 bg-background/95 px-3 py-2 text-[11px] font-mono text-primary shadow-lg shadow-black/20 hover:bg-primary hover:text-primary-foreground transition-colors"
+                         >
+                           Only members Telegram
+                         </a>
+                       </div>
                     </div>
                   </div>
                 </div>
