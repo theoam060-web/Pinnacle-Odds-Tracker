@@ -946,13 +946,13 @@ function TerminalSection() {
                     {/* Animated grid background inside terminal */}
                     <div className="absolute inset-0 bg-[linear-gradient(to_right,#8080800a_1px,transparent_1px),linear-gradient(to_bottom,#8080800a_1px,transparent_1px)] bg-[size:16px_16px]"></div>
                     
-                    <div className="relative z-10 h-full pb-12 space-y-3">
+                    <div className="relative z-10 h-full pb-12 space-y-3 flex flex-col">
                        <div className="flex justify-between items-center pb-2 border-b border-border/30">
                          <div className="text-xs font-mono text-muted-foreground">{tr.terminal.latestDrops}</div>
                          <div className="text-[10px] font-mono text-primary flex items-center gap-1">● {tr.terminal.live}</div>
                        </div>
                        
-                       <div className="space-y-2">
+                      <div className="space-y-2 flex-1 overflow-hidden">
                          {[1,2,3,4].map((i) => (
                            <div key={i} className="flex justify-between items-center bg-card border border-border/50 p-3 rounded text-sm font-mono">
                              <div className="flex flex-col gap-1">
@@ -969,12 +969,12 @@ function TerminalSection() {
                            </div>
                          ))}
                        </div>
-                       <div className="sticky left-0 bottom-0 z-20 pt-2 flex justify-start">
+                      <div className="mt-3 z-20 flex justify-start">
                          <a
                            href="https://t.me/+i23SOkc0K9k2YWFk"
                            target="_blank"
                            rel="noopener noreferrer"
-                           className="inline-flex items-center gap-2 rounded-md border border-primary/40 bg-primary/10 px-4 py-2.5 text-xs font-mono font-semibold text-primary shadow-lg shadow-black/25 hover:bg-primary hover:text-primary-foreground transition-colors"
+                           className="inline-flex items-center gap-2 rounded-md border border-primary bg-primary px-4 py-2.5 text-xs font-mono font-semibold text-primary-foreground shadow-lg shadow-black/25 hover:bg-primary/90 transition-colors"
                          >
                            Members only Telegram
                          </a>
