@@ -946,7 +946,7 @@ function TerminalSection() {
                     {/* Animated grid background inside terminal */}
                     <div className="absolute inset-0 bg-[linear-gradient(to_right,#8080800a_1px,transparent_1px),linear-gradient(to_bottom,#8080800a_1px,transparent_1px)] bg-[size:16px_16px]"></div>
                     
-                    <div className="relative z-10 space-y-3">
+                    <div className="relative z-10 h-full pb-12 space-y-3">
                        <div className="flex justify-between items-center pb-2 border-b border-border/30">
                          <div className="text-xs font-mono text-muted-foreground">{tr.terminal.latestDrops}</div>
                          <div className="text-[10px] font-mono text-primary flex items-center gap-1">● {tr.terminal.live}</div>
@@ -969,14 +969,14 @@ function TerminalSection() {
                            </div>
                          ))}
                        </div>
-                       <div className="absolute left-4 bottom-4 z-20">
+                       <div className="sticky left-0 bottom-0 z-20 pt-2 flex justify-start">
                          <a
                            href="https://t.me/+i23SOkc0K9k2YWFk"
                            target="_blank"
                            rel="noopener noreferrer"
-                           className="inline-flex items-center gap-2 rounded-md border border-primary/30 bg-background/95 px-3 py-2 text-[11px] font-mono text-primary shadow-lg shadow-black/20 hover:bg-primary hover:text-primary-foreground transition-colors"
+                           className="inline-flex items-center gap-2 rounded-md border border-primary/40 bg-primary/10 px-4 py-2.5 text-xs font-mono font-semibold text-primary shadow-lg shadow-black/25 hover:bg-primary hover:text-primary-foreground transition-colors"
                          >
-                           Only members Telegram
+                           Members only Telegram
                          </a>
                        </div>
                     </div>
