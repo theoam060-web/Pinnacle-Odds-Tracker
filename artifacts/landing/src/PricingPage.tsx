@@ -89,6 +89,7 @@ const GOLD_FEATURES: FeatureDef[] = [
   { text: "9 alert configurations", highlight: true },
   { text: "ALL sports — every league covered", highlight: true },
   { text: "ALL markets", highlight: true },
+  { text: "Bet size calculator", highlight: true },
   { text: "Bet Tracker & Bet Stats", highlight: true },
   { text: "Odds movement history" },
   { text: "Live EV in Bet Tracker" },
