@@ -206,9 +206,18 @@ export function Layout({ children, notificationFilters }: LayoutProps) {
         </div>
       </div>
 
-      <InstallPWABadge />
-
       <div className="mt-auto border-t border-border/30">
+        <a
+          href="https://t.me/+i23SOkc0K9k2YWFk"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="w-full flex items-center gap-2.5 px-5 py-3.5 text-primary hover:text-primary-foreground hover:bg-primary/90 transition-all text-xs border border-primary/30 bg-primary/10"
+        >
+          <svg viewBox="0 0 24 24" className="w-3.5 h-3.5 shrink-0 fill-current" xmlns="http://www.w3.org/2000/svg">
+            <path d="M12 0C5.373 0 0 5.373 0 12s5.373 12 12 12 12-5.373 12-12S18.627 0 12 0zm5.894 8.221-1.97 9.28c-.145.658-.537.818-1.084.508l-3-2.21-1.447 1.394c-.16.16-.295.295-.605.295l.213-3.053 5.56-5.023c.242-.213-.054-.333-.373-.12L7.17 13.957l-2.96-.924c-.643-.204-.657-.643.136-.953l11.57-4.461c.537-.194 1.006.131.978.602z" />
+          </svg>
+          Join Telegram group
+        </a>
         <button
           onClick={() => setSettingsOpen(true)}
           className="w-full flex items-center gap-2.5 px-5 py-3.5 text-muted-foreground/50 hover:text-foreground hover:bg-white/5 transition-all text-xs"
