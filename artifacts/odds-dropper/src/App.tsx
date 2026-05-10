@@ -220,7 +220,16 @@ function SubscriptionGate({ children }: { children: React.ReactNode }) {
   const retryCount = useRef(0);
   const sessionIdRef = useRef<string | undefined>(undefined);
 
+  useEffect(() => {
+    if (!bypassAuth) return;
+    setSubState({ status: "active", tier: "platinum", isTrialing: false });
+  }, [bypassAuth]);
+
   const attemptFetch = useCallback(async () => {
+    if (bypassAuth) {
+      setSubState({ status: "active", tier: "platinum", isTrialing: false });
+      return;
+    }
     try {
       const sessionId = sessionIdRef.current;
       if (sessionId && retryCount.current === 0) {
@@ -275,11 +284,15 @@ function SubscriptionGate({ children }: { children: React.ReactNode }) {
   }, []);
 
   const fetchSubscription = useCallback((sessionId?: string) => {
+    if (bypassAuth) {
+      setSubState({ status: "active", tier: "platinum", isTrialing: false });
+      return;
+    }
     retryCount.current = 0;
     sessionIdRef.current = sessionId;
     setSubState({ status: "loading" });
     attemptFetch();
-  }, [attemptFetch]);
+  }, [attemptFetch, bypassAuth]);
 
   useEffect(() => {
     if (bypassAuth) return;
