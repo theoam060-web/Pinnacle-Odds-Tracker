@@ -24,6 +24,7 @@ import { Activity } from "lucide-react";
 import { PlanContext, type PlanTier } from "@/lib/plan-context";
 
 const basePath = import.meta.env.BASE_URL.replace(/\/$/, "");
+const adminBypass = import.meta.env.VITE_ADMIN_BYPASS === "true";
 
 const clerkPubKey = publishableKeyFromHost(
   window.location.hostname,
@@ -213,7 +214,7 @@ type SubState =
 const MAX_SUB_RETRIES = 3;
 
 function SubscriptionGate({ children }: { children: React.ReactNode }) {
-  const bypassAuth = import.meta.env.VITE_DEV_BYPASS_AUTH === "true";
+  const bypassAuth = adminBypass || import.meta.env.VITE_DEV_BYPASS_AUTH === "true";
   const { isSignedIn, isLoaded } = useAuth();
   const [subState, setSubState] = useState<SubState>({ status: "loading" });
   const retryCount = useRef(0);
@@ -341,7 +342,7 @@ function SubscriptionGate({ children }: { children: React.ReactNode }) {
 }
 
 function AuthGate({ children }: { children: React.ReactNode }) {
-  const bypassAuth = import.meta.env.VITE_DEV_BYPASS_AUTH === "true";
+  const bypassAuth = adminBypass || import.meta.env.VITE_DEV_BYPASS_AUTH === "true";
   const { isLoaded, isSignedIn } = useAuth();
 
   if (bypassAuth) return <>{children}</>;
