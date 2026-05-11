@@ -1164,6 +1164,7 @@ function CTASection() {
   const { isSignedIn } = useAppAuth();
   const { lang } = useLang();
   const tr = t(lang);
+  const ctaLabel = isSignedIn ? tr.cta.viewPlans : tr.cta.startTrial;
   return (
     <section className="py-32 relative overflow-hidden bg-card border-t border-border">
       <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,var(--tw-gradient-stops))] from-primary/10 via-background to-background"></div>
@@ -1186,7 +1187,7 @@ function CTASection() {
               className="bg-primary text-primary-foreground px-10 py-4 rounded-md font-mono font-bold tracking-wide text-lg hover:bg-primary/90 transition-colors shadow-[0_0_30px_hsl(var(--primary)/0.3)]"
               data-testid="btn-view-plans"
             >
-              {tr.cta.viewPlans}
+              {ctaLabel}
             </button>
           ) : (
             <button
@@ -1195,7 +1196,7 @@ function CTASection() {
               data-testid="btn-footer-signup"
             >
               <GoogleIcon />
-              {tr.cta.startTrial}
+              {ctaLabel}
             </button>
           )}
         </div>
