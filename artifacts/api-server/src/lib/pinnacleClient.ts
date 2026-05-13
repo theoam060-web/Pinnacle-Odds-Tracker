@@ -8,7 +8,7 @@ const SPORT_DISCOVERY_TTL_MS = 2 * 60 * 1000;
 const REQUEST_TIMEOUT_MS = 20_000;
 const MAX_RETRIES = 2;
 const RETRY_DELAY_MS = 1_000;
-const INTER_SPORT_DELAY_MS = 3000;
+const INTER_SPORT_DELAY_MS = 300;
 
 // ---------------------------------------------------------------------------
 // Public types
@@ -402,9 +402,10 @@ function getMarketType(raw: PinnacleMarketRaw): MarketType {
 function normalizeMarket(
   raw: PinnacleMarketRaw,
   matchup: NormalizedMatchup,
+  participantIdToName: Map<number, string>,
 ): NormalizedMarket {
   const prices: NormalizedPrice[] = (raw.prices ?? []).map((p) => ({
-    designation: p.designation ?? "unknown",
+    designation: p.designation ?? participantIdToName.get(p.participantId ?? -1) ?? "unknown",
     points: p.points ?? null,
     americanPrice: p.price,
     decimalPrice: americanToDecimal(p.price),
@@ -615,8 +616,14 @@ async function fetchSportFull(
   const rawMatchups = await fetchMatchupsForSport(config, sportId);
 
   const matchupsById = new Map<number, NormalizedMatchup>();
+  const participantIdToName = new Map<number, string>();
   for (const raw of rawMatchups) {
     matchupsById.set(raw.id, normalizeMatchup(raw));
+    for (const p of raw.participants ?? []) {
+      if (p.id != null && p.name) {
+        participantIdToName.set(p.id, p.name);
+      }
+    }
   }
 
   const sportName = rawMatchups[0]?.league?.sport?.name ?? "Unknown";
@@ -629,7 +636,7 @@ async function fetchSportFull(
     const matchup = matchupsById.get(rawMarket.matchupId);
     // Skip markets whose matchup isn't in our catalog — they'd show "Unknown vs Unknown"
     if (!matchup) continue;
-    markets.push(normalizeMarket(rawMarket, matchup));
+    markets.push(normalizeMarket(rawMarket, matchup, participantIdToName));
   }
 
   return {
